@@ -1,1 +1,2 @@
-This is the stub README.txt for the "cl-permutation" project.
+A library (intended) for operating on permutations and permutation
+groups.
