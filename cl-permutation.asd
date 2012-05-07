@@ -7,8 +7,10 @@
   permutation groups."
   :author "Robert Smith <quad@symbo1ics.com>"
   ;; :license "Specify license here"
+  :serial t
   :components ((:file "package")
                (:file "cl-permutation")
+               (:file "utilities")
                (:file "permutation")
                ))
 
