@@ -161,3 +161,5 @@
     (loop :for i :below n
           :do (setf (aref perm*-spec (perm-ref perm i)) i)
           :finally (return (make-perm :spec perm*-spec)))))
+          
+; HI!!!
