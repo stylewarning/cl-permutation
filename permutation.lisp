@@ -6,7 +6,7 @@
 (defstruct (perm (:conc-name perm.)
                         (:print-function print-perm))
   (spec #(0) :type (vector (unsigned-byte *))
-            :read-only t))
+             :read-only t))
 
 (defun print-perm (perm stream depth)
   "Printer for perms."
@@ -57,6 +57,10 @@
   ;; Set ]
   (set-macro-character #\] (get-macro-character #\))))
 
+(defun allocate-perm-vector (n)
+  "Allocate a vector compatible with a size-N permutation."
+  (make-array (1+ n) :element-type '(unsigned-byte *)
+                     :initial-element 0))
 
 ;;;;;;;;;;;;;;;;;;;;;;; Permutation operations ;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -131,8 +135,7 @@
           p1 p2)
   
   (let* ((n        (perm-size p1))
-         (p12-spec (make-array (1+ n) :element-type '(unsigned-byte *)
-                                      :initial-element 0)))
+         (p12-spec (allocate-perm-vector n)))
     (loop :for i :from 1 :to n
           :do (setf (aref p12-spec i)
                     (perm-eval p1 (perm-eval p2 i)))
@@ -181,8 +184,7 @@
 (defun perm-inverse (perm)
   "Find the inverse of the permutation PERM."
   (let* ((n          (perm-size perm))
-         (perm*-spec (make-array (1+ n) :element-type '(unsigned-byte *)
-                                        :initial-element 0)))
+         (perm*-spec (allocate-perm-vector n)))
     (loop :for i :from 1 :to n
           :do (setf (aref perm*-spec (perm-eval perm i)) i)
           :finally (return (make-perm :spec perm*-spec)))))
