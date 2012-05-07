@@ -109,6 +109,24 @@
                     (perm-ref p1 (perm-ref p2 i)))
           :finally (return (make-perm :spec p12-spec)))))
 
+(defun perm-transpose (perm a b)
+  "Transpose the indexes A and B in PERM."
+  (assert (<= 0 a (1- (perm-size perm)))
+          (a)
+          "The first transposition index ~A must be in the range of ~
+           the permutation."
+          a)
+  (assert (<= 0 b (1- (perm-size perm)))
+          (b)
+          "The second transposition index ~A must be in the range of ~
+           the permutation."
+          b)
+  
+  (let ((transposed-spec (copy-seq (perm.spec perm))))
+    (rotatef (aref transposed-spec a)
+             (aref transposed-spec b))
+    (make-perm :spec transposed-spec)))
+
 (defun perm-inverse (perm)
   "Find the inverse of the permutation PERM."
   (let* ((n          (perm-size perm))
