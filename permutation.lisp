@@ -64,6 +64,18 @@
   "The identity permutation of size N."
   (make-perm :spec (coerce (iota (1+ n)) 'vector)))
 
+(defun random-perm (n &optional (parity :any))
+  "Make a random permutation of size N. PARITY specifies the parity of
+  the permutation:
+
+    * :ANY  for any permutation
+    * :EVEN for only even permutations
+    * :ODD  for only odd permutations"
+  (let ((spec-0 (coerce (iota+1 n) 'vector)))
+    (make-perm :spec (concatenate 'vector
+                                  #(0)
+                                  (nshuffle spec-0 parity)))))
+
 (defun perm-ref (perm n)
   "Compute the zero-based index of PERM at N."
   (assert (<= 0 n (1- (perm-size perm)))
