@@ -97,6 +97,10 @@
   "Is PERM an odd permutation?"
   (oddp (perm-length perm)))
 
+(defun perm-sign (perm)
+  "The sign of a permutation PERM."
+  (if (perm-even-p perm) 1 -1))
+
 (defun perm-compose (p1 p2)
   "Compose the permutations P1 and P2."
   (assert (= (perm-size p1)
