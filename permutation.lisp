@@ -5,7 +5,7 @@
 
 (defstruct (perm (:conc-name perm.)
                         (:print-function print-perm))
-  (spec #() :type (vector (unsigned-byte *))
+  (spec #(0) :type (vector (unsigned-byte *))
             :read-only t))
 
 (defun print-perm (perm stream depth)
@@ -16,12 +16,13 @@
     (princ "#[" stream)
     
     (cond
-      ((zerop len) nil)
-      ((= 1 len) (format stream "~D" (1+ (aref spec 0))))
+      ((zerop len) (error "Inconsistent permutation; has zero elements."))
+      ((= 1 len) nil)
+      ((= 2 len) (format stream "~D" (1+ (aref spec 1))))
       (t (progn
-          (format stream "~D" (1+ (aref spec 0)))
-          (dotimes (i (- len 1))
-            (format stream " ~D" (1+ (aref spec (1+ i))))))))
+           (format stream "~D" (aref spec 1))
+           (dotimes (i (- len 2))
+             (format stream " ~D" (aref spec (+ 2 i)))))))
     
     (princ "]" stream)))
 
@@ -46,7 +47,7 @@
             nil
             "Permutation syntax must contain the numbers 1 to ~A ~
              for the permutation given." (length read-list))
-    (make-perm :spec (coerce (mapcar #'1- read-list) 'vector))))
+    (make-perm :spec (coerce (cons 0 read-list) 'vector))))
 
 (defun enable-perm-reader ()
   "Enable the use of #[...] for perms."
@@ -61,30 +62,38 @@
 
 (defun perm-identity (n)
   "The identity permutation of size N."
-  (make-perm :spec (coerce (iota n) 'vector)))
+  (make-perm :spec (coerce (iota (1+ n)) 'vector)))
 
 (defun perm-ref (perm n)
-  "Compute what N maps to in the permutation PERM."
+  "Compute the zero-based index of PERM at N."
   (assert (<= 0 n (1- (perm-size perm)))
           (n)
-          "Permutation index of ~D must be within the length of the ~
+          "Permutation reference index of ~D must be within the length of the ~
+           permutation ~A."
+          n perm)
+  (aref (perm.spec perm) (1+ n)))
+
+(defun perm-eval (perm n)
+  "Evaluate the permutation PERM at index N."
+  (assert (<= 1 n (perm-size perm))
+          (n)
+          "Permutation index of ~D must be within 1 and the length of the ~
            permutation ~A."
           n perm)
   (aref (perm.spec perm) n))
 
 (defun perm-size (perm)
   "The size of a permutation PERM."
-  (length (perm.spec perm)))
+  (1- (length (perm.spec perm))))
 
 (defun perm-length (perm)
   "Count the number of inversions in the permutation PERM."
-  (let ((spec      (perm.spec perm))
-        (n         (perm-size perm))
+  (let ((n         (perm-size perm))
         (inv-count 0))
     (loop :for i :below (1- n)
           :do (loop :for j :from (1+ i) :to (1- n)
-                    :when (> (svref spec i)
-                             (svref spec j))
+                    :when (> (perm-ref perm i)
+                             (perm-ref perm j))
                     :do (incf inv-count)))
     
     inv-count))
@@ -110,22 +119,22 @@
           p1 p2)
   
   (let* ((n        (perm-size p1))
-         (p12-spec (make-array n :element-type '(unsigned-byte *)
-                                 :initial-element 0)))
-    (loop :for i :below n
+         (p12-spec (make-array (1+ n) :element-type '(unsigned-byte *)
+                                      :initial-element 0)))
+    (loop :for i :from 1 :to n
           :do (setf (aref p12-spec i)
-                    (perm-ref p1 (perm-ref p2 i)))
+                    (perm-eval p1 (perm-eval p2 i)))
           :finally (return (make-perm :spec p12-spec)))))
 
 (defun perm-transpose-indexes (perm a b)
   "Transpose the indexes A and B in PERM."
-  (assert (<= 0 a (1- (perm-size perm)))
+  (assert (<= 1 a (perm-size perm))
           (a)
           "The first transposition index ~A must be in the range of ~
            the permutation."
           a)
   
-  (assert (<= 0 b (1- (perm-size perm)))
+  (assert (<= 1 b (perm-size perm))
           (b)
           "The second transposition index ~A must be in the range of ~
            the permutation."
@@ -138,13 +147,13 @@
 
 (defun perm-transpose-entries (perm a b)
   "Transpose the entries A and B in PERM."
-  (assert (<= 0 a (1- (perm-size perm)))
+  (assert (<= 1 a (perm-size perm))
           (a)
           "The first transposition index ~A must be in the range of ~
            the permutation."
           a)
   
-  (assert (<= 0 b (1- (perm-size perm)))
+  (assert (<= 1 b (perm-size perm))
           (b)
           "The second transposition index ~A must be in the range of ~
            the permutation."
@@ -160,10 +169,10 @@
 (defun perm-inverse (perm)
   "Find the inverse of the permutation PERM."
   (let* ((n          (perm-size perm))
-         (perm*-spec (make-array n :element-type '(unsigned-byte *)
-                                   :initial-element 0)))
-    (loop :for i :below n
-          :do (setf (aref perm*-spec (perm-ref perm i)) i)
+         (perm*-spec (make-array (1+ n) :element-type '(unsigned-byte *)
+                                        :initial-element 0)))
+    (loop :for i :from 1 :to n
+          :do (setf (aref perm*-spec (perm-eval perm i)) i)
           :finally (return (make-perm :spec perm*-spec)))))
           
 ; HI!!!
