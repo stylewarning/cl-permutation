@@ -90,10 +90,10 @@
   "Count the number of inversions in the permutation PERM."
   (let ((n         (perm-size perm))
         (inv-count 0))
-    (loop :for i :below (1- n)
-          :do (loop :for j :from (1+ i) :to (1- n)
-                    :when (> (perm-ref perm i)
-                             (perm-ref perm j))
+    (loop :for i :from 1 :to (1- n)
+          :do (loop :for j :from (1+ i) :to n
+                    :when (> (perm-eval perm i)
+                             (perm-eval perm j))
                     :do (incf inv-count)))
     
     inv-count))
