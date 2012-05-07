@@ -59,6 +59,10 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;; Permutation operations ;;;;;;;;;;;;;;;;;;;;;;;
 
+(defun perm-identity (n)
+  "The identity permutation of size N."
+  (make-perm :spec (coerce (iota n) 'vector)))
+
 (defun perm-ref (perm n)
   "Compute what N maps to in the permutation PERM."
   (assert (<= 0 n (1- (perm-size perm)))
@@ -109,13 +113,14 @@
                     (perm-ref p1 (perm-ref p2 i)))
           :finally (return (make-perm :spec p12-spec)))))
 
-(defun perm-transpose (perm a b)
+(defun perm-transpose-indexes (perm a b)
   "Transpose the indexes A and B in PERM."
   (assert (<= 0 a (1- (perm-size perm)))
           (a)
           "The first transposition index ~A must be in the range of ~
            the permutation."
           a)
+  
   (assert (<= 0 b (1- (perm-size perm)))
           (b)
           "The second transposition index ~A must be in the range of ~
@@ -125,6 +130,27 @@
   (let ((transposed-spec (copy-seq (perm.spec perm))))
     (rotatef (aref transposed-spec a)
              (aref transposed-spec b))
+    (make-perm :spec transposed-spec)))
+
+(defun perm-transpose-entries (perm a b)
+  "Transpose the entries A and B in PERM."
+  (assert (<= 0 a (1- (perm-size perm)))
+          (a)
+          "The first transposition index ~A must be in the range of ~
+           the permutation."
+          a)
+  
+  (assert (<= 0 b (1- (perm-size perm)))
+          (b)
+          "The second transposition index ~A must be in the range of ~
+           the permutation."
+          b)
+  
+  (let* ((transposed-spec (copy-seq (perm.spec perm)))
+         (pos-a (position a transposed-spec))
+         (pos-b (position b transposed-spec)))
+    (rotatef (aref transposed-spec pos-a)
+             (aref transposed-spec pos-b))
     (make-perm :spec transposed-spec)))
 
 (defun perm-inverse (perm)
