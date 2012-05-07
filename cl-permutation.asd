@@ -8,5 +8,7 @@
   :author "Robert Smith <quad@symbo1ics.com>"
   ;; :license "Specify license here"
   :components ((:file "package")
-               (:file "cl-permutation")))
+               (:file "cl-permutation")
+               (:file "permutation")
+               ))
 

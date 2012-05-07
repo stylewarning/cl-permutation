@@ -3,5 +3,5 @@
 
 (in-package #:cl-permutation)
 
-;;; ...
+;;; nothing here for now...
 
