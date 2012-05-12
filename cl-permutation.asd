@@ -12,5 +12,5 @@
                (:file "cl-permutation")
                (:file "utilities")
                (:file "permutation")
-               ))
+               (:file "permutation-group")))
 
