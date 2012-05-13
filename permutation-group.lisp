@@ -22,5 +22,5 @@
   )
 
 (defun group-order (generators)
-  ;; ...
-  )
+  (let ((transversals (strong-generating-set generators)))
+    (product (hash-table-values transversals) :key 'hash-table-size)))
