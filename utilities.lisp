@@ -3,6 +3,8 @@
 
 ;;;; Utilities.
 
+(in-package #:cl-permutation)
+
 (defun iota (n)
   "Generate a list of numbers between 0 and N-1."
   (loop :for i :below n :collect i))
