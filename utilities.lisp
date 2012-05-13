@@ -74,6 +74,26 @@ function KEY."
         :do (format t "~S ==> ~S~%" k v))
   (terpri))
 
+(defun index-to-hash-table-key (hash-table n)
+  "Get the Nth key from HASH-TABLE. Ordering is not specified.
+
+This function just guarantees we can map N to some hash table key."
+  (maphash (lambda (k v)
+             (declare (ignore v))
+             (when (zerop n)
+               (return-from index-to-hash-table-key k))
+             (decf n))
+           hash-table))
+
+(defun random-hash-table-key (hash-table)
+  "Obtain a random hash table key."
+  (index-to-hash-table-key hash-table
+                           (random (hash-table-count hash-table))))
+
+(defun random-hash-table-value (hash-table)
+  "Obtain a random hash table value."
+  (gethash (random-hash-table-key hash-table) hash-table))
+
 (define-condition hash-table-access-error (cell-error)
   ((table :initarg :table :reader hash-table-access-error-table)
    (key :initarg :key :reader hash-table-access-error-key))
