@@ -4,7 +4,8 @@
 (in-package #:cl-permutation)
 
 (defstruct (perm (:conc-name perm.)
-                        (:print-function print-perm))
+;;                 (:print-function print-perm)
+                 )
   (spec #(0) :type (vector (unsigned-byte *))
              :read-only t))
 
@@ -18,7 +19,7 @@
     (cond
       ((zerop len) (error "Inconsistent permutation; has zero elements."))
       ((= 1 len) nil)
-      ((= 2 len) (format stream "~D" (1+ (aref spec 1))))
+      ((= 2 len) (format stream "~D" (aref spec 1)))
       (t (progn
            (format stream "~D" (aref spec 1))
            (dotimes (i (- len 2))
@@ -128,6 +129,7 @@
 
 (defun perm-compose (p1 p2)
   "Compose the permutations P1 and P2."
+  #+#:ignore
   (assert (= (perm-size p1)
              (perm-size p2))
           nil
