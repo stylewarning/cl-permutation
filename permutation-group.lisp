@@ -22,8 +22,6 @@
   (print-unreadable-object (group stream :type t :identity nil)
     (format stream "of ~D generators" (length (perm-group.generators group)))))
 
-(defvar *prods*)
-
 (defun sigma (trans k j)
   (safe-gethash j (safe-gethash k trans)))
 
@@ -51,9 +49,9 @@
               :do (loop :for tt :in (gethash k sgs)
                         :for prod := (perm-compose tt s)
                         :do (progn
-                              (setf (gethash prod *prods*) t)
+                              (setf (gethash prod *product-membership*) t)
                               
-                              (when (and (hash-table-key-exists-p *prods* prod)
+                              (when (and (hash-table-key-exists-p *product-membership* prod)
                                          (not (group-element-p prod trans)))
                                 (multiple-value-setq (sgs trans)
                                   (update-transversal prod sgs trans k))
@@ -91,14 +89,13 @@ of size N"
 
     (let ((n (maximum generators :key 'perm-size))
           (sgs (make-hash-table))
-          (trans (make-hash-table)))
+          (trans (make-hash-table))
+          (*product-membership* (make-hash-table)))
+      (declare (special *product-membership*))
       
       ;; Initialize TRANS to map I -> (I -> Identity(I)).
       (dotimes (i n)
         (setf (gethash (1+ i) trans) (identity-table (1+ i))))
-      
-      ;; Initialize the product table
-      (setf *prods* (make-hash-table))
       
       ;; Add the generators.
       (loop :for generator :in generators
