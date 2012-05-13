@@ -20,7 +20,7 @@
   (print-unreadable-object (group stream :type t :identity nil)
     (format stream "of ~D generator~:p" (length (perm-group.generators group)))))
 
-(defun sigma (trans k j)
+(defun safe-sigma (trans k j)
   (safe-gethash j (safe-gethash k trans)))
 
 (defun group-element-p (perm trans &optional (k (perm-size perm)))
@@ -35,8 +35,6 @@
                                  (1- k)))))))))
 
 (defun add-generator (perm sgs trans &optional (k (perm-size perm)))
-  (declare (special *product-membership*))
-  
   (setf (gethash k sgs)
         (union (gethash k sgs) (list perm)))
   
@@ -48,11 +46,7 @@
         (loop :for s :being :the :hash-values :of (gethash k trans)
               :do (dolist (tt (gethash k sgs))
                     (let ((prod (perm-compose tt s)))
-                      ;; Remember PROD.
-                      (setf (gethash prod *product-membership*) t)
-                      
-                      (when (and (hash-table-key-exists-p *product-membership* prod)
-                                 (not (group-element-p prod trans)))
+                      (unless (group-element-p prod trans)
                         (multiple-value-setq (sgs trans)
                           (update-transversal prod sgs trans k))
                         
@@ -66,7 +60,7 @@
 (defun update-transversal (perm sgs trans &optional (k (perm-size perm)))
   (let ((j (perm-eval perm k)))
     (handler-case
-        (let ((new-perm (perm-compose (perm-inverse (sigma trans k j))
+        (let ((new-perm (perm-compose (perm-inverse (safe-sigma trans k j))
                                       perm)))
           (if (group-element-p new-perm trans (1- k))
               (values sgs trans)
@@ -91,9 +85,7 @@ of size N"
 
     (let ((n (maximum generators :key 'perm-size))
           (sgs (make-hash-table))
-          (trans (make-hash-table))
-          (*product-membership* (make-hash-table)))
-      (declare (special *product-membership*))
+          (trans (make-hash-table)))
       
       ;; Initialize TRANS to map I -> (I -> Identity(I)).
       (dotimes (i n)
