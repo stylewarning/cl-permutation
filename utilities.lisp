@@ -57,6 +57,12 @@
 function KEY."
   (reduce '* list :key key :initial-value 1))
 
+(defun hash-table-key-exists-p (hash-table key)
+  "Check of KEY exists in HASH-TABLE."
+  (multiple-value-bind (val existsp) (gethash hash-table key)
+    (declare (ignore val))
+    existsp))
+
 (defun hash-table-values (hash-table)
   "Return a list of the hash table values of HASH-TABLE."
   (loop :for v :being :the :hash-values :of hash-table
