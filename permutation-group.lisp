@@ -1,8 +1,6 @@
 ;;;; permutation-group.lisp
 ;;;; Copyright (c) 2012 Robert Smith, Brendan Pawlowski
 
-;;;; Reference: Efficient Representation of Perm Groups. Donald Knuth. 1990.
-
 (in-package #:cl-permutation)
 
 ;;; A TRANSVERSAL SYSTEM (trans) is represented as a hash table, which
