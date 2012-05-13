@@ -49,3 +49,8 @@
   "Compute the maximum of LIST, optionally via the function KEY."
   (loop :for x :in list
         :maximizing (funcall key x)))
+
+(defun product (list &key (key 'identity))
+  "Compute the product of the items in LIST, optionally via the
+function KEY."
+  (reduce '* list :key key :initial-value 1))
