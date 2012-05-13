@@ -59,7 +59,7 @@ function KEY."
 
 (defun hash-table-key-exists-p (hash-table key)
   "Check of KEY exists in HASH-TABLE."
-  (multiple-value-bind (val existsp) (gethash hash-table key)
+  (multiple-value-bind (val existsp) (gethash key hash-table)
     (declare (ignore val))
     existsp))
 
