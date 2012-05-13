@@ -80,6 +80,10 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;; Permutation operations ;;;;;;;;;;;;;;;;;;;;;;;
 
+(defun list-to-perm (list)
+  "Construct a perm from a list LIST."
+  (make-perm :spec (coerce (cons 0 (copy-list list)) 'vector)))
+
 (defun perm-identity (n)
   "The identity permutation of size N."
   (make-perm :spec (coerce (iota (1+ n)) 'vector)))
