@@ -40,30 +40,27 @@
   (setf (gethash k sgs)
         (union (gethash k sgs) (list perm)))
   
-  (block :outer
-    (let ((redo nil))
-      (loop
-        (setf redo nil)
-        
-        (loop :for s :being :the :hash-values :of (gethash k trans)
-              :do (dolist (tt (gethash k sgs))
-                    (let ((prod (perm-compose tt s)))
-
-                      
-                      (when (and (not (and (hash-table-key-exists-p *product-membership* prod)
-                                           (= k (gethash prod *product-membership*))))
-                                 (not (group-element-p prod trans)))
-                        (setf (gethash prod *product-membership*) k)
-                        
-                        (multiple-value-setq (sgs trans)
-                          (update-transversal prod sgs trans k))
-                        
-                        (setf redo t)))))
-        
-        (unless redo
-          (return-from :outer)))))
-
-  (values sgs trans))
+  (let ((redo nil))
+    (loop
+      (loop :for s :being :the :hash-values :of (gethash k trans)
+            :do (dolist (tt (gethash k sgs))
+                  (let ((prod (perm-compose tt s)))
+                    (unless (or (and (hash-table-key-exists-p *product-membership* prod)
+                                     (= k (gethash prod *product-membership*)))
+                                (group-element-p prod trans))
+                     (setf (gethash prod *product-membership*) k)
+                     
+                     (multiple-value-setq (sgs trans)
+                       (update-transversal prod sgs trans k))
+                     
+                     (setf redo t)))))
+      
+      ;; Break out?
+      (unless redo
+        (return-from add-generator (values sgs trans)))
+      
+      ;; Reset the REDO flag.
+      (setf redo nil))))
 
 (defun update-transversal (perm sgs trans &optional (k (perm-size perm)))
   (let ((j (perm-eval perm k)))
