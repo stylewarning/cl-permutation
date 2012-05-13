@@ -26,8 +26,27 @@
   )
 
 (defun strong-generating-set (generators)
-  ;; ...
-  )
+  (labels ((identity-table (n)
+             "Make a hash table mapping I to the identity permutation
+of size I for 1 <= I <= N."
+             (let ((ht (make-hash-table)))
+               (dotimes (i n ht)
+                 (setf (gethash (1+ i) ht)
+                       (perm-identity (1+ i)))))))
+
+    (let ((n (maximum generators :key 'perm-size))
+          (trans (make-hash-table))
+          (group (make-hash-table)))
+      
+      ;; Initialize GROUP to map I -> (I -> Identity(I)).
+      (dotimes (i n)
+        (setf (gethash (1+ i) group) (identity-table (1+ i))))
+      
+      ;; Add the generators.
+      (loop :for generator :in generators
+            :do (multiple-value-setq (trans group)
+                  (add-generator generator trans group))
+            :finally (return (values group trans))))))
 
 (defun group-order (generators)
   (let ((transversals (strong-generating-set generators)))
