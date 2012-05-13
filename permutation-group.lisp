@@ -1,5 +1,7 @@
 ;;;; permutation-group.lisp
-;;;; Copyright (c) 2012 Robert Smith
+;;;; Copyright (c) 2012 Robert Smith, Brendan Pawlowski
+
+;;;; Reference: Efficient Representation of Perm Groups. Donald Knuth. 1990.
 
 (in-package #:cl-permutation)
 
@@ -8,6 +10,17 @@
 ;;; sigma_kj. That is
 ;;;
 ;;;    K -> (J -> sigma_kj)
+
+(defstruct (perm-group (:conc-name perm-group.)
+                       (:print-function perm-group-printer))
+  generators
+  strong-generators
+  transversal-system)
+
+(defun perm-group-printer (group stream depth)
+  (declare (ignore depth))
+  (print-unreadable-object (group stream :type t :identity nil)
+    (format stream "of ~D generators" (length (perm-group.generators group)))))
 
 (defvar *prods*)
 
@@ -66,7 +79,7 @@
           (setf (gethash j (gethash k trans)) perm)
           (values sgs trans))))))
 
-(defun strong-generating-set (generators)
+(defun generate-perm-group (generators)
   (labels ((identity-table (n)
              "Make a hash table mapping N to the identity permutation
 of size N"
@@ -91,9 +104,12 @@ of size N"
       (loop :for generator :in generators
             :do (multiple-value-setq (sgs trans)
                   (add-generator generator sgs trans))
-            :finally (return (values trans sgs))))))
+            :finally (return (make-perm-group :generators generators
+                                              :strong-generators sgs
+                                              :transversal-system trans))))))
 
-(defun group-order (generators)
-  (let ((transversals (strong-generating-set generators)))
+(defun group-order (group)
+  "Compute the order of the permutation group GROUP."
+  (let ((transversals (perm-group.transversal-system group)))
     (product (hash-table-values transversals) :key 'hash-table-count)))
 
