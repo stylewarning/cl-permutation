@@ -45,3 +45,7 @@
                                 (svref vector 1)))
                      (return vector)))))
 
+(defun maximum (list &key (key 'identity))
+  "Compute the maximum of LIST, optionally via the function KEY."
+  (loop :for x :in list
+        :maximizing (funcall key x)))
