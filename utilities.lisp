@@ -54,3 +54,8 @@
   "Compute the product of the items in LIST, optionally via the
 function KEY."
   (reduce '* list :key key :initial-value 1))
+
+(defun hash-table-values (hash-table)
+  "Return a list of the hash table values of HASH-TABLE."
+  (loop :for v :being :the :hash-values :of hash-table
+        :collect v))
