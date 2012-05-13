@@ -35,6 +35,8 @@
                                  (1- k)))))))))
 
 (defun add-generator (perm sgs trans &optional (k (perm-size perm)))
+  (declare (special *product-membership*))
+  
   (setf (gethash k sgs)
         (union (gethash k sgs) (list perm)))
   
@@ -46,7 +48,13 @@
         (loop :for s :being :the :hash-values :of (gethash k trans)
               :do (dolist (tt (gethash k sgs))
                     (let ((prod (perm-compose tt s)))
-                      (unless (group-element-p prod trans)
+
+                      
+                      (when (and (not (and (hash-table-key-exists-p *product-membership* prod)
+                                           (= k (gethash prod *product-membership*))))
+                                 (not (group-element-p prod trans)))
+                        (setf (gethash prod *product-membership*) k)
+                        
                         (multiple-value-setq (sgs trans)
                           (update-transversal prod sgs trans k))
                         
@@ -85,7 +93,9 @@ of size N"
 
     (let ((n (maximum generators :key 'perm-size))
           (sgs (make-hash-table))
-          (trans (make-hash-table)))
+          (trans (make-hash-table))
+          (*product-membership* (make-hash-table)))
+      (declare (special *product-membership*))
       
       ;; Initialize TRANS to map I -> (I -> Identity(I)).
       (dotimes (i n)
