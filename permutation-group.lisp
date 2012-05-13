@@ -113,6 +113,10 @@ of size N"
   (let ((transversals (perm-group.transversal-system group)))
     (product (hash-table-values transversals) :key 'hash-table-count)))
 
+(defun group-element-p (perm group)
+  "Decide if the permutation PERM is an element of the group GROUP."
+  (trans-element-p perm (perm-group.transversal-system group)))
+
 (defun random-group-element (group)
   "Generate a random element of the group GROUP."
   (loop :for v :being :the :hash-values :of (perm-group.transversal-system group)
