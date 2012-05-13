@@ -88,6 +88,11 @@
   "The identity permutation of size N."
   (make-perm :spec (coerce (iota (1+ n)) 'vector)))
 
+(defun perm-identity-p (perm)
+  "Is the permutation PERM an identity permutation?"
+  (equalp (perm.spec perm)
+          (perm.spec (perm-identity (perm-size perm)))))
+
 (defun random-perm (n &optional (parity :any))
   "Make a random permutation of size N. PARITY specifies the parity of
   the permutation:
@@ -171,6 +176,30 @@
           :do (setf (aref p12-spec i)
                     (perm-eval* p1 (perm-eval* p2 i)))
           :finally (return (make-perm :spec p12-spec)))))
+
+(defun perm-expt (perm n)
+  "Raise a permutation PERM to the Nth power."
+  (check-type n integer)
+  (assert (not (minusp n))
+          (n)
+          "Exponent must be non-negative. Given ~S,"
+          n)
+
+  (labels ((rec (current-perm n)
+             (if (= n 1) 
+                 current-perm
+                 (rec (perm-compose perm current-perm) (1- n)))))
+    (if (zerop n)
+        (perm-identity (perm-size perm))
+        (rec perm n))))
+
+(defun perm-order (perm)
+  "Compute the order of a permutation PERM."
+  (labels ((rec (current-perm n)
+             (if (perm-identity-p current-perm)
+                 n
+                 (rec (perm-compose perm current-perm) (1+ n)))))
+    (rec perm 1)))
 
 (defun perm-transpose-indexes (perm a b)
   "Transpose the indexes A and B in PERM."
