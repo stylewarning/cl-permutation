@@ -23,14 +23,14 @@
 (defun safe-sigma (trans k j)
   (safe-gethash j (safe-gethash k trans)))
 
-(defun group-element-p (perm trans &optional (k (perm-size perm)))
+(defun trans-element-p (perm trans &optional (k (perm-size perm)))
   (or (= 1 k)
       (let ((j (perm-eval perm k)))
         (multiple-value-bind (k-val k-exists-p) (gethash k trans)
           (when k-exists-p
             (multiple-value-bind (j-val j-exists-p) (gethash j k-val)
               (when j-exists-p
-                (group-element-p (perm-compose (perm-inverse j-val) perm) 
+                (trans-element-p (perm-compose (perm-inverse j-val) perm) 
                                  trans 
                                  (1- k)))))))))
 
@@ -47,7 +47,7 @@
                   (let ((prod (perm-compose tt s)))
                     (unless (or (and (hash-table-key-exists-p *product-membership* prod)
                                      (= k (gethash prod *product-membership*)))
-                                (group-element-p prod trans))
+                                (trans-element-p prod trans))
                      (setf (gethash prod *product-membership*) k)
                      
                      (multiple-value-setq (sgs trans)
@@ -67,7 +67,7 @@
     (handler-case
         (let ((new-perm (perm-compose (perm-inverse (safe-sigma trans k j))
                                       perm)))
-          (if (group-element-p new-perm trans (1- k))
+          (if (trans-element-p new-perm trans (1- k))
               (values sgs trans)
               (add-generator new-perm sgs trans (1- k))))
       (hash-table-access-error (c) 
