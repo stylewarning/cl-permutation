@@ -20,7 +20,7 @@
 (defun perm-group-printer (group stream depth)
   (declare (ignore depth))
   (print-unreadable-object (group stream :type t :identity nil)
-    (format stream "of ~D generators" (length (perm-group.generators group)))))
+    (format stream "of ~D generator~:p" (length (perm-group.generators group)))))
 
 (defun sigma (trans k j)
   (safe-gethash j (safe-gethash k trans)))
@@ -110,3 +110,10 @@ of size N"
   (let ((transversals (perm-group.transversal-system group)))
     (product (hash-table-values transversals) :key 'hash-table-count)))
 
+(defun random-group-element (group)
+  (loop :for v :being :the :hash-values :of (perm-group.transversal-system group)
+        :collect (random-hash-table-value v) :into random-sigmas
+        :finally (return (let ((maxlen (maximum random-sigmas :key 'perm-size)))
+                           (reduce 'perm-compose (mapcar (lambda (s)
+                                                           (perm-compose (perm-identity maxlen) s))
+                                                         random-sigmas))))))
