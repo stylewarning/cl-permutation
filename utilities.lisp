@@ -67,3 +67,25 @@ function KEY."
   "Return a list of the hash table values of HASH-TABLE."
   (loop :for v :being :the :hash-values :of hash-table
         :collect v))
+
+(defun print-hash-table (hash-table)
+  (loop :for k :being :the :hash-keys :of hash-table
+        :for v := (gethash k hash-table)
+        :do (format t "~S ==> ~S~%" k v))
+  (terpri))
+
+(define-condition hash-table-access-error (cell-error)
+  ((table :initarg :table :reader hash-table-access-error-table)
+   (key :initarg :key :reader hash-table-access-error-key))
+  (:documentation "An error to be signalled if a key doesn't exist in
+  a hash-table."))
+
+(defun safe-gethash (key hash-table)
+  "Throw an error in the event that KEY foes not exist in
+  HASH-TABLE. Othwerwise return the value."
+  (multiple-value-bind (val existsp) (gethash key hash-table)
+    (if existsp
+        val
+        (error 'hash-table-access-error :name 'gethash
+                                        :table hash-table
+                                        :key key))))
