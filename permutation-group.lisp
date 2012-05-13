@@ -3,6 +3,8 @@
 
 (in-package #:cl-permutation)
 
+
+
 (defvar *prods*)
 
 (defun sigma (trans k j)
@@ -37,7 +39,7 @@
                               (when (and (hash-table-key-exists-p *prods* prod)
                                          (not (group-element-p prod trans)))
                                 (multiple-value-setq (sgs trans)
-                                  (update-sgsversal prod sgs trans k))
+                                  (update-transversal prod sgs trans k))
                                 
                                 (setf redo t)))))
         
@@ -46,7 +48,7 @@
 
   (values sgs trans))
 
-(defun update-sgsversal (perm sgs trans &optional (k (perm-size perm)))
+(defun update-transversal (perm sgs trans &optional (k (perm-size perm)))
   (let ((j (perm-eval perm k)))
     (handler-case
         (let ((new-perm (perm-compose (perm-inverse (sigma trans k j))
