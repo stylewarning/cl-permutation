@@ -111,6 +111,7 @@ of size N"
     (product (hash-table-values transversals) :key 'hash-table-count)))
 
 (defun random-group-element (group)
+  "Generate a random element of the group GROUP."
   (loop :for v :being :the :hash-values :of (perm-group.transversal-system group)
         :collect (random-hash-table-value v) :into random-sigmas
         :finally (return (let ((maxlen (maximum random-sigmas :key 'perm-size)))
