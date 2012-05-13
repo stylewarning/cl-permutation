@@ -99,6 +99,16 @@
           n perm)
   (aref (perm.spec perm) n))
 
+(defun perm-eval* (perm n)
+  "Evaluate the permutation PERM at index N."
+  (assert (<= 1 n)
+          (n)
+          "Permutation index of ~D must be greater than 1."
+          n)
+  (if (> n (perm-size perm))
+      n
+      (aref (perm.spec perm) n)))
+
 (defun perm-size (perm)
   "The size of a permutation PERM."
   (1- (length (perm.spec perm))))
@@ -140,7 +150,7 @@
          (p12-spec (allocate-perm-vector n)))
     (loop :for i :from 1 :to n
           :do (setf (aref p12-spec i)
-                    (perm-eval p1 (perm-eval p2 i)))
+                    (perm-eval* p1 (perm-eval* p2 i)))
           :finally (return (make-perm :spec p12-spec)))))
 
 (defun perm-transpose-indexes (perm a b)
