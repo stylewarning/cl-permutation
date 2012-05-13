@@ -9,19 +9,15 @@
              ))
     (is-in perm group 0)))
 
-(defun add-generator (perm trans group)
-  (labels ((rec (perm trans group k)
-             ;; ...
-             ))
-    (rec perm trans group 0)))
+(defun add-generator (perm trans group &optional (k 0))
+  ;; ...
+  )
 
-(defun update-transversal (perm trans group)
-  (labels ((rec (perm trans group k)
-             ;; ...
-             ))
-    (rec perm trans group 0)))
+(defun update-transversal (perm trans group &optional (k 0))
+  ;; ...
+  )
 
-(defun sgs (generators)
+(defun strong-generating-set (generators)
   ;; ...
   )
 
