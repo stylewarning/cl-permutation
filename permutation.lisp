@@ -4,11 +4,11 @@
 (in-package #:cl-permutation)
 
 (defstruct (perm (:conc-name perm.)
-;;                 (:print-function print-perm)
-                 )
+                 (:print-function print-perm))
   (spec #(0) :type (vector (unsigned-byte *))
              :read-only t))
 
+#+#:ignore
 (defun print-perm (perm stream depth)
   "Printer for perms."
   (declare (ignore depth))
@@ -26,6 +26,21 @@
              (format stream " ~D" (aref spec (+ 2 i)))))))
     
     (princ "]" stream)))
+
+(defun print-perm (perm stream depth)
+  "Printer for perms."
+  (declare (ignore depth))
+  (print-unreadable-object (perm stream :type t :identity nil)
+    (let* ((spec (perm.spec perm))
+           (len (length spec)))
+      (cond
+        ((zerop len) (error "Inconsistent permutation; has zero elements."))
+        ((= 1 len) nil)
+        ((= 2 len) (format stream "~D" (aref spec 1)))
+        (t (progn
+             (format stream "~D" (aref spec 1))
+             (dotimes (i (- len 2))
+               (format stream " ~D" (aref spec (+ 2 i))))))))))
 
 (defun verify-perm-elements (elements)
   (let ((len (length elements)))
