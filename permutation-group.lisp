@@ -36,9 +36,9 @@
 
 (defun add-generator (perm sgs trans &optional (k (perm-size perm)))
   (declare (special *product-membership*))
-  
-  (setf (gethash k sgs)
-        (union (gethash k sgs) (list perm)))
+
+  ;; Add the permutation to the generating set.
+  (pushnew perm (gethash k sgs))
   
   (let ((redo nil))
     (loop
