@@ -3,6 +3,7 @@
 (defun group-from (generators-as-lists)
   (generate-perm-group (mapcar 'list-to-perm generators-as-lists)))
 
+;;; 120
 (defparameter S_5
   (group-from
    '((2 1 3 4 5)
@@ -10,11 +11,13 @@
      (1 2 4 3 5)
      (1 2 3 5 4))))
 
-(defparameter mathieu
+;;; 244823040
+(defparameter mathieu-m25
   (group-from
    '((16 7 4 17 1 6 11 23 22 10 19 2 14 5 3 8 9 18 20 24 15 21 13 12)
      (24 21 10 22 9 23 8 7 5 3 18 20 14 13 19 17 16 11 15 12 2 4 6 1))))
 
+;;; 3674160
 (defparameter rubik-2x2
   (group-from
    '((2 4 1 3 17 18 7 8 5 6 11 12 9 10 15 16 13 14 19 20 21 22 23 24) ; U
@@ -24,7 +27,8 @@
      ;; (9 2 11 4 6 8 5 7 21 10 23 12 13 14 15 16 17 3 19 1 20 22 18 24)  ; L
      ;; (7 5 3 4 21 6 24 8 9 10 11 12 13 1 15 2 18 20 17 19 16 22 23 14) ;B
      )))
-     
+
+;;; 43252003274489856000
 (defparameter rubik-3x3
   (group-from
    '((3 5 8 2 7 1 4 6 33 34 35 12 13 14 15 16 9 10 11 20 21 22 23 24 17 
