@@ -1,8 +1,5 @@
 (in-package #:cl-permutation)
 
-(defun group-from (generators-as-lists)
-  (generate-perm-group (mapcar 'list-to-perm generators-as-lists)))
-
 ;;; 120
 (defparameter S_5
   (group-from

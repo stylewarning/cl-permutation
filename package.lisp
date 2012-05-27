@@ -28,6 +28,7 @@
    ;; permutation-group.lisp
    #:perm-group
    #:generate-perm-group
+   #:group-from
    #:group-order
    #:group-element-p
    #:random-group-element))

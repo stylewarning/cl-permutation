@@ -108,6 +108,11 @@ of size N"
                        :strong-generators sgs
                        :transversal-system trans))))
 
+(defun group-from (generators-as-lists)
+  "Generate a permutation group from a list of generators, which are
+represented as lists."
+  (generate-perm-group (mapcar 'list-to-perm generators-as-lists)))
+
 (defun group-order (group)
   "Compute the order of the permutation group GROUP."
   (let ((transversals (perm-group.transversal-system group)))
