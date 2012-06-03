@@ -250,3 +250,101 @@
           :finally (return (make-perm :spec perm*-spec)))))
           
 ; HI!!!
+; HELLO
+
+(defun orbit-of (n perm)
+  "Compute the orbit of the element N in the permutation PERM."
+  (labels ((orb (k cycle)
+             (if (= n k)
+                 (cons n (reverse cycle))
+                 (orb (perm-eval perm k)
+                      (cons k cycle)))))
+    (orb (perm-eval perm n) nil)))
+
+;;; We could reduce (mod n (length cycle))
+(defun rotate-cycle-clockwise (cycle &optional (n 1))
+  "Rotate the elements of a cycle syntactically clockwise, a total of
+N times. When N is negative, rotate counterclockwise."
+  (cond
+    ((null cycle) nil)
+    ((zerop n) cycle)
+    ((plusp n) (rotate-cycle-clockwise
+                (cons (last cycle)
+                      (butlast cycle))
+                (1- n)))
+    ((minusp n) (rotate-cycle-counterclockwise cycle (- n)))))
+
+;;; We could reduce (mod n (length cycle))
+(defun rotate-cycle-counterclockwise (cycle &optional (n 1))
+  "Rotate the elements of a cycle CYCLE syntactically
+counterclockwise, a total of N times. When N is negative, rotate
+clockwise."
+  (cond
+    ((null cycle) nil)
+    ((zerop n) cycle)
+    ((plusp n) (rotate-cycle-counterclockwise
+                (append (cdr cycle)
+                        (list (car cycle)))
+                (1- n)))
+    ((minusp n) (rotate-cycle-clockwise cycle (- n)))))
+
+(defun normalize-cycle-order (cycle)
+  "Rotate a cycle CYCLE so its least value is syntactically first."
+  (let* ((minimum (reduce #'min cycle))
+         (min-pos (position minimum cycle)))
+    (rotate-cycle-counterclockwise cycle min-pos)))
+
+(defun normalize-cycles (cycles)
+  "Normalize a list of cycles CYCLES in descending length, normalizing
+each cycle in turn."
+  (mapcar #'normalize-cycle-order
+          (sort (remove-if #'singletonp cycles) ; Copy?
+                (lambda (x y)
+                  (> (length x)
+                     (length y))))))
+
+(defun to-cycles (perm &key (normalizep t))
+  "Convert a permutation PERM in its standard representation to its
+cycle representation."
+  (labels ((next-cycle (todo cycles)
+             (if (null todo)
+                 cycles
+                 (let ((new-cycle (orbit-of (car todo)
+                                            perm)))
+                   (next-cycle (set-difference todo new-cycle)
+                               (cons new-cycle cycles))))))
+    (let ((cycs (next-cycle (iota+1 (perm-size perm)) nil)))
+      (if normalizep
+          (normalize-cycles cycs)
+          cycs))))
+
+(defun decompose-cycle-to-maps (cycle)
+  "Convert a cycle CYCLE to a list of pairs (a_i, b_i) such that a
+permutation is the composition of a_i |-> b_i."
+  (cond
+    ((null cycle) (list nil))
+    ((singletonp cycle) (list (list (car cycle) (car cycle))))
+    (t (labels ((get-swaps (the-cycle swaps first-element)
+                  (if (null the-cycle)
+                      swaps
+                      (get-swaps (cdr the-cycle)
+                                 (cons (list (car the-cycle)
+                                             (if (null (cdr the-cycle))
+                                                 first-element
+                                                 (cadr the-cycle)))
+                                       swaps)
+                                 first-element))))
+         (get-swaps cycle nil (car cycle))))))
+
+(defun from-cycles (cycles &optional (size 0))
+  "Convert a cycle representation of a permutation CYCLES to the
+standard representation."
+  (let* ((maximum (max (1- size) (reduce #'max
+                                         (mapcar #'(lambda (x)
+                                                     (apply #'max x)) cycles))))
+         (perm (coerce (iota (1+ maximum)) 'vector)))
+    (dolist (mapping
+             (mapcan #'decompose-cycle-to-maps cycles)
+             (make-perm :spec perm))
+      (setf (aref perm (first mapping))
+            (second mapping)))))

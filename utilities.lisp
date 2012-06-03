@@ -109,3 +109,9 @@ This function just guarantees we can map N to some hash table key."
         (error 'hash-table-access-error :name 'gethash
                                         :table hash-table
                                         :key key))))
+
+(defun singletonp (x)
+  "Does X contain one element?"
+  (typecase x
+    (sequence (= 1 (length x)))
+    (t nil)))
