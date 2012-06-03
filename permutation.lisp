@@ -339,9 +339,9 @@ permutation is the composition of a_i |-> b_i."
 (defun from-cycles (cycles &optional (size 0))
   "Convert a cycle representation of a permutation CYCLES to the
 standard representation."
-  (let* ((maximum (max (1- size) (reduce #'max
-                                         (mapcar #'(lambda (x)
-                                                     (apply #'max x)) cycles))))
+  (let* ((maximum (max size (reduce #'max
+                                    (mapcar #'(lambda (x)
+                                                (apply #'max x)) cycles))))
          (perm (coerce (iota (1+ maximum)) 'vector)))
     (dolist (mapping
              (mapcan #'decompose-cycle-to-maps cycles)
