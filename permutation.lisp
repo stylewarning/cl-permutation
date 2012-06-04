@@ -46,27 +46,34 @@
              (dotimes (i (- len 2))
                (format stream " ~D" (aref spec (+ 2 i))))))))))
 
-(defun verify-perm-elements (elements)
+(defun contains-1-to-N (elements)
+  "Check that ELEMENTS contains the integers between 1 and the length
+of the list, inclusive."
   (let ((len (length elements)))
     (loop :for i :in elements
           :sum i :into s
           :finally (return (= s (/ (* len (1+ len)) 2))))))
 
+(defun assert-valid-permutation-elements (elements)
+  "Verify (via assertions) that the elements "
+  (assert (every 'integerp elements)
+            nil
+            "Permutation syntax must only have integers.")
+  
+  (assert (every 'plusp elements)
+            nil
+            "Permutation syntax must contain positive numbers only.")
+  
+  (assert (contains-1-to-N elements)
+          nil
+          "Permutation syntax must contain the numbers 1 to ~A ~
+           for the permutation given." (length elements)))
+
 (defun perm-reader (stream char n)
   (declare (ignore char n))
   (let ((read-list (read-delimited-list #\] stream t)))
-    (assert (every 'integerp read-list)
-            nil
-            "Permutation syntax must only have integers.")
+    (assert-valid-permutation-elements read-list)
 
-    (assert (every 'plusp read-list)
-            nil
-            "Permutation syntax must contain positive numbers only.")
-    
-    (assert (verify-perm-elements read-list)
-            nil
-            "Permutation syntax must contain the numbers 1 to ~A ~
-             for the permutation given." (length read-list))
     (make-perm :spec (coerce (cons 0 read-list) 'vector))))
 
 (defun enable-perm-reader ()
@@ -88,6 +95,7 @@
 
 (defun list-to-perm (list)
   "Construct a perm from a list LIST."
+  (assert-valid-permutation-elements list)
   (make-perm :spec (coerce (cons 0 (copy-list list)) 'vector)))
 
 (defun perm-identity (n)
