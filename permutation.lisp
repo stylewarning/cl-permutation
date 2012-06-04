@@ -295,13 +295,17 @@ clockwise."
     (rotate-cycle-counterclockwise cycle min-pos)))
 
 (defun normalize-cycles (cycles)
-  "Normalize a list of cycles CYCLES in descending length, normalizing
-each cycle in turn."
-  (mapcar #'normalize-cycle-order
-          (sort (remove-if #'singletonp cycles) ; Copy?
-                (lambda (x y)
-                  (> (length x)
-                     (length y))))))
+  "Normalize each cycle in CYCLES, then normalize the list of cycles
+in descending length (or if the length is the same, ascending first
+element)."
+  (sort (mapcar #'normalize-cycle-order
+                (remove-if #'singletonp cycles))
+        (lambda (x y)
+          (let ((lenx (length x))
+                (leny (length y)))
+            (if (= lenx leny)
+                (< (first x) (first y))
+                (> lenx leny))))))
 
 (defun to-cycles (perm &key (normalizep t))
   "Convert a permutation PERM in its standard representation to its
