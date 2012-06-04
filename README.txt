@@ -32,7 +32,8 @@ Given permutation must contain the numbers 1 to 3
 One can also create permutations with LIST-TO-PERM, which converts a
 list to a permutation.
 
-Lastly, there is an experimental reader macro for permutations, which are created at read time. To enable the syntax, use
+Lastly, there is an experimental reader macro for permutations, which
+are created at read time. To enable the syntax, use
 
   (enable-perm-reader)
 
@@ -88,7 +89,8 @@ PERM> (from-cycles '((1 3 2)))
 PERM> (from-cycles '((1 3 2)) 5)
 #<PERM 3 1 2 4 5>
 
-Lastly, there is a (mostly useless) function CYCLES-TO-ONE-LINE which converts cycles to one-line notation. That is, the cycles
+Lastly, there is a (mostly useless) function CYCLES-TO-ONE-LINE which
+converts cycles to one-line notation. That is, the cycles
 
    (1 2 3)(4 5)
 
@@ -121,7 +123,8 @@ PERM> (group-from '((1 3 2 4)
                     (3 2 4 1)))
 #<PERM-GROUP of 2 generators>
 
-We can generate a permutation group from a list of cycles as well. The above is equivalent to
+We can generate a permutation group from a list of cycles as well. The
+above is equivalent to
 
 PERM> (group-from-cycles '(((2 3))
                            ((1 3 4))) 4) 
@@ -209,5 +212,6 @@ No it's not. How about four edge pieces?
 PERM> (group-element-p (from-cycles '((7 18) (2 34) (4 10) (5 26)) 48) rubik-3x3)
 T
 
-As can be seen, the few operations we have are powerful in studying finite groups.
+As can be seen, the few operations we have are powerful in studying
+finite groups.
 
