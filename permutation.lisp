@@ -59,16 +59,16 @@ of the list, inclusive."
   "Verify (via assertions) that the elements "
   (assert (every 'integerp elements)
             nil
-            "Permutation syntax must only have integers.")
+            "Permutation must only have integers.")
   
   (assert (every 'plusp elements)
             nil
-            "Permutation syntax must contain positive numbers only.")
+            "Permutation must contain positive numbers only.")
   
   (assert (contains-1-to-N elements)
           nil
-          "Permutation syntax must contain the numbers 1 to ~A ~
-           for the permutation given." (length elements)))
+          "Given permutation must contain the numbers 1 to ~A"
+          (length elements)))
 
 (defun perm-reader (stream char n)
   (declare (ignore char n))
@@ -181,7 +181,7 @@ of the list, inclusive."
   (if (perm-even-p perm) 1 -1))
 
 (defun perm-compose (p1 p2)
-  "Compose the permutations P1 and P2."
+  "Compose the permutations P1 and P2: x |-> P2(P1(x))."
   #+#:ignore
   (assert (= (perm-size p1)
              (perm-size p2))
