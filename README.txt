@@ -59,7 +59,7 @@ perm-size : the size of the permutation (number of mapped elements)
 perm-length : number of inversions
 perm-even-p |
 perm-odd-p  : check for evenness/oddness
-perm-sign-p |
+perm-sign   |
 perm-compose : compose two permutations
 perm-expt : compose a perm with itself a number of times
 perm-order : order of a permutation
