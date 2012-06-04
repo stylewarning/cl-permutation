@@ -322,16 +322,16 @@ cycle representation."
           cycs))))
 
 (defun decompose-cycle-to-maps (cycle)
-  "Convert a cycle CYCLE to a list of pairs (a_i, b_i) such that a
+  "Convert a cycle CYCLE to a list of pairs (a_i . b_i) such that a
 permutation is the composition of a_i |-> b_i."
   (cond
     ((null cycle) (list nil))
-    ((singletonp cycle) (list (list (car cycle) (car cycle))))
+    ((singletonp cycle) (list (cons (car cycle) (car cycle))))
     (t (labels ((get-swaps (the-cycle swaps first-element)
                   (if (null the-cycle)
                       swaps
                       (get-swaps (cdr the-cycle)
-                                 (cons (list (car the-cycle)
+                                 (cons (cons (car the-cycle)
                                              (if (null (cdr the-cycle))
                                                  first-element
                                                  (cadr the-cycle)))
@@ -349,8 +349,8 @@ standard representation."
     (dolist (mapping
              (mapcan #'decompose-cycle-to-maps cycles)
              (make-perm :spec perm))
-      (setf (aref perm (first mapping))
-            (second mapping)))))
+      (setf (aref perm (car mapping))
+            (cdr mapping)))))
 
 (defun cycles-to-one-line (cycles)
   "Convert CYCLES to one-line notation. This is not the same as
