@@ -41,6 +41,7 @@
    #:perm-group
    #:generate-perm-group
    #:group-from
+   #:group-from-cycles
    #:group-order
    #:group-element-p
    #:random-group-element))

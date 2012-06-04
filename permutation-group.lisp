@@ -113,6 +113,14 @@ of size N"
 represented as lists."
   (generate-perm-group (mapcar 'list-to-perm generators-as-lists)))
 
+;;; TODO: Automatically try calculating size.
+(defun group-from-cycles (generators-as-cycles size)
+  "Generate a permutation group from a list of generators, which are
+  represented as cycles."
+  (generate-perm-group (mapcar (lambda (c)
+                                 (from-cycles c size))
+                               generators-as-cycles)))
+
 (defun group-order (group)
   "Compute the order of the permutation group GROUP."
   (let ((transversals (perm-group.transversal-system group)))
