@@ -3,6 +3,10 @@
 
 (in-package #:cl-permutation)
 
+
+
+;;;;;;;;;;;;;;;;;;;;; PERMUTATION DATA STRUCTURE ;;;;;;;;;;;;;;;;;;;;;
+
 (defstruct (perm (:conc-name perm.)
                  (:print-function print-perm))
   (spec #(0) :type (vector (unsigned-byte *))
@@ -78,7 +82,9 @@
   (make-array (1+ n) :element-type '(unsigned-byte *)
                      :initial-element 0))
 
-;;;;;;;;;;;;;;;;;;;;;;; Permutation operations ;;;;;;;;;;;;;;;;;;;;;;;
+
+
+;;;;;;;;;;;;;;;;;;;;;;; PERMUTATION OPERATIONS ;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun list-to-perm (list)
   "Construct a perm from a list LIST."
@@ -251,6 +257,10 @@
           
 ; HI!!!
 ; HELLO
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; CYCLES ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun orbit-of (n perm)
   "Compute the orbit of the element N in the permutation PERM."
