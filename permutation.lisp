@@ -8,7 +8,8 @@
 ;;;;;;;;;;;;;;;;;;;;; PERMUTATION DATA STRUCTURE ;;;;;;;;;;;;;;;;;;;;;
 
 (defstruct (perm (:conc-name perm.)
-                 (:print-function print-perm))
+                 (:print-function print-perm)
+                 (:constructor %make-perm))
   (spec #(0) :type (vector (unsigned-byte *))
              :read-only t))
 
@@ -74,7 +75,7 @@ of the list, inclusive."
   (let ((read-list (read-delimited-list #\] stream t)))
     (assert-valid-permutation-elements read-list)
 
-    (make-perm :spec (coerce (cons 0 read-list) 'vector))))
+    (%make-perm :spec (coerce (cons 0 read-list) 'vector))))
 
 (defun enable-perm-reader ()
   "Enable the use of #[...] for perms."
@@ -96,11 +97,15 @@ of the list, inclusive."
 (defun list-to-perm (list)
   "Construct a perm from a list LIST."
   (assert-valid-permutation-elements list)
-  (make-perm :spec (coerce (cons 0 (copy-list list)) 'vector)))
+  (%make-perm :spec (coerce (cons 0 (copy-list list)) 'vector)))
+
+(defun make-perm (&rest elements)
+  "Construct a permutation from the numbers ELEMENTS."
+  (list-to-perm elements))
 
 (defun perm-identity (n)
   "The identity permutation of size N."
-  (make-perm :spec (coerce (iota (1+ n)) 'vector)))
+  (%make-perm :spec (coerce (iota (1+ n)) 'vector)))
 
 (defun perm-identity-p (perm)
   "Is the permutation PERM an identity permutation?"
@@ -115,7 +120,7 @@ of the list, inclusive."
     * :EVEN for only even permutations
     * :ODD  for only odd permutations"
   (let ((spec-0 (coerce (iota+1 n) 'vector)))
-    (make-perm :spec (concatenate 'vector
+    (%make-perm :spec (concatenate 'vector
                                   #(0)
                                   (nshuffle spec-0 parity)))))
 
@@ -189,7 +194,7 @@ of the list, inclusive."
     (loop :for i :from 1 :to n
           :do (setf (aref p12-spec i)
                     (perm-eval* p1 (perm-eval* p2 i)))
-          :finally (return (make-perm :spec p12-spec)))))
+          :finally (return (%make-perm :spec p12-spec)))))
 
 (defun perm-expt (perm n)
   "Raise a permutation PERM to the Nth power."
@@ -232,7 +237,7 @@ of the list, inclusive."
   (let ((transposed-spec (copy-seq (perm.spec perm))))
     (rotatef (aref transposed-spec a)
              (aref transposed-spec b))
-    (make-perm :spec transposed-spec)))
+    (%make-perm :spec transposed-spec)))
 
 (defun perm-transpose-entries (perm a b)
   "Transpose the entries A and B in PERM."
@@ -253,7 +258,7 @@ of the list, inclusive."
          (pos-b (position b transposed-spec)))
     (rotatef (aref transposed-spec pos-a)
              (aref transposed-spec pos-b))
-    (make-perm :spec transposed-spec)))
+    (%make-perm :spec transposed-spec)))
 
 (defun perm-inverse (perm)
   "Find the inverse of the permutation PERM."
@@ -261,7 +266,7 @@ of the list, inclusive."
          (perm*-spec (allocate-perm-vector n)))
     (loop :for i :from 1 :to n
           :do (setf (aref perm*-spec (perm-eval perm i)) i)
-          :finally (return (make-perm :spec perm*-spec)))))
+          :finally (return (%make-perm :spec perm*-spec)))))
           
 ; HI!!!
 ; HELLO
@@ -366,11 +371,11 @@ standard representation."
          (perm (coerce (iota (1+ maximum)) 'vector)))
     (dolist (mapping
              (mapcan #'decompose-cycle-to-maps cycles)
-             (make-perm :spec perm))
+             (%make-perm :spec perm))
       (setf (aref perm (car mapping))
             (cdr mapping)))))
 
 (defun cycles-to-one-line (cycles)
   "Convert CYCLES to one-line notation. This is not the same as
   FROM-CYCLES."
-  (make-perm :spec (coerce (cons 0 (mapcan 'identity cycles)) 'vector)))
+  (%make-perm :spec (coerce (cons 0 (mapcan 'identity cycles)) 'vector)))

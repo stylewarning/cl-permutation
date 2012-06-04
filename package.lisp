@@ -6,9 +6,10 @@
   (:nicknames #:perm)
   (:export
    ;; permutation.lisp
-   #:perm
+   #:perm                               ; Type, Structure
    #:enable-perm-reader
    #:list-to-perm
+   #:make-perm
    #:perm-identity
    #:perm-identity-p
    #:random-perm
