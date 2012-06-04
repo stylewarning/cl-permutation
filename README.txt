@@ -1,2 +1,213 @@
-A library (intended) for operating on permutations and permutation
-groups.
+CL-PERMUTATION
+==============
+
+A library for operating on permutations and permutation groups.
+
+
+NOTES
+=====
+
+Creating Permutations
+---------------------
+
+Permutations are represented by the structure PERM, which is
+read-only/immutable. A permutation of size N is essentially a sequence
+of numbers from 1 to N. One-based permutations was chosen because that
+is the dominating convention in mathematics. All we lose, essentially,
+is direct compatibility with array indexing, and one fixnum worth of
+space (internally, the permutations are stored in an array of size
+N+1, where the zeroth element is always zero).
+
+A permutation can be created via MAKE-PERM:
+
+PERM> (make-perm 1 2 3)
+#<PERM 1 2 3>
+
+The permutation will be checked for validity.
+
+PERM> (make-perm 1 2 5)
+Given permutation must contain the numbers 1 to 3
+   [Condition of type SIMPLE-ERROR]
+
+One can also create permutations with LIST-TO-PERM, which converts a
+list to a permutation.
+
+Lastly, there is an experimental reader macro for permutations, which are created at read time. To enable the syntax, use
+
+  (enable-perm-reader)
+
+and then one may type
+
+  #[3 1 2 4 5]
+
+for permutations instead.
+
+
+Permutation Operations
+----------------------
+
+There is a slew of permutation operations:
+
+perm-identity : construct an identity perm
+perm-identity-p : check if a perm is an identity perm
+random-perm : construct a random perm with specified parity
+perm-ref : zero-based reference
+perm-eval : one-based (standard) reference
+perm-eval* : one-based (standard) reference with out-of-bounds handling
+perm-size : the size of the permutation (number of mapped elements)
+perm-length : number of inversions
+perm-even-p |
+perm-odd-p  : check for evenness/oddness
+perm-sign-p |
+perm-compose : compose two permutations
+perm-expt : compose a perm with itself a number of times
+perm-order : order of a permutation
+perm-transpose-indexes : swap two indexes, keeping the entries fixed
+perm-transpose-entries : swap two entries, keeping the indexes fixed
+perm-inverse : invert a permutation
+
+
+Cycle Operations
+----------------
+
+There's also a number of operations for cycles. Cycles are just
+represented as Lisp lists. We can convert to and from cycle
+representation using TO-CYCLES and FROM-CYCLES. Cycles created by
+TO-CYCLES are automatically normalized with
+NORMALIZE-CYCLES. Normalization is defined as:
+
+  * No fixed points.
+  * Cycles contain their least element first.
+  * Cycle length is descending.
+  * For cycles of equal length, order by ascending first elements.
+
+FROM-CYCLES allows the specification of the permutation's length. For example:
+
+PERM> (from-cycles '((1 3 2)))
+#<PERM 3 1 2>
+PERM> (from-cycles '((1 3 2)) 5)
+#<PERM 3 1 2 4 5>
+
+Lastly, there is a (mostly useless) function CYCLES-TO-ONE-LINE which converts cycles to one-line notation. That is, the cycles
+
+   (1 2 3)(4 5)
+
+gets converted to the permutation
+
+   12345.
+
+Let me know if you find a good use.
+
+As of now, the error checking in cycle code is dismal.
+
+
+Permutation Groups
+------------------
+
+There is initial support for permutation groups at the
+moment. Permutation groups are represented by the structure
+PERM-GROUP.
+
+We can create a permutation group from its generators via
+GENERATE-PERMUTATION-GROUP. A shorthand syntax is provided which,
+instead of taking a list of PERM objects, takes a list of lists
+representing perms. This shorthand is GROUP-FROM. For example, the
+following two are the same group:
+
+PERM> (generate-perm-group (list (make-perm 1 3 2 4)
+                                 (make-perm 3 2 4 1)))
+#<PERM-GROUP of 2 generators>
+PERM> (group-from '((1 3 2 4)
+                    (3 2 4 1)))
+#<PERM-GROUP of 2 generators>
+
+We can generate a permutation group from a list of cycles as well. The above is equivalent to
+
+PERM> (group-from-cycles '(((2 3))
+                           ((1 3 4))) 4) 
+#<PERM-GROUP of 2 generators>
+
+Once we have generated a group, we can do some operations on it.
+
+For example, let's define the group for 3x3 Rubik's cubes. A cube has
+six moves: we can turn the front, back, left, right, top, and
+bottom. Label each sticker with a number like so:
+
+                     +--------------+
+                     |              |
+                     |  1    2    3 |
+                     |              |
+                     |  4   up    5 |
+                     |              |
+                     |  6    7    8 |
+                     |              |
+      +--------------+--------------+--------------+--------------+
+      |              |              |              |              |
+      |  9   10   11 | 17   18   19 | 25   26   27 | 33   34   35 |
+      |              |              |              |              |
+      | 12  left  13 | 20 front  21 | 28 right  29 | 36  back  37 |
+      |              |              |              |              |
+      | 14   15   16 | 22   23   24 | 30   31   32 | 38   39   40 |
+      |              |              |              |              |
+      +--------------+--------------+--------------+--------------+
+                     |              |
+                     | 41   42   43 |
+                     |              |
+                     | 44  down  45 |
+                     |              |
+                     | 46   47   48 |
+                     |              |
+                     +--------------+
+
+Each turn corresponds to a permutation of stickers. I'll do the hard
+work of specifying them:
+
+(defparameter rubik-3x3
+  (group-from
+   '((3 5 8 2 7 1 4 6 33 34 35 12 13 14 15 16 9 10 11 20 21 22 23 24 17 
+      18 19 28 29 30 31 32 25 26 27 36 37 38 39 40 41 42 43 44 45 46 47 48)
+     (17 2 3 20 5 22 7 8 11 13 16 10 15 9 12 14 41 18 19 44 21 46 23 24 
+      25 26 27 28 29 30 31 32 33 34 6 36 4 38 39 1 40 42 43 37 45 35 47 48) 
+     (1 2 3 4 5 25 28 30 9 10 8 12 7 14 15 6 19 21 24 18 23 17 20 22 43 
+      26 27 42 29 41 31 32 33 34 35 36 37 38 39 40 11 13 16 44 45 46 47 48) 
+     (1 2 38 4 36 6 7 33 9 10 11 12 13 14 15 16 17 18 3 20 5 22 23 8 27 
+      29 32 26 31 25 28 30 48 34 35 45 37 43 39 40 41 42 19 44 21 46 47 24) 
+     (14 12 9 4 5 6 7 8 46 10 11 47 13 48 15 16 17 18 19 20 21 22 23 24
+      25 26 1 28 2 30 31 3 35 37 40 34 39 33 36 38 41 42 43 44 45 32 29 27) 
+     (1 2 3 4 5 6 7 8 9 10 11 12 13 22 23 24 17 18 19 20 21 30 31 32 25
+      26 27 28 29 38 39 40 33 34 35 36 37 14 15 16 43 45 48 42 47 41 44 46))))
+
+Now we have our group:
+
+PERM> rubik-3x3
+#<PERM-GROUP of 6 generators>
+      
+Let's query the group's order:
+
+PERM> (group-order rubik-3x3)
+43252003274489856000
+
+A lot of positions! Let's generate a random cube:
+
+PERM> (random-group-element rubik-3x3)
+#<PERM 1 20 24 39 12 40 29 41 9 47 46 21 45 11 34 8 14 36 22 31 44 25 10 48
+       16 37 43 15 26 32 7 33 30 13 35 5 28 27 23 17 19 4 38 2 18 6 42 3>
+
+And as cycles...
+
+PERM> (to-cycles *)
+((2 20 31 7 29 26 37 28 15 34 13 45 18 36 5 12 21 44) (4 39 23 10 47 42)
+ (6 40 17 14 11 46) (8 41 19 22 25 16) (3 24 48) (27 43 38) (30 32 33))
+
+Let's check if flipping an edge piece is valid:
+
+PERM> (group-element-p (from-cycles '((7 18)) 48) rubik-3x3)
+NIL
+
+No it's not. How about four edge pieces?
+
+PERM> (group-element-p (from-cycles '((7 18) (2 34) (4 10) (5 26)) 48) rubik-3x3)
+T
+
+As can be seen, the few operations we have are powerful in studying finite groups.
+
