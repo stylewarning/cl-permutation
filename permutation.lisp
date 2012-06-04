@@ -313,8 +313,7 @@ cycle representation."
   (labels ((next-cycle (todo cycles)
              (if (null todo)
                  cycles
-                 (let ((new-cycle (orbit-of (car todo)
-                                            perm)))
+                 (let ((new-cycle (orbit-of (car todo) perm)))
                    (next-cycle (set-difference todo new-cycle)
                                (cons new-cycle cycles))))))
     (let ((cycs (next-cycle (iota+1 (perm-size perm)) nil)))
@@ -352,3 +351,8 @@ standard representation."
              (make-perm :spec perm))
       (setf (aref perm (first mapping))
             (second mapping)))))
+
+(defun cycles-to-one-line (cycles)
+  "Convert CYCLES to one-line notation. This is not the same as
+  FROM-CYCLES."
+  (make-perm :spec (coerce (cons 0 (mapcan 'identity cycles)) 'vector)))
