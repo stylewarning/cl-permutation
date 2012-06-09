@@ -88,10 +88,10 @@ of size N"
                
                ht)))
 
-    (let ((n (maximum generators :key 'perm-size))
-          (sgs (make-hash-table))
-          (trans (make-hash-table))
-          (*product-membership* (make-hash-table)))
+    (let* ((n (maximum generators :key 'perm-size))
+           (sgs (make-hash-table))
+           (trans (make-hash-table :size n))
+           (*product-membership* (make-hash-table)))
       (declare (special *product-membership*))
       
       ;; Initialize TRANS to map I -> (I -> Identity(I)).
