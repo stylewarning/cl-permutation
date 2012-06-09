@@ -9,6 +9,13 @@
   "Generate a list of numbers between 0 and N-1."
   (loop :for i :below n :collect i))
 
+(defun iota-vector (n)
+  "Generate the equivalent of (COERCE (IOTA N) 'VECTOR)."
+  (loop :with a := (make-array n :initial-element 0)
+        :for i :below n
+        :do (setf (aref a i) i)
+        :finally (return a)))
+
 (defun iota+1 (n)
   "Generate a list of numbers between 1 and N."
   (loop :for i :from 1 :to n :collect i))
@@ -56,6 +63,13 @@
   "Compute the product of the items in LIST, optionally via the
 function KEY."
   (reduce '* list :key key :initial-value 1))
+
+(defun sign (x)
+  "Return the sign of X."
+  (cond
+    ((plusp x)  1)
+    ((zerop x)  0)
+    (t         -1)))
 
 (defun hash-table-key-exists-p (hash-table key)
   "Check of KEY exists in HASH-TABLE."

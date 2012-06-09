@@ -105,7 +105,7 @@ of the list, inclusive."
 
 (defun perm-identity (n)
   "The identity permutation of size N."
-  (%make-perm :spec (coerce (iota (1+ n)) 'vector)))
+  (%make-perm :spec (iota-vector (1+ n))))
 
 (defun perm-identity-p (perm)
   "Is the permutation PERM an identity permutation?"
