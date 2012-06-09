@@ -67,7 +67,9 @@
         ;; We do this hackery to be able to emit the initial
         ;; (identity) perm. Initially PERM is just T -- not a vector.
         (if (not (vectorp perm))
-            (setf perm (iota-vector (1+ n)))
+            (progn
+              (setf perm (iota-vector (1+ n)))
+              (%make-perm :spec perm))
             (let ((next (next-perm perm n)))
               ;; If we are at the end, then set PERM to NIL.
               (if next
