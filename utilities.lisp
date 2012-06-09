@@ -59,10 +59,10 @@
   (loop :for x :in list
         :maximizing (funcall key x)))
 
-(defun product (list &key (key 'identity))
-  "Compute the product of the items in LIST, optionally via the
+(defun product (seq &key (key 'identity))
+  "Compute the product of the items in SEQ, optionally via the
 function KEY."
-  (reduce '* list :key key :initial-value 1))
+  (reduce '* seq :key key :initial-value 1))
 
 (defun sign (x)
   "Return the sign of X."
@@ -76,6 +76,11 @@ function KEY."
   (multiple-value-bind (val existsp) (gethash key hash-table)
     (declare (ignore val))
     existsp))
+
+(defun hash-table-keys (hash-table)
+  "Return a list of the hash table keys of HASH-TABLE."
+  (loop :for k :being :the :hash-keys :of hash-table
+        :collect k))
 
 (defun hash-table-values (hash-table)
   "Return a list of the hash table values of HASH-TABLE."
