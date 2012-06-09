@@ -37,6 +37,10 @@
    #:from-cycles
    #:cycles-to-one-line                 ; Possibly will be removed.
    
+   ;; permutation-generation.lisp
+   #:make-perm-generator
+   #:doperms
+   
    ;; permutation-group.lisp
    #:perm-group
    #:generate-perm-group
