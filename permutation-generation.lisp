@@ -56,6 +56,10 @@
 
 (defun make-perm-generator (n)
   "Create a generator that generates permutations of size N."
+  (assert (plusp n)
+          (n)
+          "Must provide a positive size for permutation generation. Given ~D."
+          n)
   (let ((perm t))
     (lambda ()
       ;; Check if PERM is NIL (if the generator was exhausted).
@@ -75,9 +79,13 @@
 RESULT."
   (let ((perm (gensym "PERM-"))
         (len (gensym "LEN-")))
-    `(loop :with ,len := ,n
-           :for ,perm := (iota-vector (1+,len)) :then (next-perm ,perm ,len)
-           :while ,perm
-           :do (let ((,x (%make-perm :spec (map 'vector 'abs ,perm))))
-                 ,@body)
-           :finally (return ,result))))
+    `(let ((,len ,n))
+       (assert (plusp ,len)
+               (,len)
+               "Must provide a positive size for permutation generation. Given ~D."
+               ,len)
+       (loop :for ,perm := (iota-vector (1+,len)) :then (next-perm ,perm ,len)
+             :while ,perm
+             :do (let ((,x (%make-perm :spec (map 'vector 'abs ,perm))))
+                   ,@body)
+             :finally (return ,result)))))
