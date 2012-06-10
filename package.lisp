@@ -27,6 +27,7 @@
    #:perm-transpose-indexes
    #:perm-transpose-entries
    #:perm-inverse
+   #:permute
    
    #:orbit-of
    #:rotate-cycle-clockwise             ; Possibly will be removed.

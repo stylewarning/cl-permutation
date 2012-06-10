@@ -267,10 +267,23 @@ of the list, inclusive."
     (loop :for i :from 1 :to n
           :do (setf (aref perm*-spec (perm-eval perm i)) i)
           :finally (return (%make-perm :spec perm*-spec)))))
-          
+
+(defun permute (perm a)
+  "Permute A according to PERM."
+  (assert (<= (perm-size perm)
+              (length a))
+          (perm a)
+          "Only able to permute arrays whose size is greater or equal to PERM.")
+  
+  (let* ((len (length a))
+         (result (make-array len)))
+    (loop :for i :below len
+          :do (setf (aref result i)
+                    (aref a (1- (perm-eval* perm (1+ i)))))
+          :finally (return result))))
+
 ; HI!!!
 ; HELLO
-
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; CYCLES ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
