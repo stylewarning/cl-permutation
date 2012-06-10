@@ -66,6 +66,7 @@ perm-order : order of a permutation
 perm-transpose-indexes : swap two indexes, keeping the entries fixed
 perm-transpose-entries : swap two entries, keeping the indexes fixed
 perm-inverse : invert a permutation
+perm-fixpoints : compute the fixed points of a permutation
 permute : permute an array according to a permutation
 
 

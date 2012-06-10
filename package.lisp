@@ -27,6 +27,7 @@
    #:perm-transpose-indexes
    #:perm-transpose-entries
    #:perm-inverse
+   #:perm-fixpoints
    #:permute
    
    #:orbit-of

@@ -268,6 +268,15 @@ of the list, inclusive."
           :do (setf (aref perm*-spec (perm-eval perm i)) i)
           :finally (return (%make-perm :spec perm*-spec)))))
 
+;;; This can be a bit more optimized.
+(defun perm-fixpoints (perm &optional (n (perm-size perm)))
+  "Return a list of the fixed points in PERM less than or equal to N,
+  which is the perm's size by default.."
+  (check-type n (integer 1))
+  (loop :for i :from 1 :to n
+        :when (= i (perm-eval* perm i))
+          :collect i))
+
 (defun permute (perm a)
   "Permute the array A according to PERM."
   (assert (<= (perm-size perm)
