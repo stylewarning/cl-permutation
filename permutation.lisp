@@ -269,7 +269,7 @@ of the list, inclusive."
           :finally (return (%make-perm :spec perm*-spec)))))
 
 (defun permute (perm a)
-  "Permute A according to PERM."
+  "Permute the array A according to PERM."
   (assert (<= (perm-size perm)
               (length a))
           (perm a)
