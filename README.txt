@@ -66,6 +66,50 @@ perm-order : order of a permutation
 perm-transpose-indexes : swap two indexes, keeping the entries fixed
 perm-transpose-entries : swap two entries, keeping the indexes fixed
 perm-inverse : invert a permutation
+permute : permute an array according to a permutation
+
+
+Permutation Generation
+----------------------
+
+There are ways of efficiently generating all permutations of a given
+length incrementally. Instead of generating all permutations at once
+in memory -- which takes O(n*n!) space -- we generate permutations on
+the fly.
+
+The first way is to iterate over the permutations using a DOLIST-style
+macro called DOPERMS.
+
+PERM> (let ((i 1))
+        (doperms (p 3)
+          (format t "~D: ~A~%" i p)
+          (incf i)))
+1: #<PERM 1 2 3>
+2: #<PERM 1 3 2>
+3: #<PERM 3 1 2>
+4: #<PERM 3 2 1>
+5: #<PERM 2 3 1>
+6: #<PERM 2 1 3>
+
+The other way is to produce a generator object (a closure, in fact)
+which generates the permutations. Simply FUNCALL the object to receive
+the next permutation. When they're all exhausted, the closure will
+return NIL.
+
+PERM> (defparameter S3 (make-perm-generator 3))
+S3
+PERM> (defparameter S2 (make-perm-generator 2))
+S2
+PERM> (list (funcall S2) (funcall S3))
+(#<PERM 1 2> #<PERM 1 2 3>)
+PERM> (list (funcall S2) (funcall S3))
+(#<PERM 2 1> #<PERM 1 3 2>)
+PERM> (list (funcall S2) (funcall S3))
+(NIL #<PERM 3 1 2>)
+PERM> (list (funcall S2) (funcall S3))
+(NIL #<PERM 3 2 1>)
+PERM> (list (funcall S2) (funcall S3))
+(NIL #<PERM 2 3 1>)
 
 
 Cycle Operations
