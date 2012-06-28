@@ -1,5 +1,5 @@
 ;;;; permutation-group.lisp
-;;;; Copyright (c) 2012 Robert Smith, Brendan Pawlowski
+;;;; Copyright (c) 2012 Robert Smith
 
 (in-package #:cl-permutation)
 
