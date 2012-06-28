@@ -156,10 +156,10 @@ moment. Permutation groups are represented by the structure
 PERM-GROUP.
 
 We can create a permutation group from its generators via
-GENERATE-PERMUTATION-GROUP. A shorthand syntax is provided which,
-instead of taking a list of PERM objects, takes a list of lists
-representing perms. This shorthand is GROUP-FROM. For example, the
-following two are the same group:
+GENERATE-PERM-GROUP. A shorthand syntax is provided which, instead of
+taking a list of PERM objects, takes a list of lists representing
+perms. This shorthand is GROUP-FROM. For example, the following two
+are the same group:
 
 PERM> (generate-perm-group (list (make-perm 1 3 2 4)
                                  (make-perm 3 2 4 1)))
