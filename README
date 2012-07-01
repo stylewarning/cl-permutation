@@ -30,7 +30,9 @@ Given permutation must contain the numbers 1 to 3
    [Condition of type SIMPLE-ERROR]
 
 One can also create permutations with LIST-TO-PERM, which converts a
-list to a permutation.
+list to a permutation. The companion function PERM-TO-LIST does the
+opposite operation, but it's not recommended to use list
+representations of permutations.
 
 Lastly, there is an experimental reader macro for permutations, which
 are created at read time. To enable the syntax, use

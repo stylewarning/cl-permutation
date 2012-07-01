@@ -9,6 +9,7 @@
    #:perm                               ; Type, Structure
    #:enable-perm-reader
    #:list-to-perm
+   #:perm-to-list
    #:make-perm
    #:perm-identity
    #:perm-identity-p

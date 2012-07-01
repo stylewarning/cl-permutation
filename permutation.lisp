@@ -99,6 +99,10 @@ of the list, inclusive."
   (assert-valid-permutation-elements list)
   (%make-perm :spec (coerce (cons 0 (copy-list list)) 'vector)))
 
+(defun perm-to-list (perm)
+  "Convert a permutation PERM to a list representation."
+  (coerce (subseq (perm.spec perm) 1) 'list))
+
 (defun make-perm (&rest elements)
   "Construct a permutation from the numbers ELEMENTS."
   (list-to-perm elements))
