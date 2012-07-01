@@ -13,5 +13,6 @@
                (:file "utilities")
                (:file "permutation")
                (:file "permutation-generation")
-               (:file "permutation-group")))
+               (:file "permutation-group")
+               (:file "extra-functions")))
 
