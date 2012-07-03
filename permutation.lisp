@@ -296,7 +296,7 @@ larger than the size of the permutation, return the fixed point."
 ;;; This can be a bit more optimized.
 (defun perm-fixpoints (perm &optional (n (perm-size perm)))
   "Return a list of the fixed points in PERM less than or equal to N,
-  which is the perm's size by default.."
+  which is the perm's size by default."
   (check-type n (integer 1))
   (loop :for i :from 1 :to n
         :when (= i (perm-eval* perm i))
