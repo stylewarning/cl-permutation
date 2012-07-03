@@ -7,6 +7,9 @@
 
 ;;;;;;;;;;;;;;;;;;;;; PERMUTATION DATA STRUCTURE ;;;;;;;;;;;;;;;;;;;;;
 
+(defvar *print-with-perm-syntax* nil
+  "Print permutations with special permutation syntax?")
+
 (defstruct (perm (:conc-name perm.)
                  (:print-function print-perm)
                  (:constructor %make-perm))
@@ -35,17 +38,29 @@
 (defun print-perm (perm stream depth)
   "Printer for perms."
   (declare (ignore depth))
-  (print-unreadable-object (perm stream :type t :identity nil)
-    (let* ((spec (perm.spec perm))
-           (len (length spec)))
-      (cond
-        ((zerop len) (error "Inconsistent permutation; has zero elements."))
-        ((= 1 len) nil)
-        ((= 2 len) (format stream "~D" (aref spec 1)))
-        (t (progn
-             (format stream "~D" (aref spec 1))
-             (dotimes (i (- len 2))
-               (format stream " ~D" (aref spec (+ 2 i))))))))))
+  (let* ((spec (perm.spec perm))
+             (len (length spec)))
+    (if *print-with-perm-syntax*
+        (progn
+          (format stream "#[")
+          (cond
+            ((zerop len) (error "Inconsistent permutation; has zero elements."))
+            ((= 1 len) nil)
+            ((= 2 len) (format stream "~D" (aref spec 1)))
+            (t (progn
+                 (format stream "~D" (aref spec 1))
+                 (dotimes (i (- len 2))
+                   (format stream " ~D" (aref spec (+ 2 i)))))))
+          (format stream "]"))
+        (print-unreadable-object (perm stream :type t :identity nil)
+          (cond
+            ((zerop len) (error "Inconsistent permutation; has zero elements."))
+            ((= 1 len) nil)
+            ((= 2 len) (format stream "~D" (aref spec 1)))
+            (t (progn
+                 (format stream "~D" (aref spec 1))
+                 (dotimes (i (- len 2))
+                   (format stream " ~D" (aref spec (+ 2 i)))))))))))
 
 (defun contains-1-to-N (elements)
   "Check that ELEMENTS contains the integers between 1 and the length
@@ -79,6 +94,10 @@ of the list, inclusive."
 
 (defun enable-perm-reader ()
   "Enable the use of #[...] for perms."
+  
+  ;; Enable special printing
+  (setf *print-with-perm-syntax* t)
+  
   ;; Set #[
   (set-dispatch-macro-character #\# #\[ #'perm-reader)
   
