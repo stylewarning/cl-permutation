@@ -17,6 +17,8 @@
    #:perm-ref
    #:perm-eval
    #:perm-eval*
+   #:perm-inverse-eval
+   #:perm-inverse-eval*
    #:perm-size
    #:perm-length
    #:perm-even-p

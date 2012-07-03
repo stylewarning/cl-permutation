@@ -147,7 +147,8 @@ of the list, inclusive."
   (aref (perm.spec perm) n))
 
 (defun perm-eval* (perm n)
-  "Evaluate the permutation PERM at index N."
+  "Evaluate the permutation PERM at index N. If N is larger than the
+size of the permutation, return the fixed point."
   (assert (<= 1 n)
           (n)
           "Permutation index of ~D must be greater than 1."
@@ -155,6 +156,26 @@ of the list, inclusive."
   (if (> n (perm-size perm))
       n
       (aref (perm.spec perm) n)))
+
+(defun perm-inverse-eval (perm n)
+  "Evaluate the inverse of the permutation PERM at index N."
+  (assert (<= 1 n (perm-size perm))
+          (n)
+          "Permutation index of ~D must be within 1 and the length of the ~
+           permutation ~A."
+          n perm)
+  (position n (perm.spec perm)))
+
+(defun perm-inverse-eval* (perm n)
+  "Evaluate the inverse of the permutation PERM at index N. If N is
+larger than the size of the permutation, return the fixed point."
+  (assert (<= 1 n)
+          (n)
+          "Permutation index of ~D must be greater than 1."
+          n)
+  (if (> n (perm-size perm))
+      n
+      (position n (perm.spec perm))))
 
 (defun perm-size (perm)
   "The size of a permutation PERM."
