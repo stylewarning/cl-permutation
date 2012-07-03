@@ -102,6 +102,14 @@ of the list, inclusive."
   "Convert a permutation PERM to a list representation."
   (coerce (subseq (perm.spec perm) 1) 'list))
 
+(defun word-to-perm (word)
+  "Convert a word WORD (an array) to a permutation."
+  (list-to-perm (coerce word 'list)))
+
+(defun perm-to-word (perm)
+  "Convert a permutation PERM to a word, represented by an array."
+  (copy-seq (subseq (perm.spec perm) 1)))
+
 (defun make-perm (&rest elements)
   "Construct a permutation from the numbers ELEMENTS."
   (list-to-perm elements))

@@ -10,6 +10,8 @@
    #:enable-perm-reader
    #:list-to-perm
    #:perm-to-list
+   #:word-to-perm
+   #:perm-to-word
    #:make-perm
    #:perm-identity
    #:perm-identity-p

@@ -34,6 +34,10 @@ list to a permutation. The companion function PERM-TO-LIST does the
 opposite operation, but it's not recommended to use list
 representations of permutations.
 
+One can also create permutations with WORD-TO-PERM, which is analogous
+to LIST-TO-PERM, except it works for words, which are conventially
+arrays. The reverse is PERM-TO-WORD.
+
 Lastly, there is an experimental reader macro for permutations, which
 are created at read time. To enable the syntax, use
 
