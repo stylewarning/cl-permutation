@@ -302,8 +302,9 @@ larger than the size of the permutation, return the fixed point."
         :when (= i (perm-eval* perm i))
           :collect i))
 
-(defun permute (perm a)
-  "Permute the array A according to PERM."
+(defun permute (perm a &key type)
+  "Permute the sequence A according to PERM. The return an array by
+default unless TYPE is specified."
   (assert (<= (perm-size perm)
               (length a))
           (perm a)
@@ -313,8 +314,10 @@ larger than the size of the permutation, return the fixed point."
          (result (make-array len)))
     (loop :for i :below len
           :do (setf (aref result i)
-                    (aref a (1- (perm-eval* perm (1+ i)))))
-          :finally (return result))))
+                    (elt a (1- (perm-eval* perm (1+ i)))))
+          :finally (return (if type
+                               (coerce result type)
+                               result)))))
 
 ; HI!!!
 ; HELLO
