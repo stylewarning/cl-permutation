@@ -4,8 +4,9 @@
 (defpackage #:cl-permutation
   (:use #:cl)
   (:nicknames #:perm)
+
+  ;; permutation.lisp
   (:export
-   ;; permutation.lisp
    #:perm                               ; Type, Structure
    #:enable-perm-reader
    #:list-to-perm
@@ -42,18 +43,21 @@
    #:normalize-cycles
    #:to-cycles
    #:from-cycles
-   #:cycles-to-one-line                 ; Possibly will be removed.
-   
-   ;; permutation-generation.lisp
+   #:cycles-to-one-line)                ; Possibly will be removed.
+  
+  ;; permutation-generation.lisp
+  (:export
    #:make-perm-generator
-   #:doperms
-   
-   ;; permutation-group.lisp
+   #:doperms)
+  
+  ;; permutation-group.lisp
+  (:export
    #:perm-group
    #:generate-perm-group
    #:group-from
    #:group-from-cycles
    #:group-order
    #:group-element-p
-   #:random-group-element))
+   #:random-group-element
+   #:transversal-decomposition))
 

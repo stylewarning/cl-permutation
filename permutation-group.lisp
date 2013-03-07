@@ -23,16 +23,22 @@
 (defun safe-sigma (trans k j)
   (safe-gethash j (safe-gethash k trans)))
 
+(defun trans-decomposition (perm trans &optional (k (perm-size perm)))
+  (labels ((next (perm k decomp)
+             (if (= 1 k)
+                 decomp
+                 (let ((j (perm-eval perm k)))
+                   (multiple-value-bind (k-val k-exists-p) (gethash k trans)
+                     (when k-exists-p
+                       (multiple-value-bind (j-val j-exists-p) (gethash j k-val)
+                         (when j-exists-p
+                           (next (perm-compose (perm-inverse j-val) perm) 
+                                 (1- k)
+                                 (acons k j decomp))))))))))
+    (next perm k nil)))
+
 (defun trans-element-p (perm trans &optional (k (perm-size perm)))
-  (or (= 1 k)
-      (let ((j (perm-eval perm k)))
-        (multiple-value-bind (k-val k-exists-p) (gethash k trans)
-          (when k-exists-p
-            (multiple-value-bind (j-val j-exists-p) (gethash j k-val)
-              (when j-exists-p
-                (trans-element-p (perm-compose (perm-inverse j-val) perm) 
-                                 trans 
-                                 (1- k)))))))))
+  (not (null (trans-decomposition perm trans k))))
 
 (defun add-generator (perm sgs trans &optional (k (perm-size perm)))
   (declare (special *product-membership*))
@@ -138,3 +144,28 @@ represented as lists."
                            (reduce 'perm-compose (mapcar (lambda (s)
                                                            (perm-compose (perm-identity maxlen) s))
                                                          random-sigmas))))))
+
+(defun transversal-decomposition (perm group &key remove-identities)
+  "Decompose the permutation PERM into transversal sigmas of the group
+  GROUP."
+  (let ((decomp
+          (trans-decomposition perm (perm-group.transversal-system group))))
+    (if remove-identities
+        (delete-if (lambda (sigma)
+                     (= (car sigma)
+                        (cdr sigma)))
+                   decomp)
+        decomp)))
+
+;;;; Debug Routines
+
+(defun print-trans (group)
+  (loop
+    :with trans := (perm-group.transversal-system group)
+    :for k :being :the :hash-keys :in trans
+    :for vk := (gethash k trans)
+    :do (progn
+          (format t "~D:~%" k)
+          (loop :for j :being :the :hash-keys :in vk
+                :for vj := (gethash j vk)
+                :do (format t "    ~D: ~A~%" j vj)))))
