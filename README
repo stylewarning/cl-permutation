@@ -63,6 +63,8 @@ perm-eval : one-based (standard) reference
 perm-eval* : one-based (standard) reference with out-of-bounds handling
 perm-inverse-eval : one-based (standard) reference of inverse
 perm-inverse-eval* : one-based (standard) reference of inverse with out-of-bounds handling
+perm= : check for equality
+perm=* : check for equality of different sized perms
 perm-size : the size of the permutation (number of mapped elements)
 perm-length : number of inversions
 perm-even-p |

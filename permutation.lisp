@@ -184,6 +184,21 @@ larger than the size of the permutation, return the fixed point."
       n
       (position n (perm.spec perm))))
 
+(defun perm= (perm other-perm)
+  "Are PERM and OTHER-PERM mathematically equal? (Note: Different sized perms are considered unequal. See PERM=* for extended equality.)"
+  (let ((size (perm-size perm)))
+    (and (= size (perm-size other-perm))
+         (loop :for i :from 1 :to size
+               :always (= (perm-eval perm i)
+                          (perm-eval other-perm i))))))
+
+(defun perm=* (perm other-perm)
+  "Are PERM and OTHER-PERM mathematically equal when viewed as functions on naturals? (Note: For inequality on different sized perms, see PERM=.)"
+  (loop :for i :from 1 :to (max (perm-size perm)
+                                (perm-size other-perm))
+        :always (= (perm-eval* perm i)
+                   (perm-eval* other-perm i))))
+
 (defun perm-size (perm)
   "The size of a permutation PERM."
   (1- (length (perm.spec perm))))
