@@ -47,6 +47,11 @@
    #:from-cycles
    #:cycles-to-one-line)                ; Possibly will be removed.
   
+  ;; permutation-special.lisp
+  (:export
+   #:bruhat<=
+   #:bruhat<)
+  
   ;; permutation-generation.lisp
   (:export
    #:make-perm-generator
