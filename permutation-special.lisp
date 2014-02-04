@@ -34,7 +34,7 @@
                                  (list (perm-eval v i))
                                  #'<))
         (unless (lex<= collected-w collected-v)
-          (return-from bruhat< nil)))
+          (return-from bruhat<= nil)))
       
       ;; Every section is satisfied.
       t)))
