@@ -38,10 +38,14 @@
    #:perm-fixpoints
    #:permute
    
+   #:cycle
+   #:cycle-length
+   #:cycle-identity-p
+   #:cycle-ref
+   #:orbit-length
    #:orbit-of
-   #:rotate-cycle-clockwise             ; Possibly will be removed.
-   #:rotate-cycle-counterclockwise      ; Possibly will be removed.
-   #:normalize-cycle-order              ; Possibly will be removed.
+   #:rotate-cycle
+   #:normalize-cycle
    #:normalize-cycles
    #:to-cycles
    #:from-cycles

@@ -126,6 +126,8 @@ PERM> (list (funcall S2) (funcall S3))
 Cycle Operations
 ----------------
 
+XXX: THIS IS OUT OF DATE!
+
 There's also a number of operations for cycles. Cycles are just
 represented as Lisp lists. We can convert to and from cycle
 representation using TO-CYCLES and FROM-CYCLES. Cycles created by

@@ -43,8 +43,7 @@
                    (format stream " ~D" (aref spec (+ 2 i)))))))))))
 
 (defun contains-1-to-N (elements)
-  "Check that ELEMENTS contains the integers between 1 and the length
-of the list, inclusive."
+  "Check that ELEMENTS contains the integers between 1 and the length of the list, inclusive."
   (let ((len (length elements)))
     (loop :for i :in elements
           :sum i :into s
@@ -124,8 +123,7 @@ of the list, inclusive."
           (perm.spec (perm-identity (perm-size perm)))))
 
 (defun random-perm (n &optional (parity :any))
-  "Make a random permutation of size N. PARITY specifies the parity of
-  the permutation:
+  "Make a random permutation of size N. PARITY specifies the parity of the permutation:
 
     * :ANY  for any permutation
     * :EVEN for only even permutations
@@ -154,8 +152,7 @@ of the list, inclusive."
   (aref (perm.spec perm) n))
 
 (defun perm-eval* (perm n)
-  "Evaluate the permutation PERM at index N. If N is larger than the
-size of the permutation, return the fixed point."
+  "Evaluate the permutation PERM at index N. If N is larger than the size of the permutation, return the fixed point."
   (assert (<= 1 n)
           (n)
           "Permutation index of ~D must be greater than 1."
@@ -174,8 +171,7 @@ size of the permutation, return the fixed point."
   (position n (perm.spec perm)))
 
 (defun perm-inverse-eval* (perm n)
-  "Evaluate the inverse of the permutation PERM at index N. If N is
-larger than the size of the permutation, return the fixed point."
+  "Evaluate the inverse of the permutation PERM at index N. If N is larger than the size of the permutation, return the fixed point."
   (assert (<= 1 n)
           (n)
           "Permutation index of ~D must be greater than 1."
@@ -317,16 +313,14 @@ larger than the size of the permutation, return the fixed point."
 
 ;;; This can be a bit more optimized.
 (defun perm-fixpoints (perm &optional (n (perm-size perm)))
-  "Return a list of the fixed points in PERM less than or equal to N,
-  which is the perm's size by default."
+  "Return a list of the fixed points in PERM less than or equal to N,  which is the perm's size by default."
   (check-type n (integer 1))
   (loop :for i :from 1 :to n
         :when (= i (perm-eval* perm i))
           :collect i))
 
 (defun permute (perm a &key type)
-  "Permute the sequence A according to PERM. The return an array by
-default unless TYPE is specified."
+  "Permute the sequence A according to PERM. The return an array by default unless TYPE is specified."
   (assert (<= (perm-size perm)
               (length a))
           (perm a)
@@ -347,99 +341,125 @@ default unless TYPE is specified."
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; CYCLES ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defstruct cycle
+  (normalized nil :type boolean)
+  (spec #() :type (vector (unsigned-byte *))
+            :read-only t))
+
+(defun cycle-length (cycle)
+  "Compute the length of the cycle CYCLE."
+  (length (cycle-spec cycle)))
+
+(defun cycle-identity-p (cycle)
+  "Is the cycle CYCLE representative of an identity permutation?"
+  (let ((len (cycle-length cycle)))
+    (or (zerop len)
+        (= 1 len))))
+
+(defun cycle-ref (cycle n)
+  "Compute the Nth element of the cycle CYCLE. Treat the cycle as if it is circular (so indexes greater than the cycle length or less than zero will wrap around)."
+  (aref (cycle-spec cycle)
+        (mod n (cycle-length cycle))))
+
+(defun orbit-length (n perm)
+  "Compute the length of the orbit of the element N in the permutation PERM."
+  (loop :for i :from 1
+        :for k := (perm-eval perm n) :then (perm-eval perm k)
+        :until (= n k)
+        :finally (return i)))
+
 (defun orbit-of (n perm)
-  "Compute the orbit of the element N in the permutation PERM."
-  (labels ((orb (k cycle)
-             (if (= n k)
-                 (cons n (reverse cycle))
-                 (orb (perm-eval perm k)
-                      (cons k cycle)))))
-    (orb (perm-eval perm n) nil)))
+  "Compute the orbit of the element N in the permutation PERM. Return a cycle representing the orbit of N."
+  (loop :with len := (orbit-length n perm)
+        :with spec := (make-array len :initial-element n)
+        :for i :from 1 :below len
+        :for k := (perm-eval perm n) :then (perm-eval perm k)
+        :until (= n k)
+        :do (setf (aref spec i) k)
+        :finally (return (make-cycle :spec spec))))
 
-;;; We could reduce (mod n (length cycle))
-(defun rotate-cycle-clockwise (cycle &optional (n 1))
-  "Rotate the elements of a cycle syntactically clockwise, a total of
-N times. When N is negative, rotate counterclockwise."
-  (cond
-    ((null cycle) nil)
-    ((zerop n) cycle)
-    ((plusp n) (rotate-cycle-clockwise
-                (cons (last cycle)
-                      (butlast cycle))
-                (1- n)))
-    ((minusp n) (rotate-cycle-counterclockwise cycle (- n)))))
+(defun rotate-vector! (vec n)
+  "Rotate the vector VEC a total of N elements left/counterclockwise in-place. If N is negative, rotate in the opposite direction."
+  ;; This is written in such a way that it takes O(n) time and O(1)
+  ;; space. This uses a technique where the array is divided into
+  ;; blocks equal to the length of the GCD of N and the length of the
+  ;; vector VEC. Rotated elements will move between these blocks
+  ;; accordingly.
+  (let* ((len (length vec))
+         (n   (mod n len)))
+    (dotimes (i (gcd n len) vec)
+      (let ((tmp (aref vec i))
+            (j   i))
+        (loop :named juggle :do
+          (let ((k (+ j n)))
+            (when (>= k len)
+              (decf k len))
+            (when (= k i)
+              (return-from juggle nil))
+            (setf (aref vec j) (aref vec k)
+                  j            k)))
+        (setf (aref vec j) tmp)))))
 
-;;; We could reduce (mod n (length cycle))
-(defun rotate-cycle-counterclockwise (cycle &optional (n 1))
-  "Rotate the elements of a cycle CYCLE syntactically
-counterclockwise, a total of N times. When N is negative, rotate
-clockwise."
-  (cond
-    ((null cycle) nil)
-    ((zerop n) cycle)
-    ((plusp n) (rotate-cycle-counterclockwise
-                (append (cdr cycle)
-                        (list (car cycle)))
-                (1- n)))
-    ((minusp n) (rotate-cycle-clockwise cycle (- n)))))
+(defun rotate-cycle (cycle &optional (n 1))
+  "Rotate the elements of a cycle CYCLE syntactically counterclockwise/left, a total of N times. When N is negative, rotate in the opposite direction. Return a fresh cycle."
+  (make-cycle :spec (rotate-vector! (copy-seq (cycle-spec cycle))
+                                    n)))
 
-(defun normalize-cycle-order (cycle)
+(defun normalize-cycle (cycle)
   "Rotate a cycle CYCLE so its least value is syntactically first."
-  (let* ((minimum (reduce #'min cycle))
-         (min-pos (position minimum cycle)))
-    (rotate-cycle-counterclockwise cycle min-pos)))
+  (cond
+    ((cycle-normalized cycle) cycle)
+    ((cycle-identity-p cycle) (make-cycle :normalized t :spec #()))
+    (t (let* ((minimum (reduce #'min (cycle-spec cycle)))
+              (normalized-cycle (rotate-cycle cycle
+                                              (position minimum
+                                                        (cycle-spec cycle)))))
+         (setf (cycle-normalized normalized-cycle) t)
+         normalized-cycle))))
 
 (defun normalize-cycles (cycles)
-  "Normalize each cycle in CYCLES, then normalize the list of cycles
-in descending length (or if the length is the same, ascending first
-element)."
-  (sort (mapcar #'normalize-cycle-order
-                (remove-if #'singletonp cycles))
+  "Normalize each cycle in the list of cycles CYCLES, then normalize the list of cycles in descending length (or if the length is the same, ascending first element)."
+  (sort (mapcar #'normalize-cycle
+                (remove-if #'cycle-identity-p cycles))
         (lambda (x y)
-          (let ((lenx (length x))
-                (leny (length y)))
+          (let ((lenx (cycle-length x))
+                (leny (cycle-length y)))
             (if (= lenx leny)
-                (< (first x) (first y))
+                (< (cycle-ref x 0)
+                   (cycle-ref y 0))
                 (> lenx leny))))))
 
+;;; TODO: Make this efficient.
 (defun to-cycles (perm &key (normalizep t))
-  "Convert a permutation PERM in its standard representation to its
-cycle representation."
+  "Convert a permutation PERM in its standard representation to its cycle representation."
   (labels ((next-cycle (todo cycles)
              (if (null todo)
                  cycles
                  (let ((new-cycle (orbit-of (car todo) perm)))
-                   (next-cycle (set-difference todo new-cycle)
+                   (next-cycle (set-difference todo
+                                               (coerce (cycle-spec new-cycle)
+                                                       'list))
                                (cons new-cycle cycles))))))
-    (let ((cycs (next-cycle (iota+1 (perm-size perm)) nil)))
+    (let ((cycles (next-cycle (iota+1 (perm-size perm)) nil)))
       (if normalizep
-          (normalize-cycles cycs)
-          cycs))))
+          (normalize-cycles cycles)
+          cycles))))
 
 (defun decompose-cycle-to-maps (cycle)
-  "Convert a cycle CYCLE to a list of pairs (a_i . b_i) such that a
-permutation is the composition of a_i |-> b_i."
-  (cond
-    ((null cycle) (list nil))
-    ((singletonp cycle) (list (cons (car cycle) (car cycle))))
-    (t (labels ((get-swaps (the-cycle swaps first-element)
-                  (if (null the-cycle)
-                      swaps
-                      (get-swaps (cdr the-cycle)
-                                 (cons (cons (car the-cycle)
-                                             (if (null (cdr the-cycle))
-                                                 first-element
-                                                 (cadr the-cycle)))
-                                       swaps)
-                                 first-element))))
-         (get-swaps cycle nil (car cycle))))))
+  "Convert a cycle CYCLE to a list of pairs (a_i . b_i) such that a permutation is the composition of a_i |-> b_i."
+  (loop :for i :below (cycle-length (normalize-cycle cycle))
+        :collect (cons (cycle-ref cycle i)
+                       (cycle-ref cycle (1+ i)))))
 
+;;; FIXME: Make this better.
 (defun from-cycles (cycles &optional (size 0))
-  "Convert a cycle representation of a permutation CYCLES to the
-standard representation."
+  "Convert a cycle representation of a permutation CYCLES to the standard representation."
   (let* ((maximum (max size (reduce #'max
-                                    (mapcar #'(lambda (x)
-                                                (apply #'max x)) cycles))))
+                                    (mapcar (lambda (x)
+                                              (loop :for i
+                                                    :across (cycle-spec x)
+                                                    :maximize i))
+                                            cycles))))
          (perm (coerce (iota (1+ maximum)) 'vector)))
     (dolist (mapping
              (mapcan #'decompose-cycle-to-maps cycles)
@@ -448,6 +468,11 @@ standard representation."
             (cdr mapping)))))
 
 (defun cycles-to-one-line (cycles)
-  "Convert CYCLES to one-line notation. This is not the same as
-  FROM-CYCLES."
-  (%make-perm :spec (coerce (cons 0 (mapcan 'identity cycles)) 'vector)))
+  "Convert CYCLES to one-line notation.
+
+Note: This is not the same as FROM-CYCLES."
+  (let ((elts nil))
+    (loop :for cycle :in cycles
+          :do (loop :for element :across (cycle-spec cycle)
+                    :do (push element elts)))
+    (%make-perm :spec (coerce (cons 0 (nreverse elts)) 'vector))))
