@@ -341,10 +341,58 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; CYCLES ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defstruct cycle
-  (normalized nil :type boolean)
+(defvar *canonicalize-cycle-on-creation* t)
+
+(defstruct (cycle (:constructor %make-cycle)
+                  (:print-function print-cycle))
+  (canonicalized nil :type boolean)
   (spec #() :type (vector (unsigned-byte *))
             :read-only t))
+
+(defun print-cycle (cycle stream depth)
+  "Printer for cycles.
+
+An asterisk in printed syntax denotes that the cycle has not been canonicalized (though it may be already be canonical)."
+  (declare (ignore depth))
+  (let* ((spec (cycle-spec cycle))
+         (len (length spec)))
+    (print-unreadable-object (cycle stream :type t :identity nil)
+      (write-string "(" stream)
+      (cond
+        ((zerop len) nil)
+        ((= 1 len) (format stream "~D" (aref spec 0)))
+        (t (progn
+             (format stream "~D" (aref spec 0))
+             (dotimes (i (1- len))
+               (format stream " ~D" (aref spec (1+ i)))))))
+      (write-string ")" stream)
+      (unless (cycle-canonicalized cycle)
+        (write-string "*" stream)))))
+
+(defun check-cycle-elements (elements)
+  "Ensure that the elements ELEMENTS are those of a valid cycle."
+  (assert (or (null elements)
+              (every (lambda (x)
+                       (and (integerp x)
+                            (plusp x)))
+                     elements))
+          ()
+          "Elements of a cycle must be positive integers.")
+  
+  ;;; XXX: This can be done much more efficiently.
+  (assert (= (length elements)
+             (length (remove-duplicates elements)))
+          ()
+          "There must be no duplicate elements in a cycle."))
+
+(defun make-cycle (&rest elements)
+  "Create a new cycle with the elements ELEMENTS."
+  (check-cycle-elements elements)
+  
+  (let ((cycle (%make-cycle :spec (coerce elements 'vector))))
+    (if *canonicalize-cycle-on-creation*
+        (canonicalize-cycle cycle)
+        cycle)))
 
 (defun cycle-length (cycle)
   "Compute the length of the cycle CYCLE."
@@ -376,7 +424,7 @@
         :for k := (perm-eval perm n) :then (perm-eval perm k)
         :until (= n k)
         :do (setf (aref spec i) k)
-        :finally (return (make-cycle :spec spec))))
+        :finally (return (%make-cycle :spec spec))))
 
 (defun rotate-vector! (vec n)
   "Rotate the vector VEC a total of N elements left/counterclockwise in-place. If N is negative, rotate in the opposite direction."
@@ -402,24 +450,24 @@
 
 (defun rotate-cycle (cycle &optional (n 1))
   "Rotate the elements of a cycle CYCLE syntactically counterclockwise/left, a total of N times. When N is negative, rotate in the opposite direction. Return a fresh cycle."
-  (make-cycle :spec (rotate-vector! (copy-seq (cycle-spec cycle))
-                                    n)))
+  (%make-cycle :spec (rotate-vector! (copy-seq (cycle-spec cycle))
+                                     n)))
 
-(defun normalize-cycle (cycle)
+(defun canonicalize-cycle (cycle)
   "Rotate a cycle CYCLE so its least value is syntactically first."
   (cond
-    ((cycle-normalized cycle) cycle)
-    ((cycle-identity-p cycle) (make-cycle :normalized t :spec #()))
+    ((cycle-canonicalized cycle) cycle)
+    ((cycle-identity-p cycle) (%make-cycle :canonicalized t :spec #()))
     (t (let* ((minimum (reduce #'min (cycle-spec cycle)))
-              (normalized-cycle (rotate-cycle cycle
-                                              (position minimum
-                                                        (cycle-spec cycle)))))
-         (setf (cycle-normalized normalized-cycle) t)
-         normalized-cycle))))
+              (canonicalized-cycle (rotate-cycle cycle
+                                                 (position minimum
+                                                           (cycle-spec cycle)))))
+         (setf (cycle-canonicalized canonicalized-cycle) t)
+         canonicalized-cycle))))
 
-(defun normalize-cycles (cycles)
-  "Normalize each cycle in the list of cycles CYCLES, then normalize the list of cycles in descending length (or if the length is the same, ascending first element)."
-  (sort (mapcar #'normalize-cycle
+(defun canonicalize-cycles (cycles)
+  "Canonicalize each cycle in the list of cycles CYCLES, then canonicalize the list of cycles in descending length (or if the length is the same, ascending first element)."
+  (sort (mapcar #'canonicalize-cycle
                 (remove-if #'cycle-identity-p cycles))
         (lambda (x y)
           (let ((lenx (cycle-length x))
@@ -430,7 +478,7 @@
                 (> lenx leny))))))
 
 ;;; TODO: Make this efficient.
-(defun to-cycles (perm &key (normalizep t))
+(defun to-cycles (perm &key (canonicalizep t))
   "Convert a permutation PERM in its standard representation to its cycle representation."
   (labels ((next-cycle (todo cycles)
              (if (null todo)
@@ -441,13 +489,13 @@
                                                        'list))
                                (cons new-cycle cycles))))))
     (let ((cycles (next-cycle (iota+1 (perm-size perm)) nil)))
-      (if normalizep
-          (normalize-cycles cycles)
+      (if canonicalizep
+          (canonicalize-cycles cycles)
           cycles))))
 
 (defun decompose-cycle-to-maps (cycle)
   "Convert a cycle CYCLE to a list of pairs (a_i . b_i) such that a permutation is the composition of a_i |-> b_i."
-  (loop :for i :below (cycle-length (normalize-cycle cycle))
+  (loop :for i :below (cycle-length (canonicalize-cycle cycle))
         :collect (cons (cycle-ref cycle i)
                        (cycle-ref cycle (1+ i)))))
 

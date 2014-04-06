@@ -39,14 +39,16 @@
    #:permute
    
    #:cycle
+   #:make-cycle
+   #:*canonicalize-cycle-on-creation*
    #:cycle-length
    #:cycle-identity-p
    #:cycle-ref
    #:orbit-length
    #:orbit-of
    #:rotate-cycle
-   #:normalize-cycle
-   #:normalize-cycles
+   #:canonicalize-cycle
+   #:canonicalize-cycles
    #:to-cycles
    #:from-cycles
    #:cycles-to-one-line)                ; Possibly will be removed.
