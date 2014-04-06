@@ -126,24 +126,39 @@ PERM> (list (funcall S2) (funcall S3))
 Cycle Operations
 ----------------
 
-XXX: THIS IS OUT OF DATE!
-
-There's also a number of operations for cycles. Cycles are just
-represented as Lisp lists. We can convert to and from cycle
+There's also a number of operations for cycles. Cycles are represented
+by the CYCLE structure. We can convert to and from cycle
 representation using TO-CYCLES and FROM-CYCLES. Cycles created by
-TO-CYCLES are automatically normalized with
-NORMALIZE-CYCLES. Normalization is defined as:
+TO-CYCLES are automatically canonicalized with
+CANONICALIZE-CYCLES. Canonicalization is defined as:
 
   * No fixed points.
   * Cycles contain their least element first.
   * Cycle length is descending.
   * For cycles of equal length, order by ascending first elements.
 
+Cycles that have not been canonicalized are printed with an
+asterisk. We can observe this by explicitly disabling cycle
+canonicalization:
+
+PERM> (make-cycle 3 1)
+#<CYCLE (1 3)>
+PERM> (let ((*canonicalize-cycle-on-creation* nil))
+        (make-cycle 3 1))
+#<CYCLE (3 1)*>
+
+An example use of TO-CYCLES is as follows:
+
+PERM> (let ((r (random-perm 10)))
+        (values r (to-cycles r)))
+#<PERM 7 1 6 9 10 8 2 3 5 4>
+(#<CYCLE (4 9 5 10)> #<CYCLE (1 7 2)> #<CYCLE (3 6 8)>)
+
 FROM-CYCLES allows the specification of the permutation's length. For example:
 
-PERM> (from-cycles '((1 3 2)))
+PERM> (from-cycles (list (make-cycle 1 3 2)))
 #<PERM 3 1 2>
-PERM> (from-cycles '((1 3 2)) 5)
+PERM> (from-cycles (list (make-cycle 1 3 2)) 5)
 #<PERM 3 1 2 4 5>
 
 Lastly, there is a (mostly useless) function CYCLES-TO-ONE-LINE which
@@ -155,9 +170,13 @@ gets converted to the permutation
 
    12345.
 
-Let me know if you find a good use.
+For example,
 
-As of now, the error checking in cycle code is dismal.
+PERM> (cycles-to-one-line (list (make-cycle 1 2 3)
+                                (make-cycle 4 5)))
+#<PERM 1 2 3 4 5>
+
+Let me know if you find a good use.
 
 
 Permutation Groups
@@ -183,8 +202,9 @@ PERM> (group-from '((1 3 2 4)
 We can generate a permutation group from a list of cycles as well. The
 above is equivalent to
 
-PERM> (group-from-cycles '(((2 3))
-                           ((1 3 4))) 4) 
+PERM> (group-from-cycles (list (list (make-cycle 2 3))
+                               (list (make-cycle 1 3 4)))
+                         4) 
 #<PERM-GROUP of 2 generators>
 
 Once we have generated a group, we can do some operations on it.
@@ -256,8 +276,13 @@ PERM> (random-group-element rubik-3x3)
 And as cycles...
 
 PERM> (to-cycles *)
-((2 20 31 7 29 26 37 28 15 34 13 45 18 36 5 12 21 44) (4 39 23 10 47 42)
- (6 40 17 14 11 46) (8 41 19 22 25 16) (3 24 48) (27 43 38) (30 32 33))
+(#<CYCLE (2 20 31 7 29 26 37 28 15 34 13 45 18 36 5 12 21 44)>
+ #<CYCLE (4 39 23 10 47 42)>
+ #<CYCLE (6 40 17 14 11 46)>
+ #<CYCLE (8 41 19 22 25 16)>
+ #<CYCLE (3 24 48)>
+ #<CYCLE (27 43 38)>
+ #<CYCLE (30 32 33)>)
 
 Let's check if flipping an edge piece is valid:
 
@@ -266,7 +291,12 @@ NIL
 
 No it's not. How about four edge pieces?
 
-PERM> (group-element-p (from-cycles '((7 18) (2 34) (4 10) (5 26)) 48) rubik-3x3)
+PERM> (group-element-p (from-cycles (list (make-cycle 7 18)
+                                          (make-cycle 2 34)
+                                          (make-cycle 4 10)
+                                          (make-cycle 5 26))
+                                    48)
+                       rubik-3x3)
 T
 
 As can be seen, the few operations we have are powerful in studying
