@@ -119,9 +119,20 @@ This function just guarantees we can map N to some hash table key."
   (:documentation "An error to be signalled if a key doesn't exist in
   a hash-table."))
 
+(defun hash-table-elt (hash-table n)
+  "Extract the Nth element from the hash table HASH-TABLE, given some arbitrary ordering of the keys and values. Return the Nth KEY and VALUE as two values."
+  (check-type n integer)
+  (assert (<= 0 n (1- (hash-table-count hash-table)))
+          (n)
+          "The index ~S provided is out of bounds.")
+  (maphash #'(lambda (k v)
+               (if (zerop n)
+                   (return-from hash-table-elt (values k v))
+                   (decf n)))
+           hash-table))
+
 (defun safe-gethash (key hash-table)
-  "Throw an error in the event that KEY foes not exist in
-  HASH-TABLE. Othwerwise return the value."
+  "Throw an error in the event that KEY foes not exist in HASH-TABLE. Othwerwise return the value."
   (multiple-value-bind (val existsp) (gethash key hash-table)
     (if existsp
         val
