@@ -1,7 +1,7 @@
 ;;;; utilities.lisp
-;;;; Copyright (c) 2011-2012 Robert Smith
+;;;; Copyright (c) 2011-2014 Robert Smith
 
-;;;; Utilities.
+;;;; Various portable utilities used in CL-PERMUTATION.
 
 (in-package #:cl-permutation)
 
