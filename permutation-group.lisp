@@ -15,21 +15,28 @@
   strong-generators
   transversal-system)
 
+(defun transversal-ref (trans n)
+  "Get the Nth element of the transversal TRANS."
+  (aref trans (1- n)))
+
+(defun (setf transversal-ref) (new-value trans n)
+  (setf (aref trans (1- n)) new-value))
+
 (defun perm-group-printer (group stream depth)
   (declare (ignore depth))
   (print-unreadable-object (group stream :type t :identity nil)
     (format stream "of ~D generator~:p" (length (perm-group.generators group)))))
 
 (defun safe-sigma (trans k j)
-  (safe-gethash j (safe-gethash k trans)))
+  (safe-gethash j (transversal-ref trans k)))
 
 (defun trans-decomposition (perm trans &optional (k (perm-size perm)))
   (labels ((next (perm k decomp)
              (if (= 1 k)
                  decomp
                  (let ((j (perm-eval perm k)))
-                   (multiple-value-bind (k-val k-exists-p) (gethash k trans)
-                     (when k-exists-p
+                   (let ((k-val (transversal-ref trans k)))
+                     (when k-val
                        (multiple-value-bind (j-val j-exists-p) (gethash j k-val)
                          (when j-exists-p
                            (next (perm-compose (perm-inverse j-val) perm) 
@@ -48,7 +55,7 @@
   
   (let ((redo nil))
     (loop
-      (loop :for s :being :the :hash-values :of (gethash k trans)
+      (loop :for s :being :the :hash-values :of (transversal-ref trans k)
             :do (dolist (tt (gethash k sgs))
                   (let ((prod (perm-compose tt s)))
                     (unless (or (and (hash-table-key-exists-p *product-membership* prod)
@@ -79,7 +86,7 @@
       (hash-table-access-error (c) 
         (declare (ignore c))
         (progn
-          (setf (gethash j (gethash k trans)) perm)
+          (setf (gethash j (transversal-ref trans k)) perm)
           (values sgs trans))))))
 
 (defun generate-perm-group (generators)
@@ -94,13 +101,13 @@
 
     (let* ((n (maximum generators :key 'perm-size))
            (sgs (make-hash-table))
-           (trans (make-hash-table :size n))
+           (trans (make-array n :element-type '(or null hash-table) :initial-element nil))
            (*product-membership* (make-hash-table)))
       (declare (special *product-membership*))
       
       ;; Initialize TRANS to map I -> (I -> Identity(I)).
-      (dotimes (i n)
-        (setf (gethash (1+ i) trans) (identity-table (1+ i))))
+      (loop :for i :from 1 :to n :do
+        (setf (transversal-ref trans i) (identity-table i)))
       
       ;; Add the generators.
       (dolist (generator generators)
@@ -114,7 +121,7 @@
 
 (defun group-from (generators-as-lists)
   "Generate a permutation group from a list of generators, which are represented as lists."
-  (generate-perm-group (mapcar 'list-to-perm generators-as-lists)))
+  (generate-perm-group (mapcar #'list-to-perm generators-as-lists)))
 
 ;;; TODO: Automatically try calculating size.
 (defun group-from-cycles (generators-as-cycles size)
@@ -126,7 +133,7 @@
 (defun group-order (group)
   "Compute the order of the permutation group GROUP."
   (let ((transversals (perm-group.transversal-system group)))
-    (product (hash-table-values transversals) :key 'hash-table-count)))
+    (product transversals :key #'hash-table-count)))
 
 (defun group-element-p (perm group)
   "Decide if the permutation PERM is an element of the group GROUP."
@@ -134,12 +141,12 @@
 
 (defun random-group-element (group)
   "Generate a random element of the group GROUP."
-  (loop :for v :being :the :hash-values :of (perm-group.transversal-system group)
+  (loop :for v :across (perm-group.transversal-system group)
         :collect (random-hash-table-value v) :into random-sigmas
-        :finally (return (let ((maxlen (maximum random-sigmas :key 'perm-size)))
-                           (reduce 'perm-compose (mapcar (lambda (s)
-                                                           (perm-compose (perm-identity maxlen) s))
-                                                         random-sigmas))))))
+        :finally (return (let ((maxlen (maximum random-sigmas :key #'perm-size)))
+                           (reduce #'perm-compose (mapcar (lambda (s)
+                                                            (perm-compose (perm-identity maxlen) s))
+                                                          random-sigmas))))))
 
 (defun transversal-decomposition (perm group &key remove-identities)
   "Decompose the permutation PERM into transversal sigmas of the group GROUP."
@@ -156,9 +163,8 @@
 
 (defun print-trans (group)
   (loop
-    :with trans := (perm-group.transversal-system group)
-    :for k :being :the :hash-keys :in trans
-    :for vk := (gethash k trans)
+    :for k :from 1
+    :for vk :across (perm-group.transversal-system group)
     :do (progn
           (format t "~D:~%" k)
           (loop :for j :being :the :hash-keys :in vk
