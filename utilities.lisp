@@ -5,6 +5,15 @@
 
 (in-package #:cl-permutation)
 
+(deftype vector-size (&key (down-by 0))
+  "Possible sizes of a vector."
+  (check-type down-by (integer 0 #.array-total-size-limit))
+  `(integer 0 ,(- array-total-size-limit down-by)))
+
+(deftype vector-index ()
+  "Possible indexes to a vector."
+  `(integer 0 #.(1- array-total-size-limit)))
+
 (defun iota (n)
   "Generate a list of numbers between 0 and N-1."
   (loop :for i :below n :collect i))

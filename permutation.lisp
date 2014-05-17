@@ -8,10 +8,20 @@
 (defvar *print-with-perm-syntax* nil
   "Print permutations with special permutation syntax?")
 
+(deftype perm-element ()
+  "An element of a perm."
+  ;; Since a perm can contain 1 to the maximum of VECTOR-INDEX, the
+  ;; type is also that of a VECTOR-INDEX.
+  'vector-index)
+
+(deftype raw-perm ()
+  "Type defining the internal representation of a perm."
+  `(simple-array perm-element (*)))
+
 (defstruct (perm (:conc-name perm.)
                  (:print-function print-perm)
                  (:constructor %make-perm))
-  (spec #(0) :type (vector (unsigned-byte *))
+  (spec #(0) :type raw-perm
              :read-only t))
 
 ;;; XXX: fix the duplication.
@@ -19,7 +29,7 @@
   "Printer for perms."
   (declare (ignore depth))
   (let* ((spec (perm.spec perm))
-             (len (length spec)))
+         (len (length spec)))
     (if *print-with-perm-syntax*
         (progn
           (format stream "#[")
@@ -85,7 +95,8 @@
 
 (defun allocate-perm-vector (n)
   "Allocate a vector compatible with a size-N permutation."
-  (make-array (1+ n) :element-type '(unsigned-byte *)
+  (check-type n (vector-size :down-by 1))
+  (make-array (1+ n) :element-type 'perm-element
                      :initial-element 0))
 
 
