@@ -20,7 +20,8 @@
 
 (defun iota-vector (n)
   "Generate the equivalent of (COERCE (IOTA N) 'VECTOR)."
-  (loop :with a := (make-array n :initial-element 0)
+  (loop :with a := (make-array n :element-type 'vector-index
+                                 :initial-element 0)
         :for i :below n
         :do (setf (aref a i) i)
         :finally (return a)))
@@ -36,31 +37,34 @@
       a
       (+ a (random (- (1+ b) a)))))
 
-(defun nshuffle (vector &optional (parity :any))
-  "Shuffle the permutation vector VECTOR with specified parity
-  PARITY. PARITY may be
+(defun nshuffle (vector &key (parity :any)
+                             (start 0))
+  "Shuffle the permutation vector VECTOR with specified parity PARITY. PARITY may be
 
     * :ANY  for any permutation
     * :EVEN for only even permutations
-    * :ODD  for only odd permutations"
+    * :ODD  for only odd permutations
+
+START specifies the starting index where elements should be shuffled."
   
   (assert (member parity '(:any :even :odd)))
   
   (let ((n (length vector))
         (any? (eql parity :any)))
-    (loop :for i :below (if any? n (1- n))
+    (loop :for i :from start :below (if any? n (1- n))
           :for r := (random-between i (1- n))
           :when (/= i r)
           :do (progn
-                (rotatef (svref vector i)
-                         (svref vector r))
+                (rotatef (aref vector i)
+                         (aref vector r))
                 (unless any?
-                  (rotatef (svref vector (- n 1))
-                           (svref vector (- n 2)))))
+                  (rotatef (aref vector (- n 1))
+                           (aref vector (- n 2)))))
           :finally (progn
-                     (when (eql parity :odd)
-                       (rotatef (svref vector 0)
-                                (svref vector 1)))
+                     (when (and (eql parity :odd)
+                                (< (1+ start) n))
+                       (rotatef (aref vector start)
+                                (aref vector (1+ start))))
                      (return vector)))))
 
 (defun maximum (list &key (key 'identity))

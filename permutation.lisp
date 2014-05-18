@@ -1,5 +1,5 @@
 ;;;; permutation.lisp
-;;;; Copyright (c) 2012 Robert Smith
+;;;; Copyright (c) 2012-2014 Robert Smith
 
 (in-package #:cl-permutation)
 
@@ -106,7 +106,9 @@
 (defun list-to-perm (list)
   "Construct a perm from a list LIST."
   (assert-valid-permutation-elements list)
-  (%make-perm :spec (coerce (cons 0 (copy-list list)) 'vector)))
+  (%make-perm :spec (make-array (1+ (length list))
+                                :element-type 'perm-element
+                                :initial-contents (cons 0 (copy-list list)))))
 
 (defun perm-to-list (perm)
   "Convert a permutation PERM to a list representation."
@@ -139,10 +141,10 @@
     * :ANY  for any permutation
     * :EVEN for only even permutations
     * :ODD  for only odd permutations"
-  (let ((spec-0 (coerce (iota+1 n) 'vector)))
-    (%make-perm :spec (concatenate 'vector
-                                  #(0)
-                                  (nshuffle spec-0 parity)))))
+  (let ((spec (make-array (1+ n) :element-type 'perm-element
+                                 :initial-contents (iota (1+ n)))))
+    (%make-perm :spec (nshuffle spec :parity parity
+                                     :start 1))))
 
 (defun perm-ref (perm n)
   "Compute the zero-based index of PERM at N."
@@ -519,12 +521,21 @@ An asterisk in printed syntax denotes that the cycle has not been canonicalized 
                                                     :across (cycle-spec x)
                                                     :maximize i))
                                             cycles))))
-         (perm (coerce (iota (1+ maximum)) 'vector)))
+         (perm (make-array (1+ maximum) :element-type 'perm-element
+                                        :initial-contents (iota (1+ maximum)))))
     (dolist (mapping
              (mapcan #'decompose-cycle-to-maps cycles)
              (%make-perm :spec perm))
       (setf (aref perm (car mapping))
             (cdr mapping)))))
+
+;;; XXX FIXME: This is buggy because it does not account for fixed
+;;; points. For example:
+;;;
+;;; PERM> (to-cycles (make-perm 1 3 2 5 4))
+;;; (#<CYCLE (2 3)> #<CYCLE (4 5)>)
+;;; PERM> (cycles-to-one-line *)
+;;; #<PERM 2 3 4 5>
 
 (defun cycles-to-one-line (cycles)
   "Convert CYCLES to one-line notation.
@@ -534,4 +545,6 @@ Note: This is not the same as FROM-CYCLES."
     (loop :for cycle :in cycles
           :do (loop :for element :across (cycle-spec cycle)
                     :do (push element elts)))
-    (%make-perm :spec (coerce (cons 0 (nreverse elts)) 'vector))))
+    (%make-perm :spec (make-array (1+ (length elts))
+                                  :element-type 'perm-element
+                                  :initial-contents (cons 0 (nreverse elts))))))
