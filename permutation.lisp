@@ -479,6 +479,19 @@ An asterisk in printed syntax denotes that the cycle has not been canonicalized 
          (setf (cycle-canonicalized canonicalized-cycle) t)
          canonicalized-cycle))))
 
+#+#:ignore
+(defun old-canonicalize-cycles (cycles)
+  "Canonicalize each cycle in the list of cycles CYCLES, then canonicalize the list of cycles in descending length (or if the length is the same, ascending first element)."
+  (sort (mapcar #'canonicalize-cycle
+                (remove-if #'cycle-identity-p cycles))
+        (lambda (x y)
+          (let ((lenx (cycle-length x))
+                (leny (cycle-length y)))
+            (if (= lenx leny)
+                (< (cycle-ref x 0)
+                   (cycle-ref y 0))
+                (> lenx leny))))))
+
 (defun canonicalize-cycles (cycles)
   "Canonicalize each cycle in the list of cycles CYCLES, then canonicalize the list of cycles in descending value of the first position of the cycle."
   (sort (mapcar #'canonicalize-cycle
