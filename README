@@ -132,10 +132,11 @@ representation using TO-CYCLES and FROM-CYCLES. Cycles created by
 TO-CYCLES are automatically canonicalized with
 CANONICALIZE-CYCLES. Canonicalization is defined as:
 
-  * No fixed points.
-  * Cycles contain their least element first.
-  * Cycle length is descending.
-  * For cycles of equal length, order by ascending first elements.
+  * Cycles contain their least element positionally first.
+  * Cycles are listed in descending order of their first element.
+  * No null cycles exist.
+  * The sum of the cycle lengths of a decomposition of a permutation
+    of length N is N.
 
 Cycles that have not been canonicalized are printed with an
 asterisk. We can observe this by explicitly disabling cycle
@@ -151,8 +152,8 @@ An example use of TO-CYCLES is as follows:
 
 PERM> (let ((r (random-perm 10)))
         (values r (to-cycles r)))
-#<PERM 7 1 6 9 10 8 2 3 5 4>
-(#<CYCLE (4 9 5 10)> #<CYCLE (1 7 2)> #<CYCLE (3 6 8)>)
+#<PERM 7 4 8 5 2 10 3 9 1 6>
+(#<CYCLE (6 10)> #<CYCLE (2 4 5)> #<CYCLE (1 7 3 8 9)>)
 
 FROM-CYCLES allows the specification of the permutation's length. For example:
 
@@ -176,7 +177,9 @@ PERM> (cycles-to-one-line (list (make-cycle 1 2 3)
                                 (make-cycle 4 5)))
 #<PERM 1 2 3 4 5>
 
-Let me know if you find a good use.
+If one takes a permutation which has been canonically decomposed into
+cycles, then interestingly, there exists a bijection between one-line
+notation and the cycle decomposition.
 
 
 Permutation Groups

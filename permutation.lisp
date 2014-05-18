@@ -470,7 +470,8 @@ An asterisk in printed syntax denotes that the cycle has not been canonicalized 
   "Rotate a cycle CYCLE so its least value is syntactically first."
   (cond
     ((cycle-canonicalized cycle) cycle)
-    ((cycle-identity-p cycle) (%make-cycle :canonicalized t :spec #()))
+    ((cycle-identity-p cycle) (setf (cycle-canonicalized cycle) t)
+                              cycle)
     (t (let* ((minimum (reduce #'min (cycle-spec cycle)))
               (canonicalized-cycle (rotate-cycle cycle
                                                  (position minimum
@@ -479,16 +480,13 @@ An asterisk in printed syntax denotes that the cycle has not been canonicalized 
          canonicalized-cycle))))
 
 (defun canonicalize-cycles (cycles)
-  "Canonicalize each cycle in the list of cycles CYCLES, then canonicalize the list of cycles in descending length (or if the length is the same, ascending first element)."
+  "Canonicalize each cycle in the list of cycles CYCLES, then canonicalize the list of cycles in descending value of the first position of the cycle."
   (sort (mapcar #'canonicalize-cycle
-                (remove-if #'cycle-identity-p cycles))
-        (lambda (x y)
-          (let ((lenx (cycle-length x))
-                (leny (cycle-length y)))
-            (if (= lenx leny)
-                (< (cycle-ref x 0)
-                   (cycle-ref y 0))
-                (> lenx leny))))))
+                (remove-if (lambda (cycle)
+                             (zerop (cycle-length cycle)))
+                           cycles))
+        #'>
+        :key (lambda (cycle) (cycle-ref cycle 0))))
 
 ;;; TODO: Make this efficient.
 (defun to-cycles (perm &key (canonicalizep t))
@@ -536,13 +534,8 @@ The cycle type is a partition of the perm's size, and is equal to the lengths of
   (sort (mapcar #'cycle-length (to-cycles perm :canonicalizep nil))
         #'>))
 
-;;; XXX FIXME: This is buggy because it does not account for fixed
-;;; points. For example:
-;;;
-;;; PERM> (to-cycles (make-perm 1 3 2 5 4))
-;;; (#<CYCLE (2 3)> #<CYCLE (4 5)>)
-;;; PERM> (cycles-to-one-line *)
-;;; #<PERM 2 3 4 5>
+;;; XXX FIXME: This is unsafe because it doesn't check that CYCLES
+;;; will produce a valid permutation in one-line notation.
 
 (defun cycles-to-one-line (cycles)
   "Convert CYCLES to one-line notation.
