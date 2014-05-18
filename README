@@ -292,7 +292,7 @@ PERM> (to-cycles *)
 
 Let's check if flipping an edge piece is valid:
 
-PERM> (group-element-p (from-cycles '((7 18)) 48) rubik-3x3)
+PERM> (group-element-p (from-cycles (list (make-cycle 7 18)) 48) rubik-3x3)
 NIL
 
 No it's not. How about four edge pieces?
