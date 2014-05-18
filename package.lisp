@@ -54,7 +54,7 @@
    #:cycle-type
    #:cycles-to-one-line)                ; Possibly will be removed.
   
-  ;; permutation-special.lisp
+  ;; bruhat.lisp
   (:export
    #:bruhat<=
    #:bruhat<)

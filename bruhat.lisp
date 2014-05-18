@@ -1,10 +1,10 @@
-;;;; permutation-special.lisp
+;;;; bruhat.lisp
 ;;;; Copyright (c) 2014 Robert Smith
 
 (in-package #:cl-permutation)
 
-;;;; This file contains some special permutation operations and
-;;;; computations, that are usually used in specific areas of math.
+;;; This file contains an implementation of Bruhat ordering of
+;;; permutations.
 
 ;;; This function could be computed more efficiently with a better
 ;;; data structure for merging elements. It would also cons less. It

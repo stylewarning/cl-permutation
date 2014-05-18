@@ -12,7 +12,7 @@
                (:file "cl-permutation")
                (:file "utilities")
                (:file "permutation")
-               (:file "permutation-special")
+               (:file "bruhat")
                (:file "permutation-generation")
                (:file "permutation-group")
                (:file "do-group-elements")
