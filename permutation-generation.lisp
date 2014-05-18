@@ -1,7 +1,19 @@
 ;;;; permutation-generation.lisp
-;;;; Copyright (c) 2012 Robert Smith
+;;;; Copyright (c) 2012-2014 Robert Smith
 
 (in-package #:cl-permutation)
+
+;;;; This file implements the Steinhaus-Johnson-Trotter algorithm for
+;;;; generating permutations.
+
+;;;; XXX FIXME: We cons way too much here. Can we clean it up?
+
+(defun map-into-perm (function perm-spec)
+  (let* ((n    (length perm-spec))
+         (spec (allocate-perm-vector (1- (length perm-spec)))))
+    (dotimes (i n spec)
+      (setf (aref spec i)
+            (funcall function (aref perm-spec i))))))
 
 (defun abs> (x y)
   (> (abs x)
@@ -68,12 +80,12 @@
         ;; (identity) perm. Initially PERM is just T -- not a vector.
         (if (not (vectorp perm))
             (progn
-              (setf perm (iota-vector (1+ n)))
-              (%make-perm :spec perm))
+              (setf perm (make-array (1+ n) :initial-contents (iota (1+ n))))
+              (%make-perm :spec (map-into-perm #'abs perm)))
             (let ((next (next-perm perm n)))
               ;; If we are at the end, then set PERM to NIL.
               (if next
-                  (%make-perm :spec (map 'vector #'abs next))
+                  (%make-perm :spec (map-into-perm #'abs next))
                   (setf perm nil))))))))
 
 (defmacro doperms ((x n &optional result) &body body)
@@ -86,8 +98,10 @@ RESULT."
                (,len)
                "Must provide a positive size for permutation generation. Given ~D."
                ,len)
-       (loop :for ,perm := (iota-vector (1+,len)) :then (next-perm ,perm ,len)
+       (loop :for ,perm := (make-array (1+ ,len)
+                                       :initial-contents (iota (1+ ,len)))
+               :then (next-perm ,perm ,len)
              :while ,perm
-             :do (let ((,x (%make-perm :spec (map 'vector 'abs ,perm))))
+             :do (let ((,x (%make-perm :spec (map-into-perm #'abs ,perm))))
                    ,@body)
              :finally (return ,result)))))
