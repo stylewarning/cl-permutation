@@ -529,6 +529,13 @@ An asterisk in printed syntax denotes that the cycle has not been canonicalized 
       (setf (aref perm (car mapping))
             (cdr mapping)))))
 
+(defun cycle-type (perm)
+  "Compute the cycle type of a perm PERM.
+
+The cycle type is a partition of the perm's size, and is equal to the lengths of the cycles in descending order of the perm's cycle decomposition."
+  (sort (mapcar #'cycle-length (to-cycles perm :canonicalizep nil))
+        #'>))
+
 ;;; XXX FIXME: This is buggy because it does not account for fixed
 ;;; points. For example:
 ;;;

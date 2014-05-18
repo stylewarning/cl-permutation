@@ -51,6 +51,7 @@
    #:canonicalize-cycles
    #:to-cycles
    #:from-cycles
+   #:cycle-type
    #:cycles-to-one-line)                ; Possibly will be removed.
   
   ;; permutation-special.lisp
