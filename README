@@ -279,13 +279,16 @@ PERM> (random-group-element rubik-3x3)
 And as cycles...
 
 PERM> (to-cycles *)
-(#<CYCLE (2 20 31 7 29 26 37 28 15 34 13 45 18 36 5 12 21 44)>
- #<CYCLE (4 39 23 10 47 42)>
- #<CYCLE (6 40 17 14 11 46)>
- #<CYCLE (8 41 19 22 25 16)>
- #<CYCLE (3 24 48)>
+(#<CYCLE (35)>
+ #<CYCLE (30 32 33)>
  #<CYCLE (27 43 38)>
- #<CYCLE (30 32 33)>)
+ #<CYCLE (9)>
+ #<CYCLE (8 41 19 22 25 16)>
+ #<CYCLE (6 40 17 14 11 46)>
+ #<CYCLE (4 39 23 10 47 42)>
+ #<CYCLE (3 24 48)>
+ #<CYCLE (2 20 31 7 29 26 37 28 15 34 13 45 18 36 5 12 21 44)>
+ #<CYCLE (1)>)
 
 Let's check if flipping an edge piece is valid:
 
