@@ -1,7 +1,7 @@
 (in-package #:cl-permutation)
 
 ;;; 120
-(defparameter S_5
+(defun make-S_5 ()
   (group-from
    '((2 1 3 4 5)
      (1 3 2 4 5)
@@ -9,40 +9,69 @@
      (1 2 3 5 4))))
 
 ;;; 244823040
-(defparameter mathieu-m25
+(defun make-mathieu-m25 ()
   (group-from
    '((16 7 4 17 1 6 11 23 22 10 19 2 14 5 3 8 9 18 20 24 15 21 13 12)
      (24 21 10 22 9 23 8 7 5 3 18 20 14 13 19 17 16 11 15 12 2 4 6 1))))
 
 ;;; 3674160
-(defparameter rubik-2x2
-  (group-from
-   '((2 4 1 3 17 18 7 8 5 6 11 12 9 10 15 16 13 14 19 20 21 22 23 24) ; U
-     (1 10 3 12 5 6 7 8 9 22 11 24 15 13 16 14 4 18 2 20 21 19 23 17) ; R
-     (1 2 13 15 5 4 7 3 10 12 9 11 22 14 21 16 17 18 19 20 6 8 23 24) ; F
-     ;; (1 2 3 4 5 6 11 12 9 10 15 16 13 14 19 20 17 18 7 8 22 24 21 23) ; D
-     ;; (9 2 11 4 6 8 5 7 21 10 23 12 13 14 15 16 17 3 19 1 20 22 18 24) ; L
-     ;; (14 16 3 4 2 6 1 8 9 10 11 12 13 24 15 23 19 17 20 18 21 22 5 7) ; B
-     )))
+(defun make-rubik-2x2 ()
+  (group-from-cycles
+   (list (list (make-cycle 6 18 14 10)
+               (make-cycle 5 17 13 9)
+               (make-cycle 1 2 4 3))
 
-;;; 43252003274489856000
-(defparameter rubik-3x3
-  (group-from
-   '((3 5 8 2 7 1 4 6 33 34 35 12 13 14 15 16 9 10 11 20 21 22 23 24 17
-      18 19 28 29 30 31 32 25 26 27 36 37 38 39 40 41 42 43 44 45 46 47 48)
-     (17 2 3 20 5 22 7 8 11 13 16 10 15 9 12 14 41 18 19 44 21 46 23 24
-      25 26 27 28 29 30 31 32 33 34 6 36 4 38 39 1 40 42 43 37 45 35 47 48)
-     (1 2 3 4 5 25 28 30 9 10 8 12 7 14 15 6 19 21 24 18 23 17 20 22 43
-      26 27 42 29 41 31 32 33 34 35 36 37 38 39 40 11 13 16 44 45 46 47 48)
-     (1 2 38 4 36 6 7 33 9 10 11 12 13 14 15 16 17 18 3 20 5 22 23 8 27
-      29 32 26 31 25 28 30 48 34 35 45 37 43 39 40 41 42 19 44 21 46 47 24)
-     (14 12 9 4 5 6 7 8 46 10 11 47 13 48 15 16 17 18 19 20 21 22 23 24
-      25 26 1 28 2 30 31 3 35 37 40 34 39 33 36 38 41 42 43 44 45 32 29 27)
-     (1 2 3 4 5 6 7 8 9 10 11 12 13 22 23 24 17 18 19 20 21 30 31 32 25
-      26 27 28 29 38 39 40 33 34 35 36 37 14 15 16 43 45 48 42 47 41 44 46))))
+         (list (make-cycle 13 15 16 14)
+               (make-cycle 4 12 24 17)
+               (make-cycle 2 10 22 19))
+
+         (list (make-cycle 9 10 12 11)
+               (make-cycle 4 15 21 6)
+               (make-cycle 3 13 22 8)))
+   24))                                 ; size
+
+;; 43252003274489856000
+(defun make-rubik-3x3 ()
+  (group-from-cycles   
+   (list (list (make-cycle 11 35 27 19) 
+               (make-cycle 10 34 26 18) 
+               (make-cycle 9 33 25 17)
+               (make-cycle 2 5 7 4)
+               (make-cycle 1 3 8 6))
+         
+         (list (make-cycle 10 13 15 12)
+               (make-cycle 9 11 16 14)
+               (make-cycle 6 22 46 35)
+               (make-cycle 4 20 44 37)
+               (make-cycle 1 17 41 40))
+         
+         (list (make-cycle 18 21 23 20)
+               (make-cycle 17 19 24 22)
+               (make-cycle 8 30 41 11)
+               (make-cycle 7 28 42 13)
+               (make-cycle 6 25 43 16))
+         
+         (list (make-cycle 26 29 31 28)
+               (make-cycle 25 27 32 30)
+               (make-cycle 8 33 48 24)
+               (make-cycle 5 36 45 21)
+               (make-cycle 3 38 43 19))
+         
+         (list (make-cycle 34 37 39 36)
+               (make-cycle 33 35 40 38)
+               (make-cycle 3 9 46 32)
+               (make-cycle 2 12 47 29)
+               (make-cycle 1 14 48 27))
+         
+         (list (make-cycle 42 45 47 44)
+               (make-cycle 41 43 48 46)
+               (make-cycle 16 24 32 40)
+               (make-cycle 15 23 31 39)
+               (make-cycle 14 22 30 38)))
+   48))                                 ; size
 
 ;;; Doesn't work *as intended*
-(defparameter rubik-4x4
+(defun make-rubik-4x4 ()
   (group-from
    '((4 8 12 16 3 7 11 15 2 6 10 14 1 5 9 13
      65 66 67 68 21 22 23 24 25 26 27 28 29 30 31 32
@@ -118,68 +147,78 @@
      81 82 83 84 85 86 87 88 89 90 91 92 93 94 95 96))))
 
 ;;; 100669616553523347122516032313645505168688116411019768627200000000000
-(defparameter megaminx
-  (labels ((cyc (&rest cycles)
-             (from-cycles cycles 200)))
-    (generate-perm-group
-     (list
-      (cyc (make-cycle 1 9 7 5 3)
-           (make-cycle 50 40 30 200 11)
-           (make-cycle 52 42 32 22 13)
-           (make-cycle 2 10 8 6 4)
-           (make-cycle 51 41 31 21 12))
-      (cyc (make-cycle 11 13 15 17 19)
-           (make-cycle 3 200 72 62 54)
-           (make-cycle 5 28 70 60 52)
-           (make-cycle 12 14 16 18 20)
-           (make-cycle 4 29 71 61 53))
-      (cyc (make-cycle 200 22 24 26 28)
-           (make-cycle 5 30 82 74 15)
-           (make-cycle 7 38 80 72 13)
-           (make-cycle 21 23 25 27 29)
-           (make-cycle 6 39 81 73 14))
-      (cyc (make-cycle 30 32 34 36 38)
-           (make-cycle 7 40 92 84 24)
-           (make-cycle 9 48 90 82 22)
-           (make-cycle 31 33 35 37 39)
-           (make-cycle 8 49 91 83 23))
-      (cyc (make-cycle 40 42 44 46 48)
-           (make-cycle 9 50 114 94 34)
-           (make-cycle 1 58 112 92 32)
-           (make-cycle 41 43 45 47 49)
-           (make-cycle 10 59 113 93 33))
-      (cyc (make-cycle 50 52 54 56 58)
-           (make-cycle 1 11 60 116 44)
-           (make-cycle 3 19 68 114 42)
-           (make-cycle 51 53 55 57 59)
-           (make-cycle 2 20 69 115 43))
-      (cyc (make-cycle 60 62 64 66 68)
-           (make-cycle 19 70 106 118 56)
-           (make-cycle 17 78 104 116 54)
-           (make-cycle 61 63 65 67 69)
-           (make-cycle 18 79 105 117 55))
-      (cyc (make-cycle 70 72 74 76 78)
-           (make-cycle 17 28 80 108 64)
-           (make-cycle 15 26 88 106 62)
-           (make-cycle 71 73 75 77 79)
-           (make-cycle 16 27 89 107 63))
-      (cyc (make-cycle 80 82 84 86 88)
-           (make-cycle 26 38 90 100 76)
-           (make-cycle 24 36 98 108 74)
-           (make-cycle 81 83 85 87 89)
-           (make-cycle 25 37 99 109 75))
-      (cyc (make-cycle 90 92 94 96 98)
-           (make-cycle 36 48 112 102 86)
-           (make-cycle 34 46 110 100 84)
-           (make-cycle 91 93 95 97 99)
-           (make-cycle 35 47 111 101 85))
-      (cyc (make-cycle 100 102 104 106 108)
-           (make-cycle 98 110 66 78 88)
-           (make-cycle 96 118 64 76 86)
-           (make-cycle 101 103 105 107 109)
-           (make-cycle 97 119 65 77 87))
-      (cyc (make-cycle 110 112 114 116 118)
-           (make-cycle 96 46 58 68 104)
-           (make-cycle 94 44 56 66 102)
-           (make-cycle 111 113 115 117 119)
-           (make-cycle 95 45 57 67 103))))))
+(defun make-megaminx ()
+  (group-from-cycles
+   (list
+    (list (make-cycle 1 9 7 5 3)
+          (make-cycle 50 40 30 200 11)
+          (make-cycle 52 42 32 22 13)
+          (make-cycle 2 10 8 6 4)
+          (make-cycle 51 41 31 21 12))
+
+    (list (make-cycle 11 13 15 17 19)
+          (make-cycle 3 200 72 62 54)
+          (make-cycle 5 28 70 60 52)
+          (make-cycle 12 14 16 18 20)
+          (make-cycle 4 29 71 61 53))
+
+    (list (make-cycle 200 22 24 26 28)
+          (make-cycle 5 30 82 74 15)
+          (make-cycle 7 38 80 72 13)
+          (make-cycle 21 23 25 27 29)
+          (make-cycle 6 39 81 73 14))
+
+    (list (make-cycle 30 32 34 36 38)
+          (make-cycle 7 40 92 84 24)
+          (make-cycle 9 48 90 82 22)
+          (make-cycle 31 33 35 37 39)
+          (make-cycle 8 49 91 83 23))
+
+    (list (make-cycle 40 42 44 46 48)
+          (make-cycle 9 50 114 94 34)
+          (make-cycle 1 58 112 92 32)
+          (make-cycle 41 43 45 47 49)
+          (make-cycle 10 59 113 93 33))
+
+    (list (make-cycle 50 52 54 56 58)
+          (make-cycle 1 11 60 116 44)
+          (make-cycle 3 19 68 114 42)
+          (make-cycle 51 53 55 57 59)
+          (make-cycle 2 20 69 115 43))
+
+    (list (make-cycle 60 62 64 66 68)
+          (make-cycle 19 70 106 118 56)
+          (make-cycle 17 78 104 116 54)
+          (make-cycle 61 63 65 67 69)
+          (make-cycle 18 79 105 117 55))
+
+    (list (make-cycle 70 72 74 76 78)
+          (make-cycle 17 28 80 108 64)
+          (make-cycle 15 26 88 106 62)
+          (make-cycle 71 73 75 77 79)
+          (make-cycle 16 27 89 107 63))
+
+    (list (make-cycle 80 82 84 86 88)
+          (make-cycle 26 38 90 100 76)
+          (make-cycle 24 36 98 108 74)
+          (make-cycle 81 83 85 87 89)
+          (make-cycle 25 37 99 109 75))
+    
+    (list (make-cycle 90 92 94 96 98)
+          (make-cycle 36 48 112 102 86)
+          (make-cycle 34 46 110 100 84)
+          (make-cycle 91 93 95 97 99)
+          (make-cycle 35 47 111 101 85))
+
+    (list (make-cycle 100 102 104 106 108)
+          (make-cycle 98 110 66 78 88)
+          (make-cycle 96 118 64 76 86)
+          (make-cycle 101 103 105 107 109)
+          (make-cycle 97 119 65 77 87))
+
+    (list (make-cycle 110 112 114 116 118)
+          (make-cycle 96 46 58 68 104)
+          (make-cycle 94 44 56 66 102)
+          (make-cycle 111 113 115 117 119)
+          (make-cycle 95 45 57 67 103)))
+   200))                                ; size
