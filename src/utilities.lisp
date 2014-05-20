@@ -126,6 +126,7 @@ This function just guarantees we can map N to some hash table key."
   "Obtain a random hash table value."
   (gethash (random-hash-table-key hash-table) hash-table))
 
+;; XXX: Not used.
 (define-condition hash-table-access-error (cell-error)
   ((table :initarg :table :reader hash-table-access-error-table)
    (key :initarg :key :reader hash-table-access-error-key))
@@ -144,6 +145,7 @@ This function just guarantees we can map N to some hash table key."
                    (decf n)))
            hash-table))
 
+;; XXX: Not used.
 (defun safe-gethash (key hash-table)
   "Throw an error in the event that KEY foes not exist in HASH-TABLE. Othwerwise return the value."
   (multiple-value-bind (val existsp) (gethash key hash-table)
