@@ -346,7 +346,7 @@
                     (elt a (1- (perm-eval* perm (1+ i)))))
           :finally (return (if type
                                (coerce result type)
-                               result)))))
+                               (coerce result (type-of a)))))))
 
 ; HI!!!
 ; HELLO
@@ -432,7 +432,8 @@ An asterisk in printed syntax denotes that the cycle has not been canonicalized 
 (defun orbit-of (n perm)
   "Compute the orbit of the element N in the permutation PERM. Return a cycle representing the orbit of N."
   (loop :with len := (orbit-length n perm)
-        :with spec := (make-array len :initial-element n)
+        :with spec := (make-array len :element-type 'perm-element
+                                      :initial-element n)
         :for i :from 1 :below len
         :for k := (perm-eval perm n) :then (perm-eval perm k)
         :until (= n k)
