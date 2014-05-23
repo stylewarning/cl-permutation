@@ -3,5 +3,5 @@
 ;;;; Copyright (c) 2014 Robert Smith
 
 (defpackage #:cl-permutation-examples
-  (:use #:cl)
+  (:use #:cl #:perm)
   (:nicknames #:perm-examples))
