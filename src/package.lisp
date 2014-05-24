@@ -7,6 +7,7 @@
 
   ;; permutation.lisp
   (:export
+   #:perm-element
    #:perm                               ; Type, Structure
    #:enable-perm-reader
    #:list-to-perm
@@ -38,6 +39,7 @@
    #:perm-fixpoints
    #:permute
    
+   #:cycle-element
    #:cycle
    #:make-cycle
    #:*canonicalize-cycle-on-creation*

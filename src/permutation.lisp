@@ -357,10 +357,14 @@
 
 (defvar *canonicalize-cycle-on-creation* t)
 
+(deftype cycle-element ()
+  "An element of a cycle."
+  `perm-element)
+
 (defstruct (cycle (:constructor %make-cycle)
                   (:print-function print-cycle))
   (canonicalized nil :type boolean)
-  (spec #() :type (vector unsigned-byte)))
+  (spec #() :type (vector cycle-element)))
 
 (defun print-cycle (cycle stream depth)
   "Printer for cycles.
@@ -386,11 +390,10 @@ An asterisk in printed syntax denotes that the cycle has not been canonicalized 
   "Ensure that the elements ELEMENTS are those of a valid cycle."
   (assert (or (null elements)
               (every (lambda (x)
-                       (and (integerp x)
-                            (plusp x)))
+                       (typep x 'cycle-element))
                      elements))
           ()
-          "Elements of a cycle must be positive integers.")
+          "Elements of a cycle must be positive integers acceptable to MAKE-PERM.")
   
   ;;; XXX: This can be done much more efficiently.
   (assert (= (length elements)
@@ -402,12 +405,9 @@ An asterisk in printed syntax denotes that the cycle has not been canonicalized 
   "Create a new cycle with the elements ELEMENTS."
   (check-cycle-elements elements)
   
-  ;; XXX: SBCL will say that dead code elimination is going on
-  ;; here. This is because COERCE expands into (IF (VECTORP X) X ...),
-  ;; and SBCL can infer that X is a list.
-  ;;
-  ;;    -- Robert Smith 5/24/2014
-  (let ((cycle (%make-cycle :spec (coerce elements 'vector))))
+  (let ((cycle (%make-cycle :spec (make-array (length elements)
+                                              :element-type 'cycle-element
+                                              :initial-contents elements))))
     (if *canonicalize-cycle-on-creation*
         (canonicalize-cycle cycle)
         cycle)))
@@ -437,7 +437,8 @@ An asterisk in printed syntax denotes that the cycle has not been canonicalized 
 (defun orbit-of (n perm)
   "Compute the orbit of the element N in the permutation PERM. Return a cycle representing the orbit of N."
   (loop :with len := (orbit-length n perm)
-        :with spec := (make-array len :initial-element n)
+        :with spec := (make-array len :element-type 'cycle-element
+                                      :initial-element n)
         :for i :from 1 :below len
         :for k := (perm-eval perm n) :then (perm-eval perm k)
         :until (= n k)
