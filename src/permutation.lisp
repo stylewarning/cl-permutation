@@ -21,8 +21,7 @@
 (defstruct (perm (:conc-name perm.)
                  (:print-function print-perm)
                  (:constructor %make-perm))
-  (spec #(0) :type raw-perm
-             :read-only t))
+  (spec #(0) :type raw-perm))
 
 ;;; XXX: fix the duplication.
 (defun print-perm (perm stream depth)
@@ -361,8 +360,7 @@
 (defstruct (cycle (:constructor %make-cycle)
                   (:print-function print-cycle))
   (canonicalized nil :type boolean)
-  (spec #() :type (vector (unsigned-byte *))
-            :read-only t))
+  (spec #() :type (vector unsigned-byte)))
 
 (defun print-cycle (cycle stream depth)
   "Printer for cycles.
