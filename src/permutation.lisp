@@ -79,7 +79,9 @@
   (let ((read-list (read-delimited-list #\] stream t)))
     (assert-valid-permutation-elements read-list)
 
-    (%make-perm :spec (coerce (cons 0 read-list) 'vector))))
+    (%make-perm :spec (make-array (1+ (length read-list))
+                                  :element-type 'perm-element
+                                  :initial-contents (cons 0 read-list)))))
 
 (defun enable-perm-reader ()
   "Enable the use of #[...] for perms."
@@ -432,8 +434,7 @@ An asterisk in printed syntax denotes that the cycle has not been canonicalized 
 (defun orbit-of (n perm)
   "Compute the orbit of the element N in the permutation PERM. Return a cycle representing the orbit of N."
   (loop :with len := (orbit-length n perm)
-        :with spec := (make-array len :element-type 'perm-element
-                                      :initial-element n)
+        :with spec := (make-array len :initial-element n)
         :for i :from 1 :below len
         :for k := (perm-eval perm n) :then (perm-eval perm k)
         :until (= n k)
