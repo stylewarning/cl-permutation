@@ -402,6 +402,11 @@ An asterisk in printed syntax denotes that the cycle has not been canonicalized 
   "Create a new cycle with the elements ELEMENTS."
   (check-cycle-elements elements)
   
+  ;; XXX: SBCL will say that dead code elimination is going on
+  ;; here. This is because COERCE expands into (IF (VECTORP X) X ...),
+  ;; and SBCL can infer that X is a list.
+  ;;
+  ;;    -- Robert Smith 5/24/2014
   (let ((cycle (%make-cycle :spec (coerce elements 'vector))))
     (if *canonicalize-cycle-on-creation*
         (canonicalize-cycle cycle)
