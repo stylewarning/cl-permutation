@@ -4,21 +4,35 @@
 
 (in-package #:cl-permutation-examples)
 
-;;; 3674160
+;;; Order: 3674160
+;;       +--+--+
+;;       |5 |6 |
+;;       +--+--+
+;;       |7 |8 |
+;; +--+--+--+--+--+--+--+--+
+;; |19|20|1 |2 |9 |10|13|14|
+;; +--+--+--+--+--+--+--+--+
+;; |xx|21|3 |4 |11|12|15|xx|
+;; +--+--+--+--+--+--+--+--+
+;;       |16|17|
+;;       +--+--+
+;;       |xx|18|
+;;       +--+--+
+
 (defun make-rubik-2x2 ()
   (group-from-cycles
-   (list (list (make-cycle 6 18 14 10)
-               (make-cycle 5 17 13 9)
-               (make-cycle 1 2 4 3))
+   (list (list (make-cycle 1 2 4 3)     ; F
+               (make-cycle 7 9 17 21)
+               (make-cycle 8 11 16 20))
 
-         (list (make-cycle 13 15 16 14)
-               (make-cycle 4 12 24 17)
-               (make-cycle 2 10 22 19))
+         (list (make-cycle 5 6 8 7)     ; U
+               (make-cycle 2 20 14 10)
+               (make-cycle 1 19 13 9))
 
-         (list (make-cycle 9 10 12 11)
-               (make-cycle 4 15 21 6)
-               (make-cycle 3 13 22 8)))
-   24))                                 ; size
+         (list (make-cycle 9 10 12 11)  ; R
+               (make-cycle 2 6 15 17)
+               (make-cycle 4 8 13 18)))
+   24))
 
 ;; 43252003274489856000
 (defun make-rubik-3x3 ()
