@@ -136,7 +136,7 @@ CANONICALIZE-CYCLES. Canonicalization is defined as:
   * Cycles are listed in descending order of their first element.
   * No null cycles exist.
   * The sum of the cycle lengths of a decomposition of a permutation
-    of length N is N.
+    of size N is N.
 
 Cycles that have not been canonicalized are printed with an
 asterisk. We can observe this by explicitly disabling cycle
