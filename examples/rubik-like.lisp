@@ -32,7 +32,7 @@
          (list (make-cycle 9 10 12 11)  ; R
                (make-cycle 2 6 15 17)
                (make-cycle 4 8 13 18)))
-   24))
+   21))
 
 ;; 43252003274489856000
 (defun make-rubik-3x3 ()
