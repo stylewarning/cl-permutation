@@ -39,7 +39,7 @@
         (prog1 num
           (setf num (ignore-errors (propagate num signature 1 nil))))))))
 
-(defun transversal-sizes (group)
+(defun group-radix (group)
   (map 'list #'hash-table-count (perm-group.transversal-system group)))
 
 (defun group-element-from-signature (group signature)
@@ -59,7 +59,7 @@
         (incrementer (gensym "INCREMENTER-"))
         (signature   (gensym "SIGNATURE-")))
     `(let* ((,ggroup ,group)
-            (,incrementer (incrementer (transversal-sizes ,ggroup))))
+            (,incrementer (incrementer (group-radix ,ggroup))))
        (loop :for ,signature := (funcall ,incrementer) :then (funcall ,incrementer)
              :while ,signature
              :do (let ((,var (group-element-from-signature ,ggroup ,signature)))
