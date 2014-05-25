@@ -238,7 +238,7 @@
   (if (perm-even-p perm) 1 -1))
 
 (defun perm-compose (p1 p2)
-  "Compose the permutations P1 and P2: x |-> P2(P1(x))."
+  "Compose the permutations P1 and P2: x |-> P1(P2(x))."
   #+#:ignore
   (assert (= (perm-size p1)
              (perm-size p2))
