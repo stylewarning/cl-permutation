@@ -186,7 +186,7 @@
                                   length-remaining))
 
                 ;; This is guaranteeed to decrease in size, because
-                ;; the count of the current type <= LENGTH-REMAINING/
+                ;; the count of the current type <= LENGTH-REMAINING.
                 (setf current-cardinality
                       (floor (* current-cardinality
                                 (aref unprocessed-type-counts current-type))
