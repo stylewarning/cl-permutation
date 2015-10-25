@@ -37,7 +37,7 @@
 
 (defclass radix-spec (combinatorial-spec)
   ((radix :initarg :radix
-          :accessor radix.radix))
+          :reader radix.radix))
   (:documentation "Representation of a sequence of numbers of length SIZE whose elements are between 0 and RADIX - 1."))
 
 (defclass perm-spec (combinatorial-spec)
@@ -46,15 +46,15 @@
 
 (defclass combination-spec (combinatorial-spec)
   ((zero-count :initarg :zero-count
-               :accessor comb.zero-count))
+               :reader comb.zero-count))
   (:documentation "Representation of a sequence "))
 
 (defclass word-spec (combinatorial-spec)
   ((types :initarg :types
-          :accessor word.types
-          :documentation "Non-negative integer representing the number of distinct elements within the word.")
+          :reader word.types
+          :documentation "Non-negative integer representing the number of distinct elements within the word. Note that this will include the additional zero type, even though there are never any zero elements.")
    (type-counts :initarg :type-counts
-                :accessor word.type-counts
+                :reader word.type-counts
                 :documentation "Vector of non-negative integers representing the count of each individual element type. (The sum of this vector should equal TYPES.)"))
   (:documentation "Representation of a word of elements 1 to TYPES."))
 
