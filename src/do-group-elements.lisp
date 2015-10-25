@@ -39,6 +39,7 @@
         (prog1 num
           (setf num (ignore-errors (propagate num signature 1 nil))))))))
 
+;;; Defined in reference [2].
 (defun group-radix (group)
   (map 'list #'hash-table-count (perm-group.transversal-system group)))
 
