@@ -96,8 +96,8 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;; Initialization ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defun array-for-spec (spec)
-  (zero-array (size spec)))
+(defun array-for-spec (spec &key (initial-element 0))
+  (make-array (size spec) :initial-element initial-element))
 
 (defun make-perm-spec (n)
   "Make a PERM-SPEC representing the set of permutations S_n."
@@ -234,9 +234,7 @@
 
 (defmethod unrank ((spec combination-spec) (idx integer))
   (let ((z (comb.zero-count spec))
-        (set (array-for-spec spec)))
-    ;; Inefficient to create the array then update all of its values.
-    (map-into set (constantly 1) set)
+        (set (array-for-spec spec :initial-element 1)))
     (loop :for i :from (1- (size spec)) :downto 0
           :do (let ((tmp (binomial-coefficient-or-zero i z)))
                 (when (>= idx tmp)
