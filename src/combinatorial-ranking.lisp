@@ -23,7 +23,8 @@
 
 (defclass combinatorial-spec ()
   ((cardinality-cache :initform nil
-                      :accessor cardinality-cache)
+                      :accessor cardinality-cache
+                      :type (or null unsigned-byte))
    (size :initarg :size
          :reader size))
   (:documentation "Abstract class representing linear sequences of objects of size SIZE."))
@@ -57,27 +58,34 @@
 (defgeneric cardinality (spec)
   (:documentation "Compute the cardinality of SPEC. This represents the total number of elements described by the spec."))
 
+;;; Cache the computed cardinality. These objects are intended to be
+;;; immutable at the API boundary.
 (defmethod cardinality :around ((spec combinatorial-spec))
   (or (cardinality-cache spec)
       (setf (cardinality-cache spec)
             (call-next-method))))
 
 (defmethod cardinality ((spec radix-spec))
+  ;; RADIX^SIZE
   (expt (radix.radix spec) (size spec)))
 
 (defmethod cardinality ((spec perm-spec))
+  ;; (SIZE)!
   (alexandria:factorial (size spec)))
 
 (defmethod cardinality ((spec combination-spec))
+  ;; C(SIZE, ZEROES)
   (alexandria:binomial-coefficient (size spec) (comb.zero-count spec)))
 
 (defmethod cardinality ((spec word-spec))
-  ;; NOTE: We could use a MAP/REDUCE here.
-  (let ((p (alexandria:factorial (size spec))))
-    (loop :with type-counts := (word.type-counts spec)
-          :for i :below (word.types spec)
-          :do (setf p (floor p (alexandria:factorial (aref type-counts i))))
-          :finally (return p))))
+  ;;          (SIZE)!
+  ;; --------------------------
+  ;;  (C_1)! (C_2)! ... (C_N)!
+  (reduce (lambda (p type-count)
+            ;; This will always divide evenly.
+            (floor p (alexandria:factorial type-count)))
+          (word.type-counts spec)
+          :initial-value (alexandria:factorial (size spec))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;; Initialization ;;;;;;;;;;;;;;;;;;;;;;;;;;;
