@@ -142,15 +142,15 @@
             :from-end t)))
 
 (defmethod rank ((spec perm-spec) set)
-  (loop :with rank := 0
-        :for i :from 0 :below (1- (size spec))
-        :do (progn
-              (setf rank (* rank (- (size spec) i)))
-              ;; XXX: Use COUNT.
-              (loop :for j :from i :below (size spec)
-                    :when (> (aref set i)
-                             (aref set j))
-                      :do (incf rank)))
+  (loop :with size := (size spec)
+        :with rank := 0
+        :for i :from 0 :below (1- size)
+        :for elt :across set
+        :do (let ((inversions (count-if (lambda (elt-after)
+                                          (> elt elt-after))
+                                        set
+                                        :start (1+ i))))
+              (setf rank (+ inversions (* rank (- size i)))))
         :finally (return rank)))
 
 (defmethod rank ((spec combination-spec) set)
