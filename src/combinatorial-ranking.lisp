@@ -134,35 +134,34 @@
 
 (defmethod rank ((spec radix-spec) set)
   (let ((radix (radix.radix spec)))
-    (reduce #'(lambda (next sum)
-                (+ (* sum radix)
-                   next))
+    ;; Horner's method.
+    (reduce (lambda (next sum)
+              (+ next (* sum radix)))
             set
             :initial-value 0
             :from-end t)))
 
 (defmethod rank ((spec perm-spec) set)
-  (let ((rank 0))
-    (loop :for i :from 0 :below (1- (size spec))
-          :do (progn
-                (setf rank (* rank (- (size spec) i)))
-                ;; XXX: Use COUNT.
-                (loop :for j :from i :below (size spec)
-                      :when (> (aref set i)
-                               (aref set j))
-                        :do (incf rank))))
-    ;; Return the rank
-    rank))
+  (loop :with rank := 0
+        :for i :from 0 :below (1- (size spec))
+        :do (progn
+              (setf rank (* rank (- (size spec) i)))
+              ;; XXX: Use COUNT.
+              (loop :for j :from i :below (size spec)
+                    :when (> (aref set i)
+                             (aref set j))
+                      :do (incf rank)))
+        :finally (return rank)))
 
 (defmethod rank ((spec combination-spec) set)
-  (let ((z    (comb.zero-count spec))
-        (rank 0))
-    (loop :for i :from (1- (size spec)) :downto 0
-          :when (zerop (aref set i))
-            :do (progn
-                  (incf rank (binomial-coefficient-or-zero i z))
-                  (decf z))
-          :finally (return rank))))
+  (loop :with z := (comb.zero-count spec)
+        :with rank := 0
+        :for i :from (1- (size spec)) :downto 0
+        :when (zerop (aref set i))
+          :do (progn
+                (incf rank (binomial-coefficient-or-zero i z))
+                (decf z))
+        :finally (return rank)))
 
 (defmethod rank ((spec word-spec) set)
   (let ((size                    (size spec))
