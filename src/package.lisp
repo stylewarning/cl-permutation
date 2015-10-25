@@ -75,5 +75,27 @@
    #:group-order
    #:group-element-p
    #:random-group-element
-   #:transversal-decomposition))
+   #:transversal-decomposition)
+
+  ;; combinatorial-ranking.lisp
+  (:export
+   #:combinatorial-spec                 ; CLASS
+   #:size                               ; READER
+   #:radix-spec                         ; CLASS
+   #:permutation-spec                   ; CLASS
+   #:combination-spec                   ; ClASS
+   #:multi-spec                         ; CLASS
+   
+   #:cardinality                        ; GENERIC FUNCTION, METHOD
+
+   #:array-to-permutation-spec          ; FUNCTION
+   #:array-to-radix-spec                ; FUNCTION
+   #:array-to-multi-spec                ; FUNCTION
+
+   #:rank                               ; GENERIC FUNCTION, METHOD
+   #:unrank                             ; GENERIC FUNCTION, METHOD
+
+   #:map-spec                           ; FUNCTION
+   )
+  )
 
