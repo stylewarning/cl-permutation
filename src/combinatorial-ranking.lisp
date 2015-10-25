@@ -85,17 +85,18 @@
 (defun array-for-spec (spec)
   (zero-array (size spec)))
 
-(defun array-to-perm-spec (perm)
-  "Given an array PERM, convert it to a perm spec."
-  ;; TODO: Ensure correctness of perm.
-  (make-instance 'perm-spec :size (length perm)))
+(defun make-perm-spec (n)
+  "Make a PERM-SPEC representing the set of permutations S_n."
+  (check-type n unsigned-byte)
+  (make-instance 'perm-spec :size n))
 
-(defun array-to-radix-spec (radixset radix)
-  "Given a radix RADIX, construct a RADIX-SPEC from the array RADIXSET."
-  (make-instance 'radix-spec :size (length radixset)
-                             :radix radix))
+(defun make-radix-spec (radix size)
+  "Make a RADIX-SPEC representing all numbers between 0 and RADIX^SIZE - 1."
+  (check-type radix (integer 2))
+  (check-type size unsigned-byte)
+  (make-instance 'radix-spec :size size :radix radix))
 
-(defun array-to-word-spec (word)
+(defun vector-to-word-spec (word)
   "WORD should be a vector containing 1, 2, ..., N, possibly with repeated elements."
   (let* ((size (length word))
          (sorted (sort (copy-seq word) #'<))

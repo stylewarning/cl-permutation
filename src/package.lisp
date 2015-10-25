@@ -88,9 +88,9 @@
    
    #:cardinality                        ; GENERIC FUNCTION, METHOD
 
-   #:array-to-perm-spec                 ; FUNCTION
-   #:array-to-radix-spec                ; FUNCTION
-   #:array-to-word-spec                 ; FUNCTION
+   #:make-perm-spec                     ; FUNCTION
+   #:make-radix-spec                    ; FUNCTION
+   #:vector-to-word-spec                ; FUNCTION
 
    #:rank                               ; GENERIC FUNCTION, METHOD
    #:unrank                             ; GENERIC FUNCTION, METHOD
