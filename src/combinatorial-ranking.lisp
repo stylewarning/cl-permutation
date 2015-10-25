@@ -42,20 +42,20 @@
                :accessor comb.zero-count))
   (:documentation "Representation of a sequence "))
 
-(defclass multi-spec (combinatorial-spec)
+(defclass word-spec (combinatorial-spec)
   ((types :initarg :types
-          :accessor multi.types
-          :documentation "Non-negative integer representing the number of distinct types within the permutation.")
+          :accessor word.types
+          :documentation "Non-negative integer representing the number of distinct elements within the word.")
    (type-counts :initarg :type-counts
-                :accessor multi.type-counts
-                :documentation "Vector of integers representing the count of each individual type. (The sum of this array should equal TYPES.)"))
-  (:documentation "Representation of a permutation with repeated elements."))
+                :accessor word.type-counts
+                :documentation "Vector of non-negative integers representing the count of each individual element type. (The sum of this vector should equal TYPES.)"))
+  (:documentation "Representation of a word of elements 1 to TYPES."))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Cardinality ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defgeneric cardinality (spec)
-  (:documentation "Compute the cardinality of SPEC."))
+  (:documentation "Compute the cardinality of SPEC. This represents the total number of elements described by the spec."))
 
 (defmethod cardinality :around ((spec combinatorial-spec))
   (or (cardinality-cache spec)
@@ -71,11 +71,11 @@
 (defmethod cardinality ((spec combination-spec))
   (alexandria:binomial-coefficient (size spec) (comb.zero-count spec)))
 
-(defmethod cardinality ((spec multi-spec))
+(defmethod cardinality ((spec word-spec))
   ;; NOTE: We could use a MAP/REDUCE here.
   (let ((p (alexandria:factorial (size spec))))
-    (loop :with type-counts := (multi.type-counts spec)
-          :for i :below (multi.types spec)
+    (loop :with type-counts := (word.type-counts spec)
+          :for i :below (word.types spec)
           :do (setf p (floor p (alexandria:factorial (aref type-counts i))))
           :finally (return p))))
 
@@ -95,10 +95,10 @@
   (make-instance 'radix-spec :size (length radixset)
                              :radix radix))
 
-(defun array-to-multi-spec (multiset)
-  "MULTISET should be a vector containing 1, 2, ..., N, possibly with repeated elements."
-  (let* ((size (length multiset))
-         (sorted (sort (copy-seq multiset) #'<))
+(defun array-to-word-spec (word)
+  "WORD should be a vector containing 1, 2, ..., N, possibly with repeated elements."
+  (let* ((size (length word))
+         (sorted (sort (copy-seq word) #'<))
          ;; We have a type for '0', even though its count should be 0,
          ;; hence the "1+".
          (types (1+ (aref sorted (1- size))))
@@ -107,9 +107,9 @@
     (loop :for x :across sorted
           :do (incf (aref type-counts x)))
 
-    (make-instance 'multi-spec :size size
-                               :types types
-                               :type-counts type-counts)))
+    (make-instance 'word-spec :size size
+                              :types types
+                              :type-counts type-counts)))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Ranking ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -149,10 +149,10 @@
                   (decf z))
           :finally (return rank))))
 
-(defmethod rank ((spec multi-spec) set)
+(defmethod rank ((spec word-spec) set)
   (let ((size                    (size spec))
         (current-cardinality     (cardinality spec))
-        (unprocessed-type-counts (copy-seq (multi.type-counts spec)))
+        (unprocessed-type-counts (copy-seq (word.type-counts spec)))
         (rank                    0))
     (loop :for current-position :below (1- size)
           :while (< 1 current-cardinality)
@@ -231,10 +231,10 @@
                   (decf z)))
           :finally (return set))))
 
-(defmethod unrank ((spec multi-spec) (idx integer))
+(defmethod unrank ((spec word-spec) (idx integer))
   (let* ((set                     (array-for-spec spec))
          (size                    (size spec))
-         (unprocessed-type-counts (copy-seq (multi.type-counts spec)))
+         (unprocessed-type-counts (copy-seq (word.type-counts spec)))
          (current-cardinality     (cardinality spec)))
     (dotimes (current-position size set)
       (let ((length-remaining (- size current-position))

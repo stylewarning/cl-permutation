@@ -84,13 +84,13 @@
    #:radix-spec                         ; CLASS
    #:permutation-spec                   ; CLASS
    #:combination-spec                   ; ClASS
-   #:multi-spec                         ; CLASS
+   #:word-spec                          ; CLASS
    
    #:cardinality                        ; GENERIC FUNCTION, METHOD
 
    #:array-to-permutation-spec          ; FUNCTION
    #:array-to-radix-spec                ; FUNCTION
-   #:array-to-multi-spec                ; FUNCTION
+   #:array-to-word-spec                 ; FUNCTION
 
    #:rank                               ; GENERIC FUNCTION, METHOD
    #:unrank                             ; GENERIC FUNCTION, METHOD
