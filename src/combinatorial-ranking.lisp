@@ -96,35 +96,20 @@
                              :radix radix))
 
 (defun array-to-multi-spec (multiset)
-  ;;; TODO: optimize this whole thing.
-  (let ((spec (make-instance 'multi-spec :size (length multiset)))
-        (last 0)
-        (types 1))
+  "MULTISET should be a vector containing 1, 2, ..., N, possibly with repeated elements."
+  (let* ((size (length multiset))
+         (sorted (sort (copy-seq multiset) #'<))
+         ;; We have a type for '0', even though its count should be 0,
+         ;; hence the "1+".
+         (types (1+ (aref sorted (1- size))))
+         (type-counts (zero-array types)))
 
-    ;; Count the types
-    ;;
-    ;; NOTE: Could use (LENGTH (REMOVE-DUPLICATES ...))
-    ;;
-    ;; XXX : Do type counting here.
-    (loop :for x :across (sort (copy-seq multiset) #'<)
-          :when (/= last x)
-            :do (progn
-                  (setf last x)
-                  (incf types)))
+    (loop :for x :across sorted
+          :do (incf (aref type-counts x)))
 
-    ;; Set appropriate slots
-    (setf (multi.types spec) types
-          (multi.type-counts spec) (zero-array types))
-
-    ;; Initialize the type-counts array
-    ;;
-    ;; XXX: This is O(n^2)
-    (dotimes (i types)
-      (setf (aref (multi.type-counts spec) i)
-            (count i multiset)))
-
-    ;; Return the set.
-    spec))
+    (make-instance 'multi-spec :size size
+                               :types types
+                               :type-counts type-counts)))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Ranking ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
