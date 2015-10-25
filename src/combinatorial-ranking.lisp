@@ -13,6 +13,12 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Utilities ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defun binomial-coefficient-or-zero (n k)
+  "If N < K, return 0, otherwise return the binomial coefficient."
+  (if (< n k)
+      0
+      (alexandria:binomial-coefficient n k)))
+
 (defun zero-array (length)
   "Make an array of zeroes of length LENGTH."
   (make-array length :element-type 'unsigned-byte
