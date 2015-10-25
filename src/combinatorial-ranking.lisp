@@ -33,9 +33,9 @@
           :accessor radix.radix))
   (:documentation "Representation of a sequence of numbers of length SIZE whose elements are between 0 and RADIX - 1."))
 
-(defclass permutation-spec (combinatorial-spec)
+(defclass perm-spec (combinatorial-spec)
   ()
-  (:documentation "Representation of a permutation of size SIZE."))
+  (:documentation "Representation of a perm of size SIZE."))
 
 (defclass combination-spec (combinatorial-spec)
   ((zero-count :initarg :zero-count
@@ -65,7 +65,7 @@
 (defmethod cardinality ((spec radix-spec))
   (expt (radix.radix spec) (size spec)))
 
-(defmethod cardinality ((spec permutation-spec))
+(defmethod cardinality ((spec perm-spec))
   (alexandria:factorial (size spec)))
 
 (defmethod cardinality ((spec combination-spec))
@@ -85,10 +85,10 @@
 (defun array-for-spec (spec)
   (zero-array (size spec)))
 
-(defun array-to-permutation-spec (perm)
-  "Given an array PERM, convert it to a permutation spec."
+(defun array-to-perm-spec (perm)
+  "Given an array PERM, convert it to a perm spec."
   ;; TODO: Ensure correctness of perm.
-  (make-instance 'permutation-spec :size (length perm)))
+  (make-instance 'perm-spec :size (length perm)))
 
 (defun array-to-radix-spec (radixset radix)
   "Given a radix RADIX, construct a RADIX-SPEC from the array RADIXSET."
@@ -126,7 +126,7 @@
             :initial-value 0
             :from-end t)))
 
-(defmethod rank ((spec permutation-spec) set)
+(defmethod rank ((spec perm-spec) set)
   (let ((rank 0))
     (loop :for i :from 0 :below (1- (size spec))
           :do (progn
@@ -202,7 +202,7 @@
         (setf (aref set i) rem
               idx quo)))))
 
-(defmethod unrank ((spec permutation-spec) (idx integer))
+(defmethod unrank ((spec perm-spec) (idx integer))
   (let ((size (size spec))
         (set (array-for-spec spec)))
     ;; (setf (aref set (1- size)) 0)

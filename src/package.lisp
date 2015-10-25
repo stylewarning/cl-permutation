@@ -82,13 +82,13 @@
    #:combinatorial-spec                 ; CLASS
    #:size                               ; READER
    #:radix-spec                         ; CLASS
-   #:permutation-spec                   ; CLASS
+   #:perm-spec                          ; CLASS
    #:combination-spec                   ; ClASS
    #:word-spec                          ; CLASS
    
    #:cardinality                        ; GENERIC FUNCTION, METHOD
 
-   #:array-to-permutation-spec          ; FUNCTION
+   #:array-to-perm-spec                 ; FUNCTION
    #:array-to-radix-spec                ; FUNCTION
    #:array-to-word-spec                 ; FUNCTION
 
