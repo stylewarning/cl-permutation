@@ -204,10 +204,6 @@
 (defgeneric unrank (spec idx)
   (:documentation "Unrank the integer rank IDX according to SPEC."))
 
-;;; TODO: Clean this up.
-;;;
-;;; XXX: This can be made more efficient by precomputing the size of
-;;; the unranked index with logs.
 (defmethod unrank ((spec radix-spec) (idx integer))
   (let ((radix (radix.radix spec))
         (set (array-for-spec spec)))
@@ -219,8 +215,6 @@
 (defmethod unrank ((spec perm-spec) (idx integer))
   (let ((size (size spec))
         (set (array-for-spec spec)))
-    ;; (setf (aref set (1- size)) 0)
-
     (loop
       :for i :from (- size 2) :downto 0
       :do (progn
@@ -228,7 +222,7 @@
             (setf idx (floor idx (- size i)))
             (loop :for j :from (1+ i) :to (1- (size spec))
                   :when (>= (aref set j)
-                            (aref set  i))
+                            (aref set i))
                     :do (incf (aref set j))))
       :finally (return set))))
 
