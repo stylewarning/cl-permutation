@@ -133,8 +133,9 @@
 
 (defun perm-identity-p (perm)
   "Is the permutation PERM an identity permutation?"
-  (equalp (perm.rep perm)
-          (perm.rep (perm-identity (perm-size perm)))))
+  (loop :with rep := (perm.rep perm)
+        :for i :from 1 :below (length rep)
+        :always (= i (aref rep i))))
 
 (defun random-perm (n &optional (parity :any))
   "Make a random permutation of size N. PARITY specifies the parity of the permutation:
