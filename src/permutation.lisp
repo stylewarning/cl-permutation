@@ -1,5 +1,5 @@
 ;;;; permutation.lisp
-;;;; Copyright (c) 2012-2014 Robert Smith
+;;;; Copyright (c) 2012-2015 Robert Smith
 
 (in-package #:cl-permutation)
 
@@ -21,7 +21,7 @@
 (defstruct (perm (:conc-name perm.)
                  (:print-function print-perm)
                  (:constructor %make-perm))
-  (rep #(0) :type raw-perm))
+  (rep (iota-vector 1) :type raw-perm))
 
 ;;; XXX: fix the duplication.
 (defun print-perm (perm stream depth)
