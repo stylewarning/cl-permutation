@@ -52,11 +52,11 @@
                    (format stream " ~D" (aref spec (+ 2 i)))))))))))
 
 (defun contains-1-to-N (elements)
-  "Check that ELEMENTS contains the integers between 1 and the length of the list, inclusive."
-  (let ((len (length elements)))
-    (loop :for i :in elements
-          :sum i :into s
-          :finally (return (= s (/ (* len (1+ len)) 2))))))
+  "Check that ELEMENTS contains the integers between 1 and the length of the sequence, inclusive."
+  (let ((len (length elements))
+        (sum 0))
+    (map nil (lambda (x) (incf sum x)) elements)
+    (= sum (/ (* len (1+ len)) 2))))
 
 (defun assert-valid-permutation-elements (elements)
   "Verify (via assertions) that the elements "
