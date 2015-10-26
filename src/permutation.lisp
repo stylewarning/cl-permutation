@@ -336,7 +336,7 @@
 ;;; This can be a bit more optimized. We can just look at the internal
 ;;; representation.
 (defun perm-fixpoints (perm &optional (n (perm-size perm)))
-  "Return a list of the fixed points in PERM less than or equal to N,  which is the perm's size by default."
+  "Return a list of the fixed points in PERM less than or equal to N, which is the perm's size by default."
   (check-type n (integer 1))
   (loop :for i :from 1 :to n
         :when (= i (perm-eval* perm i))
@@ -541,14 +541,10 @@ An asterisk in printed syntax denotes that the cycle has not been canonicalized 
 ;;; FIXME: Make this better.
 (defun from-cycles (cycles &optional (size 0))
   "Convert a cycle representation of a permutation CYCLES to the standard representation."
-  (let* ((maximum (max size (reduce #'max
-                                    (mapcar (lambda (x)
-                                              (loop :for i
-                                                    :across (cycle-rep x)
-                                                    :maximize i))
-                                            cycles))))
-         (perm (make-array (1+ maximum) :element-type 'perm-element
-                                        :initial-contents (iota (1+ maximum)))))
+  (let* ((maximum (max size (loop :for cycle :in cycles
+                                  :maximize (loop :for i :across (cycle-rep cycle)
+                                                  :maximize i))))
+         (perm (iota-vector (1+ maximum))))
     (dolist (mapping
              (mapcan #'decompose-cycle-to-maps cycles)
              (%make-perm :rep perm))
@@ -564,7 +560,6 @@ The cycle type is a partition of the perm's size, and is equal to the lengths of
 
 ;;; XXX FIXME: This is unsafe because it doesn't check that CYCLES
 ;;; will produce a valid permutation in one-line notation.
-
 (defun cycles-to-one-line (cycles)
   "Convert CYCLES to one-line notation.
 
@@ -573,6 +568,4 @@ Note: This is not the same as FROM-CYCLES."
     (loop :for cycle :in cycles
           :do (loop :for element :across (cycle-rep cycle)
                     :do (push element elts)))
-    (%make-perm :rep (make-array (1+ (length elts))
-                                 :element-type 'perm-element
-                                 :initial-contents (cons 0 (nreverse elts))))))
+    (list-to-perm (nreverse elts))))
