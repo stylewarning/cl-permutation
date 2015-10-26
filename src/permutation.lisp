@@ -194,7 +194,7 @@
           "Permutation index of ~D must be within 1 and the length of the ~
            permutation ~A."
           n perm)
-  (position n (perm.rep perm)))
+  (position n (perm.rep perm) :start 1))
 
 (defun perm-inverse-eval* (perm n)
   "Evaluate the inverse of the permutation PERM at index N. If N is larger than the size of the permutation, return the fixed point."
@@ -204,7 +204,7 @@
           n)
   (if (> n (perm-size perm))
       n
-      (position n (perm.rep perm))))
+      (position n (perm.rep perm) :start 1)))
 
 (defun perm= (perm other-perm)
   "Are PERM and OTHER-PERM mathematically equal? (Note: Different sized perms are considered unequal. See PERM=* for extended equality.)"
