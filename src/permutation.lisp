@@ -21,13 +21,13 @@
 (defstruct (perm (:conc-name perm.)
                  (:print-function print-perm)
                  (:constructor %make-perm))
-  (spec #(0) :type raw-perm))
+  (rep #(0) :type raw-perm))
 
 ;;; XXX: fix the duplication.
 (defun print-perm (perm stream depth)
   "Printer for perms."
   (declare (ignore depth))
-  (let* ((spec (perm.spec perm))
+  (let* ((spec (perm.rep perm))
          (len (length spec)))
     (if *print-with-perm-syntax*
         (progn
@@ -78,9 +78,9 @@
   (let ((read-list (read-delimited-list #\] stream t)))
     (assert-valid-permutation-elements read-list)
 
-    (%make-perm :spec (make-array (1+ (length read-list))
-                                  :element-type 'perm-element
-                                  :initial-contents (cons 0 read-list)))))
+    (%make-perm :rep (make-array (1+ (length read-list))
+                                 :element-type 'perm-element
+                                 :initial-contents (cons 0 read-list)))))
 
 (defun enable-perm-reader ()
   "Enable the use of #[...] for perms."
@@ -107,13 +107,13 @@
 (defun list-to-perm (list)
   "Construct a perm from a list LIST."
   (assert-valid-permutation-elements list)
-  (%make-perm :spec (make-array (1+ (length list))
-                                :element-type 'perm-element
-                                :initial-contents (cons 0 (copy-list list)))))
+  (%make-perm :rep (make-array (1+ (length list))
+                               :element-type 'perm-element
+                               :initial-contents (cons 0 (copy-list list)))))
 
 (defun perm-to-list (perm)
   "Convert a permutation PERM to a list representation."
-  (coerce (subseq (perm.spec perm) 1) 'list))
+  (coerce (subseq (perm.rep perm) 1) 'list))
 
 (defun word-to-perm (word)
   "Convert a word WORD (an array) to a permutation."
@@ -121,7 +121,7 @@
 
 (defun perm-to-word (perm)
   "Convert a permutation PERM to a word, represented by an array."
-  (copy-seq (subseq (perm.spec perm) 1)))
+  (copy-seq (subseq (perm.rep perm) 1)))
 
 (defun make-perm (&rest elements)
   "Construct a permutation from the numbers ELEMENTS."
@@ -129,12 +129,12 @@
 
 (defun perm-identity (n)
   "The identity permutation of size N."
-  (%make-perm :spec (iota-vector (1+ n))))
+  (%make-perm :rep (iota-vector (1+ n))))
 
 (defun perm-identity-p (perm)
   "Is the permutation PERM an identity permutation?"
-  (equalp (perm.spec perm)
-          (perm.spec (perm-identity (perm-size perm)))))
+  (equalp (perm.rep perm)
+          (perm.rep (perm-identity (perm-size perm)))))
 
 (defun random-perm (n &optional (parity :any))
   "Make a random permutation of size N. PARITY specifies the parity of the permutation:
@@ -144,8 +144,8 @@
     * :ODD  for only odd permutations"
   (let ((spec (make-array (1+ n) :element-type 'perm-element
                                  :initial-contents (iota (1+ n)))))
-    (%make-perm :spec (nshuffle spec :parity parity
-                                     :start 1))))
+    (%make-perm :rep (nshuffle spec :parity parity
+                                    :start 1))))
 
 (defun perm-ref (perm n)
   "Compute the zero-based index of PERM at N."
@@ -154,7 +154,7 @@
           "Permutation reference index of ~D must be within the length of the ~
            permutation ~A."
           n perm)
-  (aref (perm.spec perm) (1+ n)))
+  (aref (perm.rep perm) (1+ n)))
 
 (defun perm-eval (perm n)
   "Evaluate the permutation PERM at index N."
@@ -163,7 +163,7 @@
           "Permutation index of ~D must be within 1 and the length of the ~
            permutation ~A."
           n perm)
-  (aref (perm.spec perm) n))
+  (aref (perm.rep perm) n))
 
 (defun perm-eval* (perm n)
   "Evaluate the permutation PERM at index N. If N is larger than the size of the permutation, return the fixed point."
@@ -173,7 +173,7 @@
           n)
   (if (> n (perm-size perm))
       n
-      (aref (perm.spec perm) n)))
+      (aref (perm.rep perm) n)))
 
 (defun perm-inverse-eval (perm n)
   "Evaluate the inverse of the permutation PERM at index N."
@@ -182,7 +182,7 @@
           "Permutation index of ~D must be within 1 and the length of the ~
            permutation ~A."
           n perm)
-  (position n (perm.spec perm)))
+  (position n (perm.rep perm)))
 
 (defun perm-inverse-eval* (perm n)
   "Evaluate the inverse of the permutation PERM at index N. If N is larger than the size of the permutation, return the fixed point."
@@ -192,7 +192,7 @@
           n)
   (if (> n (perm-size perm))
       n
-      (position n (perm.spec perm))))
+      (position n (perm.rep perm))))
 
 (defun perm= (perm other-perm)
   "Are PERM and OTHER-PERM mathematically equal? (Note: Different sized perms are considered unequal. See PERM=* for extended equality.)"
@@ -211,7 +211,7 @@
 
 (defun perm-size (perm)
   "The size of a permutation PERM."
-  (1- (length (perm.spec perm))))
+  (1- (length (perm.rep perm))))
 
 (defun perm-length (perm)
   "Count the number of inversions in the permutation PERM."
@@ -251,7 +251,7 @@
     (loop :for i :from 1 :to n
           :do (setf (aref p12-spec i)
                     (perm-eval* p1 (perm-eval* p2 i)))
-          :finally (return (%make-perm :spec p12-spec)))))
+          :finally (return (%make-perm :rep p12-spec)))))
 
 (defun perm-expt (perm n)
   "Raise a permutation PERM to the Nth power. If N is negative, then the inverse will be raised to the -Nth power."
@@ -287,10 +287,10 @@
            the permutation."
           b)
   
-  (let ((transposed-spec (copy-seq (perm.spec perm))))
+  (let ((transposed-spec (copy-seq (perm.rep perm))))
     (rotatef (aref transposed-spec a)
              (aref transposed-spec b))
-    (%make-perm :spec transposed-spec)))
+    (%make-perm :rep transposed-spec)))
 
 (defun perm-transpose-entries (perm a b)
   "Transpose the entries A and B in PERM."
@@ -306,12 +306,12 @@
            the permutation."
           b)
   
-  (let* ((transposed-spec (copy-seq (perm.spec perm)))
+  (let* ((transposed-spec (copy-seq (perm.rep perm)))
          (pos-a (position a transposed-spec))
          (pos-b (position b transposed-spec)))
     (rotatef (aref transposed-spec pos-a)
              (aref transposed-spec pos-b))
-    (%make-perm :spec transposed-spec)))
+    (%make-perm :rep transposed-spec)))
 
 (defun perm-inverse (perm)
   "Find the inverse of the permutation PERM."
@@ -319,7 +319,7 @@
          (perm*-spec (allocate-perm-vector n)))
     (loop :for i :from 1 :to n
           :do (setf (aref perm*-spec (perm-eval perm i)) i)
-          :finally (return (%make-perm :spec perm*-spec)))))
+          :finally (return (%make-perm :rep perm*-spec)))))
 
 ;;; This can be a bit more optimized.
 (defun perm-fixpoints (perm &optional (n (perm-size perm)))
@@ -360,14 +360,14 @@
 (defstruct (cycle (:constructor %make-cycle)
                   (:print-function print-cycle))
   (canonicalized nil :type boolean)
-  (spec #() :type (vector cycle-element)))
+  (rep #() :type (vector cycle-element)))
 
 (defun print-cycle (cycle stream depth)
   "Printer for cycles.
 
 An asterisk in printed syntax denotes that the cycle has not been canonicalized (though it may be already be canonical)."
   (declare (ignore depth))
-  (let* ((spec (cycle-spec cycle))
+  (let* ((spec (cycle-rep cycle))
          (len (length spec)))
     (print-unreadable-object (cycle stream :type t :identity nil)
       (write-string "(" stream)
@@ -401,16 +401,16 @@ An asterisk in printed syntax denotes that the cycle has not been canonicalized 
   "Create a new cycle with the elements ELEMENTS."
   (check-cycle-elements elements)
   
-  (let ((cycle (%make-cycle :spec (make-array (length elements)
-                                              :element-type 'cycle-element
-                                              :initial-contents elements))))
+  (let ((cycle (%make-cycle :rep (make-array (length elements)
+                                             :element-type 'cycle-element
+                                             :initial-contents elements))))
     (if *canonicalize-cycle-on-creation*
         (canonicalize-cycle cycle)
         cycle)))
 
 (defun cycle-length (cycle)
   "Compute the length of the cycle CYCLE."
-  (length (cycle-spec cycle)))
+  (length (cycle-rep cycle)))
 
 (defun cycle-identity-p (cycle)
   "Is the cycle CYCLE representative of an identity permutation?"
@@ -420,7 +420,7 @@ An asterisk in printed syntax denotes that the cycle has not been canonicalized 
 
 (defun cycle-ref (cycle n)
   "Compute the Nth element of the cycle CYCLE. Treat the cycle as if it is circular (so indexes greater than the cycle length or less than zero will wrap around)."
-  (aref (cycle-spec cycle)
+  (aref (cycle-rep cycle)
         (mod n (cycle-length cycle))))
 
 (defun orbit-length (n perm)
@@ -439,7 +439,7 @@ An asterisk in printed syntax denotes that the cycle has not been canonicalized 
         :for k := (perm-eval perm n) :then (perm-eval perm k)
         :until (= n k)
         :do (setf (aref spec i) k)
-        :finally (return (%make-cycle :spec spec))))
+        :finally (return (%make-cycle :rep spec))))
 
 (defun rotate-vector! (vec n)
   "Rotate the vector VEC a total of N elements left/counterclockwise in-place. If N is negative, rotate in the opposite direction."
@@ -465,8 +465,8 @@ An asterisk in printed syntax denotes that the cycle has not been canonicalized 
 
 (defun rotate-cycle (cycle &optional (n 1))
   "Rotate the elements of a cycle CYCLE syntactically counterclockwise/left, a total of N times. When N is negative, rotate in the opposite direction. Return a fresh cycle."
-  (%make-cycle :spec (rotate-vector! (copy-seq (cycle-spec cycle))
-                                     n)))
+  (%make-cycle :rep (rotate-vector! (copy-seq (cycle-rep cycle))
+                                    n)))
 
 (defun canonicalize-cycle (cycle)
   "Rotate a cycle CYCLE so its least value is syntactically first."
@@ -474,10 +474,10 @@ An asterisk in printed syntax denotes that the cycle has not been canonicalized 
     ((cycle-canonicalized cycle) cycle)
     ((cycle-identity-p cycle) (setf (cycle-canonicalized cycle) t)
                               cycle)
-    (t (let* ((minimum (reduce #'min (cycle-spec cycle)))
+    (t (let* ((minimum (reduce #'min (cycle-rep cycle)))
               (canonicalized-cycle (rotate-cycle cycle
                                                  (position minimum
-                                                           (cycle-spec cycle)))))
+                                                           (cycle-rep cycle)))))
          (setf (cycle-canonicalized canonicalized-cycle) t)
          canonicalized-cycle))))
 
@@ -511,7 +511,7 @@ An asterisk in printed syntax denotes that the cycle has not been canonicalized 
                  cycles
                  (let ((new-cycle (orbit-of (car todo) perm)))
                    (next-cycle (set-difference todo
-                                               (coerce (cycle-spec new-cycle)
+                                               (coerce (cycle-rep new-cycle)
                                                        'list))
                                (cons new-cycle cycles))))))
     (let ((cycles (next-cycle (iota+1 (perm-size perm)) nil)))
@@ -531,14 +531,14 @@ An asterisk in printed syntax denotes that the cycle has not been canonicalized 
   (let* ((maximum (max size (reduce #'max
                                     (mapcar (lambda (x)
                                               (loop :for i
-                                                    :across (cycle-spec x)
+                                                    :across (cycle-rep x)
                                                     :maximize i))
                                             cycles))))
          (perm (make-array (1+ maximum) :element-type 'perm-element
                                         :initial-contents (iota (1+ maximum)))))
     (dolist (mapping
              (mapcan #'decompose-cycle-to-maps cycles)
-             (%make-perm :spec perm))
+             (%make-perm :rep perm))
       (setf (aref perm (car mapping))
             (cdr mapping)))))
 
@@ -558,8 +558,8 @@ The cycle type is a partition of the perm's size, and is equal to the lengths of
 Note: This is not the same as FROM-CYCLES."
   (let ((elts nil))
     (loop :for cycle :in cycles
-          :do (loop :for element :across (cycle-spec cycle)
+          :do (loop :for element :across (cycle-rep cycle)
                     :do (push element elts)))
-    (%make-perm :spec (make-array (1+ (length elts))
-                                  :element-type 'perm-element
-                                  :initial-contents (cons 0 (nreverse elts))))))
+    (%make-perm :rep (make-array (1+ (length elts))
+                                 :element-type 'perm-element
+                                 :initial-contents (cons 0 (nreverse elts))))))

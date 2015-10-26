@@ -30,5 +30,5 @@ INJECT-TO."
   "Remove the largest element of a permutation."
   ;; Here, we are going to do it the ugly way.
   (let* ((size (perm-size perm))
-         (new-spec (remove size (perm.spec perm))))
-    (%make-perm :spec new-spec)))
+         (new-spec (remove size (perm.rep perm))))
+    (%make-perm :rep new-spec)))
