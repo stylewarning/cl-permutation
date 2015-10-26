@@ -61,12 +61,12 @@
 (defun assert-valid-permutation-elements (elements)
   "Verify (via assertions) that the elements "
   (assert (every 'integerp elements)
-            nil
-            "Permutation must only have integers.")
+          nil
+          "Permutation must only have integers.")
   
   (assert (every 'plusp elements)
-            nil
-            "Permutation must contain positive numbers only.")
+          nil
+          "Permutation must contain positive numbers only.")
   
   (assert (contains-1-to-N elements)
           nil
