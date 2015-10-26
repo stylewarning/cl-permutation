@@ -143,10 +143,10 @@
     * :ANY  for any permutation
     * :EVEN for only even permutations
     * :ODD  for only odd permutations"
-  (let ((spec (make-array (1+ n) :element-type 'perm-element
-                                 :initial-contents (iota (1+ n)))))
-    (%make-perm :rep (nshuffle spec :parity parity
-                                    :start 1))))
+  (let ((rep (make-array (1+ n) :element-type 'perm-element
+                                :initial-contents (iota (1+ n)))))
+    (%make-perm :rep (nshuffle rep :parity parity
+                                   :start 1))))
 
 (defun perm-ref (perm n)
   "Compute the zero-based index of PERM at N."
@@ -322,7 +322,8 @@
           :do (setf (aref perm*-spec (perm-eval perm i)) i)
           :finally (return (%make-perm :rep perm*-spec)))))
 
-;;; This can be a bit more optimized.
+;;; This can be a bit more optimized. We can just look at the internal
+;;; representation.
 (defun perm-fixpoints (perm &optional (n (perm-size perm)))
   "Return a list of the fixed points in PERM less than or equal to N,  which is the perm's size by default."
   (check-type n (integer 1))
