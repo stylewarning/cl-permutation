@@ -104,27 +104,39 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;; PERMUTATION OPERATIONS ;;;;;;;;;;;;;;;;;;;;;;;
 
+(declaim (inline list-to-perm))
 (defun list-to-perm (list)
   "Construct a perm from a list LIST."
   (assert-valid-permutation-elements list)
-  (%make-perm :rep (make-array (1+ (length list))
-                               :element-type 'perm-element
-                               :initial-contents (cons 0 (copy-list list)))))
+  (loop :with rep := (allocate-perm-vector (length list))
+        :for i :from 1
+        :for x :in list
+        :do (setf (aref rep i) x)
+        :finally (return (%make-perm :rep rep))))
+(declaim (notinline list-to-perm))
 
 (defun perm-to-list (perm)
   "Convert a permutation PERM to a list representation."
-  (coerce (subseq (perm.rep perm) 1) 'list))
+  (loop :for i :below (perm-size perm)
+        :collect (perm-ref perm i)))
 
 (defun word-to-perm (word)
   "Convert a word WORD (an array) to a permutation."
-  (list-to-perm (coerce word 'list)))
+  (assert-valid-permutation-elements word)
+  (loop :with rep := (allocate-perm-vector (length word))
+        :for i :from 1
+        :for x :across word
+        :do (setf (aref rep i) x)
+        :finally (return (%make-perm :rep rep))))
 
 (defun perm-to-word (perm)
-  "Convert a permutation PERM to a word, represented by an array."
-  (copy-seq (subseq (perm.rep perm) 1)))
+  "Convert a permutation PERM to a word, represented by a vector."
+  (subseq (perm.rep perm) 1))
 
 (defun make-perm (&rest elements)
   "Construct a permutation from the numbers ELEMENTS."
+  (declare (dynamic-extent elements)
+           (inline list-to-perm))
   (list-to-perm elements))
 
 (defun perm-identity (n)
