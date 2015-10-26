@@ -563,8 +563,7 @@ The cycle type is a partition of the perm's size, and is equal to the lengths of
   "Convert CYCLES to one-line notation.
 
 Note: This is not the same as FROM-CYCLES."
-  (let ((elts nil))
-    (loop :for cycle :in cycles
-          :do (loop :for element :across (cycle-rep cycle)
-                    :do (push element elts)))
-    (list-to-perm (nreverse elts))))
+  (list-to-perm
+   (loop :for cycle :in cycles
+         :append (loop :for element :across (cycle-rep cycle)
+                       :collect element))))
