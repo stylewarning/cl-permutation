@@ -143,10 +143,9 @@
     * :ANY  for any permutation
     * :EVEN for only even permutations
     * :ODD  for only odd permutations"
-  (let ((rep (make-array (1+ n) :element-type 'perm-element
-                                :initial-contents (iota (1+ n)))))
-    (%make-perm :rep (nshuffle rep :parity parity
-                                   :start 1))))
+  (%make-perm :rep (nshuffle (iota-vector (1+ n))
+                             :parity parity
+                             :start 1)))
 
 (defun perm-ref (perm n)
   "Compute the zero-based index of PERM at N."
