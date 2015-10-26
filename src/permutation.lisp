@@ -254,20 +254,16 @@
           :finally (return (%make-perm :spec p12-spec)))))
 
 (defun perm-expt (perm n)
-  "Raise a permutation PERM to the Nth power."
+  "Raise a permutation PERM to the Nth power. If N is negative, then the inverse will be raised to the -Nth power."
   (check-type n integer)
-  (assert (not (minusp n))
-          (n)
-          "Exponent must be non-negative. Given ~S,"
-          n)
-
   (labels ((rec (current-perm n)
              (if (= n 1) 
                  current-perm
                  (rec (perm-compose perm current-perm) (1- n)))))
-    (if (zerop n)
-        (perm-identity (perm-size perm))
-        (rec perm n))))
+    (cond
+      ((minusp n) (rec (perm-inverse perm) (- n)))
+      ((zerop n)  (perm-identity (perm-size perm)))
+      (t (rec perm n)))))
 
 (defun perm-order (perm)
   "Compute the order of a permutation PERM."
