@@ -532,24 +532,23 @@ An asterisk in printed syntax denotes that the cycle has not been canonicalized 
           (canonicalize-cycles cycles)
           cycles))))
 
-(defun decompose-cycle-to-maps (cycle)
-  "Convert a cycle CYCLE to a list of pairs (a_i . b_i) such that a permutation is the composition of a_i |-> b_i."
+(defun map-cycle-mappings (f cycle)
+  "Apply a binary function F to all pairs (a_i, b_i) such that the cycle is the composition of a_i |-> b_i."
   (loop :for i :below (cycle-length (canonicalize-cycle cycle))
-        :collect (cons (cycle-ref cycle i)
-                       (cycle-ref cycle (1+ i)))))
+        :do (funcall f
+                     (cycle-ref cycle i)
+                     (cycle-ref cycle (1+ i)))))
 
-;;; FIXME: Make this better.
 (defun from-cycles (cycles &optional (size 0))
   "Convert a cycle representation of a permutation CYCLES to the standard representation."
   (let* ((maximum (max size (loop :for cycle :in cycles
                                   :maximize (loop :for i :across (cycle-rep cycle)
                                                   :maximize i))))
          (perm (iota-vector (1+ maximum))))
-    (dolist (mapping
-             (mapcan #'decompose-cycle-to-maps cycles)
-             (%make-perm :rep perm))
-      (setf (aref perm (car mapping))
-            (cdr mapping)))))
+    (dolist (cycle cycles (%make-perm :rep perm))
+      (map-cycle-mappings (lambda (from to)
+                            (setf (aref perm from) to))
+                          cycle))))
 
 (defun cycle-type (perm)
   "Compute the cycle type of a perm PERM.
