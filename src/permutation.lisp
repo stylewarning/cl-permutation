@@ -120,8 +120,8 @@
   (loop :for i :below (perm-size perm)
         :collect (perm-ref perm i)))
 
-(defun word-to-perm (word)
-  "Convert a word WORD (an array) to a permutation."
+(defun vector-to-perm (word)
+  "Convert a vector VECTOR to a permutation. VECTOR must represent a valid elements of a permutation."
   (assert-valid-permutation-elements word)
   (loop :with rep := (allocate-perm-vector (length word))
         :for i :from 1
@@ -129,8 +129,8 @@
         :do (setf (aref rep i) x)
         :finally (return (%make-perm :rep rep))))
 
-(defun perm-to-word (perm)
-  "Convert a permutation PERM to a word, represented by a vector."
+(defun perm-to-vector (perm)
+  "Convert a permutation PERM to a vector."
   (subseq (perm.rep perm) 1))
 
 (defun make-perm (&rest elements)

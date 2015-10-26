@@ -12,8 +12,8 @@
    #:enable-perm-reader
    #:list-to-perm
    #:perm-to-list
-   #:word-to-perm
-   #:perm-to-word
+   #:vector-to-perm
+   #:perm-to-vector
    #:make-perm
    #:perm-identity
    #:perm-identity-p
