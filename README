@@ -182,6 +182,159 @@ cycles, then interestingly, there exists a bijection between one-line
 notation and the cycle decomposition.
 
 
+Combinatorial Specifications
+----------------------------
+
+A "combinatorial specification" describes a space of combinatorial
+objects. They have a nice property that they all can be mapped to and
+from integers sharply. See the section "Ranking and Unranking
+Combinatorial Specifications".
+
+
+Currently, only objects of linear structure exist. All of them are
+represented as subclasses of COMBINATORIAL-SPEC. They are as follows.
+
+
+* RADIX-SPEC: Base-B Non-Negative Integers
+
+These are a representation of a base-B non-negative integer, for a
+base B > 1. They are handled by the RADIX-SPEC class. Within
+CL-PERMUTATION, the digits are written left-to-right to correspond
+with natural vector index ordering. A RADIX-SPEC can be made with
+MAKE-RADIX-SPEC. Here is the enumeration of all two-digit trinary
+numbers:
+
+> (print-objects-of-spec (make-radix-spec 3 2))
+0 ==> #(0 0) ==> 0
+1 ==> #(1 0) ==> 1
+2 ==> #(2 0) ==> 2
+3 ==> #(0 1) ==> 3
+4 ==> #(1 1) ==> 4
+5 ==> #(2 1) ==> 5
+6 ==> #(0 2) ==> 6
+7 ==> #(1 2) ==> 7
+8 ==> #(2 2) ==> 8
+
+
+* MIXED-RADIX-SPEC: Non-Negative Mixed-Radix Integers
+
+A mixed-radix integer is a generalization of a base-B integer. The
+digits in a mixed-radix numeral correspond to different
+bases. Mixed-radix specifications can be made with
+VECTOR-TO-MIXED-RADIX-SPEC. For example, the following are all
+numerals of radix (2, 3, 1):
+
+> (print-objects-of-spec (vector-to-mixed-radix-spec #(2 3 1)))
+0 ==> #(0 0 0) ==> 0
+1 ==> #(1 0 0) ==> 1
+2 ==> #(0 1 0) ==> 2
+3 ==> #(1 1 0) ==> 3
+4 ==> #(0 2 0) ==> 4
+5 ==> #(1 2 0) ==> 5
+
+Notice again we use vector index ordering.
+
+
+* PERM-SPEC: Permutations
+
+The space of permutations of length N (also known as S_N) can be
+represented. These are represented by the PERM-SPEC class.
+
+> (print-objects-of-spec (make-perm-spec 3))
+0 ==> #(0 1 2) ==> 0
+1 ==> #(0 2 1) ==> 1
+2 ==> #(1 0 2) ==> 2
+3 ==> #(1 2 0) ==> 3
+4 ==> #(2 0 1) ==> 4
+5 ==> #(2 1 0) ==> 5
+
+Currently, actual PERM objects are *not* generated (see below about
+ranking/unranking). However, one can easily convert. Also note that
+
+
+* COMBINATION-SPEC: Combinations
+
+Combinations represent the selection of M objects from a collection of
+N objects. These are represented by a vector containing M 1's and N
+0's. The class that manages this is a COMBINATION-SPEC. For example,
+all combinations of 4 objects choosing 2 can be listed by the
+following:
+
+> (print-objects-of-spec (make-combination-spec 4 2))
+0 ==> #(0 0 1 1) ==> 0
+1 ==> #(0 1 0 1) ==> 1
+2 ==> #(1 0 0 1) ==> 2
+3 ==> #(0 1 1 0) ==> 3
+4 ==> #(1 0 1 0) ==> 4
+5 ==> #(1 1 0 0) ==> 5
+
+
+* WORD-SPEC: Words
+
+A word is similar to a permutation except that it may have repeated,
+indistinct elements. These are represented by a WORD-SPEC. It can be
+created by supplying a sample word to the function
+VECTOR-TO-WORD-SPEC. For example, all words of the form 1123 can be
+listed as follows:
+
+> (print-objects-of-spec (vector-to-word-spec #(1 1 2 3)))
+0 ==> #(1 1 2 3) ==> 0
+1 ==> #(1 1 3 2) ==> 1
+2 ==> #(1 2 1 3) ==> 2
+3 ==> #(1 2 3 1) ==> 3
+4 ==> #(1 3 1 2) ==> 4
+5 ==> #(1 3 2 1) ==> 5
+6 ==> #(2 1 1 3) ==> 6
+7 ==> #(2 1 3 1) ==> 7
+8 ==> #(2 3 1 1) ==> 8
+9 ==> #(3 1 1 2) ==> 9
+10 ==> #(3 1 2 1) ==> 10
+11 ==> #(3 2 1 1) ==> 11
+
+
+Ranking and Unranking Combinatorial Specifications
+--------------------------------------------------
+
+Each combinatorial specification represents a finite space of N > 0
+objects. N is called the "cardinality" of the specification and can be
+computed with the CARDINALITY method.
+
+> (cardinality (make-perm-spec 3))
+6
+> (cardinality (vector-to-word-spec #(1 1 2 3)))
+12
+
+The cardinality is computed only once for a combinatorial
+specification and is then cached for fast access.
+
+Obviously, every object in a particular finite combinatorial space can
+be bijected to and from integers below the cardinality of that
+space. CL-PERMUTATION provides fast and efficient mechanisms for
+computing one such bijection for each combinatorial
+specification. Mapping from an object to an integer is called
+"ranking" and mapping from an integer back to an object is called
+"unranking".
+
+When a lexicographic ordering makes sense, there will be 1-to-1
+correspondence with the ordering on integers. In other words for
+objects X1 and X2 and their ranks R1 and R2, X1 lex< X2 iff R1 < R2.
+
+The method UNRANK takes a combinatorial specification and an integer,
+and maps it to the corresponding object representation (usually a
+vector). It takes an optional keyword argument :SET which acts as a
+destination of the unranked object (for efficiency purposes).
+
+The method RANK takes a combinatorial specification and an object
+produced by UNRANK (again, usually a sensible vector) and returns the
+integer (the "rank") of that object. PRINT-OBJECTS-OF-SPEC, as used
+above, prints the rank of every object in a combinatorial space.
+
+One can map over all objects and ranks by using MAP-SPEC, which takes
+a binary function (rank and object) as well as a combinatorial
+specification, and applies that function to each object and their
+rank.
+
+
 Permutation Groups
 ------------------
 
