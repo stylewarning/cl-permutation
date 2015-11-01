@@ -45,40 +45,50 @@
 (defun sigma (trans k j)
   (gethash j (transversal-ref trans k)))
 
-(defun reduce-over-trans-decomposition (f perm trans &optional (k (perm-size perm)))
-  "Reduce F over the transversal decomposition of PERM within the transversal system TRANS.
+(defun reduce-over-trans-decomposition (f initial-value perm trans &optional (k (perm-size perm)))
+  "Reduce F over the transversal decomposition of PERM within the transversal system TRANS. Return two values:
+
+    1. The result of folding over, or NIL if no decomposition exists.
+    2. NIL iff no decomposition exists.
 
 F is a function of three arguments:
 
-    ACCUM: The \"accumulator\" argument.
+    ACCUM: The \"accumulator\" argument. INITIAL-VALUE is the initial value of this argument.
     K, J : Two arguments representing the sigma.
 
-If all K and J are accumulated into a list, then the list would represent the transversal decomposition of PERM.
-
-If no decomposition exists, then NIL will be returned."
+If all K and J are accumulated into a list, then the list would represent the transversal decomposition of PERM."
   (labels ((next (perm k acc)
              (if (= 1 k)
-                 acc
+                 (values acc t)
                  (let* ((j (perm-eval perm k))
                         (k-val (transversal-ref trans k)))
-                   (when k-val
-                     (multiple-value-bind (j-val j-exists-p) (gethash j k-val)
-                       (when j-exists-p
-                         (next (perm-compose (perm-inverse j-val) perm) 
-                               (1- k)
-                               (funcall f acc k j)))))))))
-    (next perm k nil)))
+                   (if (null k-val)
+                       (values nil nil)
+                       (multiple-value-bind (j-val j-exists-p) (gethash j k-val)
+                         (if (null j-exists-p)
+                             (values nil nil)
+                             (next (perm-compose (perm-inverse j-val) perm) 
+                                   (1- k)
+                                   (funcall f acc k j)))))))))
+    (declare (dynamic-extent #'next))
+    (next perm k initial-value)))
 
 (defun trans-decomposition (perm trans &optional (k (perm-size perm)))
   (flet ((collector (decomp k j)
            (acons k j decomp)))
     (declare (dynamic-extent #'collector))
-    (reduce-over-trans-decomposition #'collector perm trans k)))
+    (values (reduce-over-trans-decomposition #'collector nil perm trans k))))
 
 (defun trans-element-p (perm trans &optional (k (perm-size perm)))
   #+#:equivalent
   (not (null (trans-decomposition perm trans k)))
-  (reduce-over-trans-decomposition (load-time-value (constantly t)) perm trans k))
+  (values
+   (reduce-over-trans-decomposition
+    (load-time-value (constantly t))
+    t
+    perm
+    trans
+    k)))
 
 ;;; XXX FIXME: This should remain NIL until a proper caching mechanism
 ;;; for perms is employed.
