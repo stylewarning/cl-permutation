@@ -15,12 +15,27 @@
   strong-generators
   transversal-system)
 
+(deftype transversal ()
+  ;; It is actually (simple-array (or null hash-table) (*)), but we
+  ;; will want to use SVREF. While such a type would collapse into
+  ;; SIMPLE-VECTOR in most implementations, we don't want to assume
+  ;; such.
+  `simple-vector)
+
+(declaim (inline make-transversal))
+(defun make-transversal (n)
+  "Make a transversal of size N."
+  (make-array n :initial-element nil))
+
+(declaim (inline transversal-ref))
 (defun transversal-ref (trans n)
   "Get the Nth element of the transversal TRANS."
-  (aref trans (1- n)))
+  (declare (type transversal trans))
+  (svref trans (1- n)))
 
 (defun (setf transversal-ref) (new-value trans n)
-  (setf (aref trans (1- n)) new-value))
+  (declare (type transversal trans))
+  (setf (svref trans (1- n)) new-value))
 
 (defun perm-group-printer (group stream depth)
   (declare (ignore depth))
@@ -102,10 +117,9 @@
                      (perm-identity n))
                
                ht)))
-
     (let* ((n (maximum generators :key 'perm-size))
            (sgs (make-hash-table))
-           (trans (make-array n :element-type '(or null hash-table) :initial-element nil))
+           (trans (make-transversal n))
            (*product-membership* (make-hash-table)))
       (declare (special *product-membership*))
       
