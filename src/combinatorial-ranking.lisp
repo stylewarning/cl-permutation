@@ -37,8 +37,13 @@
 
 (defclass radix-spec (combinatorial-spec)
   ((radix :initarg :radix
-          :reader radix.radix))
+          :reader radix))
   (:documentation "Representation of a sequence of numbers of length SIZE whose elements are between 0 and RADIX - 1."))
+
+(defclass mixed-radix-spec (combinatorial-spec)
+  ((radix :initarg :radix
+          :reader radix))
+  (:documentation "Representation of a mixed-radix number of size SIZE with mixed radix RADIX."))
 
 (defclass perm-spec (combinatorial-spec)
   ()
@@ -73,7 +78,13 @@
 
 (defmethod cardinality ((spec radix-spec))
   ;; RADIX^SIZE
-  (expt (radix.radix spec) (size spec)))
+  (expt (radix spec) (size spec)))
+
+(defmethod cardinality ((spec mixed-radix-spec))
+  ;; RADIX1 * RADIX2 * ... * RADIXn
+  (reduce (lambda (a b) (* a b))
+          (radix spec)
+          :initial-value 1))
 
 (defmethod cardinality ((spec perm-spec))
   ;; (SIZE)!
@@ -133,10 +144,20 @@
   (:documentation "Rank the set SET to an integer according to the spec SPEC."))
 
 (defmethod rank ((spec radix-spec) set)
-  (let ((radix (radix.radix spec)))
+  (let ((radix (radix spec)))
     ;; Horner's method.
     (reduce (lambda (next sum)
               (+ next (* sum radix)))
+            set
+            :initial-value 0
+            :from-end t)))
+
+(defmethod rank ((spec mixed-radix-spec) set)
+  (let ((radix (radix spec))
+        (i (size spec)))
+    ;; Horner's method, generalized for mixed radix numerals.
+    (reduce (lambda (next sum)
+              (+ next (* sum (aref radix (decf i)))))
             set
             :initial-value 0
             :from-end t)))
@@ -205,10 +226,18 @@
   (:documentation "Unrank the integer rank IDX according to SPEC."))
 
 (defmethod unrank ((spec radix-spec) (idx integer))
-  (let ((radix (radix.radix spec))
+  (let ((radix (radix spec))
         (set (array-for-spec spec)))
     (dotimes (i (size spec) set)
       (multiple-value-bind (quo rem) (floor idx radix)
+        (setf (aref set i) rem
+              idx quo)))))
+
+(defmethod unrank ((spec mixed-radix-spec) (idx integer))
+  (let ((radix (radix spec))
+        (set (array-for-spec spec)))
+    (dotimes (i (size spec) set)
+      (multiple-value-bind (quo rem) (floor idx (svref radix i))
         (setf (aref set i) rem
               idx quo)))))
 
