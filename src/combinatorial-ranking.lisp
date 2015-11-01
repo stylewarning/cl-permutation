@@ -229,28 +229,28 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Unranking ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defgeneric unrank (spec idx)
-  (:documentation "Unrank the integer rank IDX according to SPEC."))
+(defgeneric unrank (spec idx &key set)
+  (:documentation "Unrank the integer rank IDX according to SPEC. If SET is provided, such a vector will be filled. Otherwise, one will be allocated. (Beware: SET must be a vector of an appropriate size.)"))
 
-(defmethod unrank ((spec radix-spec) (idx integer))
+(defmethod unrank ((spec radix-spec) (idx integer) &key set)
   (let ((radix (radix spec))
-        (set (array-for-spec spec)))
+        (set (or set (array-for-spec spec))))
     (dotimes (i (size spec) set)
       (multiple-value-bind (quo rem) (floor idx radix)
         (setf (aref set i) rem
               idx quo)))))
 
-(defmethod unrank ((spec mixed-radix-spec) (idx integer))
+(defmethod unrank ((spec mixed-radix-spec) (idx integer) &key set)
   (let ((radix (radix spec))
-        (set (array-for-spec spec)))
+        (set (or set (array-for-spec spec))))
     (dotimes (i (size spec) set)
       (multiple-value-bind (quo rem) (floor idx (svref radix i))
         (setf (aref set i) rem
               idx quo)))))
 
-(defmethod unrank ((spec perm-spec) (idx integer))
+(defmethod unrank ((spec perm-spec) (idx integer) &key set)
   (let ((size (size spec))
-        (set (array-for-spec spec)))
+        (set (or set (array-for-spec spec))))
     (loop
       :for i :from (- size 2) :downto 0
       :do (progn
@@ -262,9 +262,11 @@
                     :do (incf (aref set j))))
       :finally (return set))))
 
-(defmethod unrank ((spec combination-spec) (idx integer))
+(defmethod unrank ((spec combination-spec) (idx integer) &key set)
   (let ((z (comb.zero-count spec))
-        (set (array-for-spec spec :initial-element 1)))
+        (set (if (null set)
+                 (array-for-spec spec :initial-element 1)
+                 (map-into set (constantly 1)))))
     (loop :for i :from (1- (size spec)) :downto 0
           :do (let ((tmp (binomial-coefficient-or-zero i z)))
                 (when (>= idx tmp)
@@ -273,8 +275,8 @@
                   (decf z)))
           :finally (return set))))
 
-(defmethod unrank ((spec word-spec) (idx integer))
-  (let* ((set                     (array-for-spec spec))
+(defmethod unrank ((spec word-spec) (idx integer) &key set)
+  (let* ((set                     (or set (array-for-spec spec)))
          (size                    (size spec))
          (unprocessed-type-counts (copy-seq (word.type-counts spec)))
          (current-cardinality     (cardinality spec)))
