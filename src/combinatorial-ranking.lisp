@@ -252,7 +252,9 @@
 
 (defmethod unrank ((spec perm-spec) (idx integer) &key set)
   (let ((size (size spec))
-        (set (or set (array-for-spec spec))))
+        (set (if (null set)
+                 (array-for-spec spec)
+                 (map-into set (constantly 0)))))
     (loop
       :for i :from (- size 2) :downto 0
       :do (progn
