@@ -1,5 +1,6 @@
 ;;;; src/package.lisp
-;;;; Copyright (c) 2012-2014 Robert Smith
+;;;;
+;;;; Copyright (c) 2012-2015 Robert Smith
 
 (defpackage #:cl-permutation
   (:use #:cl)

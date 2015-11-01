@@ -64,7 +64,9 @@
 (defun trans-element-p (perm trans &optional (k (perm-size perm)))
   (not (null (trans-decomposition perm trans k))))
 
-(defparameter *product-membership-cache* t)
+;;; XXX FIXME: This should remain NIL until a proper caching mechanism
+;;; for perms is employed.
+(defparameter *product-membership-cache* nil)
 
 (defun add-generator (perm sgs trans &optional (k (perm-size perm)))
   (declare (special *product-membership*))
