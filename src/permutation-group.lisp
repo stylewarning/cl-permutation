@@ -121,10 +121,10 @@ If no decomposition exists, then NIL will be returned."
       (cond
         (exists?
          (let ((new-perm (perm-compose (perm-inverse sigma)
-                                        perm)))
-            (if (trans-element-p new-perm trans (1- k))
-                (values sgs trans)
-                (add-generator new-perm sgs trans (1- k)))))
+                                       perm)))
+           (if (trans-element-p new-perm trans (1- k))
+               (values sgs trans)
+               (add-generator new-perm sgs trans (1- k)))))
         (t
          (setf (gethash j (transversal-ref trans k)) perm)
          (values sgs trans))))))
