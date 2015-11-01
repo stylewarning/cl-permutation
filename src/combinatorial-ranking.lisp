@@ -121,6 +121,13 @@
   (check-type size unsigned-byte)
   (make-instance 'radix-spec :size size :radix radix))
 
+(defun make-mixed-radix-spec (radix)
+  "Make a MIXED-RADIX-SPEC representing all mixed-radix numbers specified by the vector RADIX."
+  (check-type radix vector)
+  (assert (every (lambda (x) (<= 2 x)) radix) (radix) "The radix must be a vector of numbers larger than 2.")
+  (make-instance 'mixed-radix-spec :radix radix
+                                   :size (length radix)))
+
 (defun vector-to-word-spec (word)
   "WORD should be a vector containing 1, 2, ..., N, possibly with repeated elements."
   (let* ((size (length word))
