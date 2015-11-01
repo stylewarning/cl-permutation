@@ -322,8 +322,9 @@
   "Call the function F across all elements described by SPEC.
 
 F should be a binary function whose first argument represents the rank of object passed as the second argument."
-  (dotimes (i (cardinality spec))
-    (funcall f i (unrank spec i))))
+  (let ((set (array-for-spec spec)))
+    (dotimes (i (cardinality spec))
+      (funcall f i (unrank spec i :set set)))))
 
 (defun enumerate-all (spec)
   "Given the set (used as a model), enumerate all possible sets."
