@@ -76,9 +76,9 @@ If no decomposition exists, then NIL will be returned."
     (reduce-over-trans-decomposition #'collector perm trans k)))
 
 (defun trans-element-p (perm trans &optional (k (perm-size perm)))
-  (reduce-over-trans-decomposition (load-time-value (constantly t)) perm trans k)
-  #+equivalent
-  (not (null (trans-decomposition perm trans k))))
+  #+#:equivalent
+  (not (null (trans-decomposition perm trans k)))
+  (reduce-over-trans-decomposition (load-time-value (constantly t)) perm trans k))
 
 ;;; XXX FIXME: This should remain NIL until a proper caching mechanism
 ;;; for perms is employed.
