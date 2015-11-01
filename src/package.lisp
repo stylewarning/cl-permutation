@@ -82,6 +82,8 @@
    #:combinatorial-spec                 ; CLASS
    #:size                               ; READER
    #:radix-spec                         ; CLASS
+   #:radix                              ; READER
+   #:mixed-radix-spec                   ; CLASS
    #:perm-spec                          ; CLASS
    #:combination-spec                   ; ClASS
    #:word-spec                          ; CLASS
@@ -90,6 +92,7 @@
 
    #:make-perm-spec                     ; FUNCTION
    #:make-radix-spec                    ; FUNCTION
+   #:vector-to-mixed-radix-spec         ; FUNCTION
    #:vector-to-word-spec                ; FUNCTION
 
    #:rank                               ; GENERIC FUNCTION, METHOD
