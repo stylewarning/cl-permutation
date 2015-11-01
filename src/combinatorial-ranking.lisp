@@ -124,7 +124,9 @@
 (defun make-mixed-radix-spec (radix)
   "Make a MIXED-RADIX-SPEC representing all mixed-radix numbers specified by the vector RADIX."
   (check-type radix vector)
-  (assert (every (lambda (x) (<= 2 x)) radix) (radix) "The radix must be a vector of numbers larger than 2.")
+  (assert (every (alexandria:conjoin #'integerp #'plusp) radix)
+          (radix)
+          "The radix must be a vector of positive integers.")
   (make-instance 'mixed-radix-spec :radix radix
                                    :size (length radix)))
 
