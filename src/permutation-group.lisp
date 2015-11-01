@@ -45,12 +45,20 @@
 (defun sigma (trans k j)
   (gethash j (transversal-ref trans k)))
 
-;;; XXX: Make this more efficient by turning it into a mapping
-;;; function?
-(defun trans-decomposition (perm trans &optional (k (perm-size perm)))
-  (labels ((next (perm k decomp)
+(defun reduce-over-trans-decomposition (f perm trans &optional (k (perm-size perm)))
+  "Reduce F over the transversal decomposition of PERM within the transversal system TRANS.
+
+F is a function of three arguments:
+
+    ACCUM: The \"accumulator\" argument.
+    K, J : Two arguments representing the sigma.
+
+If all K and J are accumulated into a list, then the list would represent the transversal decomposition of PERM.
+
+If no decomposition exists, then NIL will be returned."
+  (labels ((next (perm k acc)
              (if (= 1 k)
-                 decomp
+                 acc
                  (let* ((j (perm-eval perm k))
                         (k-val (transversal-ref trans k)))
                    (when k-val
@@ -58,10 +66,18 @@
                        (when j-exists-p
                          (next (perm-compose (perm-inverse j-val) perm) 
                                (1- k)
-                               (acons k j decomp)))))))))
+                               (funcall f acc k j)))))))))
     (next perm k nil)))
 
+(defun trans-decomposition (perm trans &optional (k (perm-size perm)))
+  (flet ((collector (decomp k j)
+           (acons k j decomp)))
+    (declare (dynamic-extent #'collector))
+    (reduce-over-trans-decomposition #'collector perm trans k)))
+
 (defun trans-element-p (perm trans &optional (k (perm-size perm)))
+  (reduce-over-trans-decomposition (load-time-value (constantly t)) perm trans k)
+  #+equivalent
   (not (null (trans-decomposition perm trans k))))
 
 ;;; XXX FIXME: This should remain NIL until a proper caching mechanism
@@ -171,6 +187,8 @@
                                    random-sigmas
                                    :key (lambda (s) (perm-compose (perm-identity maxlen) s)))))))
 
+;;; XXX: This can be made more efficient by directly reducing over,
+;;; removing identities within the fold function.
 (defun transversal-decomposition (perm group &key remove-identities)
   "Decompose the permutation PERM into transversal sigmas of the group GROUP."
   (let ((decomp
