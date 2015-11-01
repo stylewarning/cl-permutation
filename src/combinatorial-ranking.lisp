@@ -115,6 +115,13 @@
   (check-type n unsigned-byte)
   (make-instance 'perm-spec :size n))
 
+(defun make-combination-spec (n m)
+  "Make a COMBINATION-SPEC representing the space of objects representing M items being chosen out of N total."
+  (check-type n unsigned-byte)
+  (check-type m unsigned-byte)
+  (assert (<= m n) (m n) "M must be less than N.")
+  (make-instance 'combination-spec :size n :zero-count m))
+
 (defun make-radix-spec (radix size)
   "Make a RADIX-SPEC representing all numbers between 0 and RADIX^SIZE - 1."
   (check-type radix (integer 2))

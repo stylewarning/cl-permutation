@@ -92,6 +92,7 @@
    #:cardinality                        ; GENERIC FUNCTION, METHOD
 
    #:make-perm-spec                     ; FUNCTION
+   #:make-combination-spec              ; FUNCTION
    #:make-radix-spec                    ; FUNCTION
    #:vector-to-mixed-radix-spec         ; FUNCTION
    #:vector-to-word-spec                ; FUNCTION
