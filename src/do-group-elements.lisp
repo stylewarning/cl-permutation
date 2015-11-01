@@ -29,7 +29,7 @@
         (signature (gensym "SIGNATURE-"))
         (rank      (gensym "RANK-")))
     `(let* ((,ggroup ,group)
-            (,spec (make-mixed-radix-spec (group-radix ,ggroup))))
+            (,spec (vector-to-mixed-radix-spec (group-radix ,ggroup))))
        ;; Map across all elements of the group.
        (map-spec
         (lambda (,rank ,signature)

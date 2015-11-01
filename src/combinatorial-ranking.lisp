@@ -121,7 +121,7 @@
   (check-type size unsigned-byte)
   (make-instance 'radix-spec :size size :radix radix))
 
-(defun make-mixed-radix-spec (radix)
+(defun vector-to-mixed-radix-spec (radix)
   "Make a MIXED-RADIX-SPEC representing all mixed-radix numbers specified by the vector RADIX."
   (check-type radix vector)
   (assert (every (alexandria:conjoin #'integerp #'plusp) radix)
