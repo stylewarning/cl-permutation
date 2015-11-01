@@ -101,6 +101,7 @@
    #:unrank                             ; GENERIC FUNCTION, METHOD
 
    #:map-spec                           ; FUNCTION
+   #:print-objects-of-spec              ; FUNCTION
    )
   )
 

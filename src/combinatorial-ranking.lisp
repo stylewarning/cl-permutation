@@ -337,12 +337,13 @@ F should be a binary function whose first argument represents the rank of object
     (dotimes (i (cardinality spec))
       (funcall f i (unrank spec i :set set)))))
 
-(defun enumerate-all (spec)
-  "Given the set (used as a model), enumerate all possible sets."
+(defun print-objects-of-spec (spec &optional (stream *standard-output*))
+  "Given the combinatorial specification SPEC, enumerate all possible objects represented by that specification, printing them to the stream STREAM."
   (map-spec (lambda (rank obj)
               (let ((calculated-rank (rank spec obj)))
                 (assert (= rank calculated-rank) nil "Mismatch in ranking/unranking ~A" rank)
-                (format t "~D ==> ~A ==> ~D~%"
+                (format stream
+                        "~D ==> ~A ==> ~D~%"
                         rank
                         obj
                         calculated-rank)))
