@@ -6,11 +6,11 @@ A library for operating on permutations and permutation groups.
 ## Creating Permutations
 
 Permutations are represented by the structure `PERM`, which is
-read-only/immutable. A permutation of size `N` is essentially a sequence
-of numbers from `1` to `N`. One-based permutations was chosen because that
+read-only/immutable at the API boundary. A permutation of size `N` is essentially a sequence
+of numbers from `1` to `N`. One-based permutations were chosen because that
 is the dominating convention in mathematics. All we lose, essentially,
 is direct compatibility with array indexing, and one fixnum worth of
-space (internally, the permutations are stored in an array of size
+space. (Internally, the permutations are stored in an array of size
 `N+1`, where the zeroth element is always zero).
 
 A permutation can be created via `MAKE-PERM`:
@@ -143,15 +143,15 @@ representation using `TO-CYCLES` and `FROM-CYCLES`. Cycles created by
     of size `N` is `N`.
 
 Cycles that have not been canonicalized are printed with an
-asterisk. We can observe this by explicitly disabling cycle
+asterisk '`*`'. We can observe this by explicitly disabling cycle
 canonicalization:
 
 ```
 PERM> (make-cycle 3 1)
-#<CYCLE (1 3)>
+#<CYCLE (1 3)>                ; no asterisk
 PERM> (let ((*canonicalize-cycle-on-creation* nil))
         (make-cycle 3 1))
-#<CYCLE (3 1)*>
+#<CYCLE (3 1)*>               ; asterisk
 ```
 
 An example use of `TO-CYCLES` is as follows:
@@ -249,13 +249,12 @@ PERM> (print-objects-of-spec (vector-to-mixed-radix-spec #(2 3 1)))
 4 ==> #(0 2 0) ==> 4
 5 ==> #(1 2 0) ==> 5
 ```
-
 Notice again we use vector index ordering.
 
 
 ### `PERM-SPEC`: Permutations
 
-The space of permutations of length `N (also known as `S_N`) can be
+The space of permutations of length `N` (also known as `S_N`) can be
 represented. These are represented by the `PERM-SPEC` class.
 
 ```
@@ -269,7 +268,7 @@ PERM> (print-objects-of-spec (make-perm-spec 3))
 ```
 
 Currently, actual `PERM` objects are *not* generated (see below about
-ranking/unranking). However, one can easily convert. Also note that
+ranking/unranking). However, one can easily convert between the two.
 
 
 ### `COMBINATION-SPEC`: Combinations
@@ -277,7 +276,7 @@ ranking/unranking). However, one can easily convert. Also note that
 Combinations represent the selection of `M` objects from a collection of
 `N` objects. These are represented by a vector containing `M` `1`'s and `N`
 `0`'s. The class that manages this is a `COMBINATION-SPEC`. For example,
-all combinations of 4 objects choosing 2 can be listed by the
+all combinations of 2 objects of a total of 4 can be listed by the
 following:
 
 ```
