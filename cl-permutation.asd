@@ -18,7 +18,7 @@
                  (:file "permutation-generation")
                  (:file "permutation-group")
                  (:file "do-group-elements")
-                 (:file "find-subgroups")
                  (:file "combinatorial-ranking")
+                 (:file "find-subgroups")
                  (:file "extra-functions")))))
 
