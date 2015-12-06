@@ -1,4 +1,5 @@
 ;;;; permutation-group.lisp
+;;;;
 ;;;; Copyright (c) 2012-2014 Robert Smith
 
 (in-package #:cl-permutation)
@@ -164,7 +165,7 @@ If all K and J are accumulated into a list, then the list would represent the tr
           (add-generator generator sgs trans)))
       
       ;; Return the group.
-      (make-perm-group :generators generators
+      (make-perm-group :generators (copy-list generators)
                        :strong-generators sgs
                        :transversal-system trans))))
 
