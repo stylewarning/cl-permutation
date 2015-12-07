@@ -12,9 +12,14 @@
 
 (defstruct (perm-group (:conc-name perm-group.)
                        (:print-function perm-group-printer))
+  element-size                          ; Non-negative integer
   generators
   strong-generators
   transversal-system)
+
+(defun group-identity (group)
+  "Return the identity element of the group GROUP."
+  (perm-identity (perm-group.element-size group)))
 
 (deftype transversal ()
   ;; It is actually (simple-array (or null hash-table) (*)), but we
@@ -165,7 +170,8 @@ If all K and J are accumulated into a list, then the list would represent the tr
           (add-generator generator sgs trans)))
       
       ;; Return the group.
-      (make-perm-group :generators (copy-list generators)
+      (make-perm-group :element-size (maximum generators :key #'perm-size)
+                       :generators (copy-list generators)
                        :strong-generators sgs
                        :transversal-system trans))))
 

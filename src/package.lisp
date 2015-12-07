@@ -70,6 +70,7 @@
   ;; permutation-group.lisp
   (:export
    #:perm-group
+   #:group-identity
    #:generate-perm-group
    #:group-from
    #:group-from-cycles
