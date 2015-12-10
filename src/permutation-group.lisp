@@ -86,8 +86,7 @@ If all K and J are accumulated into a list, then the list would represent the tr
     (values (reduce-over-trans-decomposition #'collector nil perm trans k))))
 
 (defun trans-element-p (perm trans &optional (k (perm-size perm)))
-  #+#:equivalent
-  (not (null (trans-decomposition perm trans k)))
+  #+#:equivalent (not (null (trans-decomposition perm trans k)))
   (values
    (reduce-over-trans-decomposition
     (load-time-value (constantly t))
@@ -96,29 +95,16 @@ If all K and J are accumulated into a list, then the list would represent the tr
     trans
     k)))
 
-;;; XXX FIXME: This should remain NIL until a proper caching mechanism
-;;; for perms is employed.
-(defparameter *product-membership-cache* nil)
-
 (defun add-generator (perm sgs trans &optional (k (perm-size perm)))
-  (declare (special *product-membership*))
-
   ;; Add the permutation to the generating set.
   (pushnew perm (gethash k sgs))
   
   (let ((redo nil))
     (loop
       (loop :for s :being :the :hash-values :of (transversal-ref trans k) :do
-        (dolist (tt (gethash k sgs))
-          (let ((prod (perm-compose tt s)))
-            (unless (or (and *product-membership-cache*
-                             (hash-table-key-exists-p *product-membership* prod)
-                             (= k (gethash prod *product-membership*)))
-                        (trans-element-p prod trans))
-              
-              (when *product-membership-cache*
-                (setf (gethash prod *product-membership*) k))
-              
+        (dolist (tau (gethash k sgs))
+          (let ((prod (perm-compose tau s)))
+            (unless (trans-element-p prod trans)
               (multiple-value-setq (sgs trans)
                 (update-transversal prod sgs trans k))
               
@@ -156,10 +142,7 @@ If all K and J are accumulated into a list, then the list would represent the tr
                ht)))
     (let* ((n (maximum generators :key 'perm-size))
            (sgs (make-hash-table))
-           (trans (make-transversal n))
-           (*product-membership* (make-hash-table)))
-      (declare (special *product-membership*))
-      
+           (trans (make-transversal n)))
       ;; Initialize TRANS to map I -> (I -> Identity(I)).
       (loop :for i :from 1 :to n :do
         (setf (transversal-ref trans i) (identity-table i)))
