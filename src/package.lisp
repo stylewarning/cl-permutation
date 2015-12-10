@@ -81,7 +81,9 @@
    #:group-element-p
    #:random-group-element
    #:transversal-decomposition
-   #:group-orbits)
+   #:group-orbits
+   #:group-from-orbit
+   #:subdirect-factors)
 
   ;; combinatorial-ranking.lisp
   (:export
