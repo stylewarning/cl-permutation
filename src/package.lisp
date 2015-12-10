@@ -80,7 +80,8 @@
    #:group-order
    #:group-element-p
    #:random-group-element
-   #:transversal-decomposition)
+   #:transversal-decomposition
+   #:group-orbits)
 
   ;; combinatorial-ranking.lisp
   (:export

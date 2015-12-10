@@ -215,7 +215,66 @@ If all K and J are accumulated into a list, then the list would represent the tr
                    decomp)
         decomp)))
 
-;;;; Debug Routines
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;; Group Orbits ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defun make-membership-set (size)
+  ;; 1+ to account for 1-based indexing
+  (make-array (1+ size) :element-type 'bit :initial-element 0))
+
+(defun membership-sets-intersect-p (set-a set-b)
+  (some (lambda (a b) (= 1 a b)) set-a set-b))
+
+(defun membership-set-nunion (set-a set-b)
+  (map-into set-a #'logior set-a set-b))
+
+(defun membership-set-count (set)
+  (count 1 set))
+
+(defun clear-membership-set (set)
+  (map-into set (constantly 0)))
+
+(defun group-orbits (group)
+  "Compute the orbits of the group GROUP. This will be a list of arrays of points."
+  (let* ((d (group-degree group))
+         (orbit-membership (make-membership-set d))
+         (orbit-memberships nil))
+    (flet ((orbit-completed-for-element (x)
+             (some (lambda (orbit)
+                     (= 1 (sbit orbit x)))
+                   orbit-memberships))
+           (membership-set-to-orbit (set)
+             (let ((orbit (make-array (membership-set-count set)))
+                   (j 0))
+               (loop :for i :from 1 :to d
+                     :when (= 1 (sbit set i))
+                       :do (setf (aref orbit j) i)
+                           (incf j)
+                     :finally (return orbit)))))
+      ;; We compute the orbit of each point for each generator,
+      ;; intersecting each time.
+      (loop :for i :from 1 :to d :do
+        (unless (orbit-completed-for-element i)
+          (clear-membership-set orbit-membership)
+          ;; Compute the orbit of the element across all generators.
+          (dolist (g (perm-group.generators group))
+            (map-orbit (lambda (k)
+                         (setf (sbit orbit-membership k) 1))
+                       i
+                       g))
+          ;; Incorporate that orbit anywhere it has intersected.
+          (let ((intersecting-orbit (find-if (lambda (set)
+                                               (membership-sets-intersect-p
+                                                orbit-membership
+                                                set))
+                                             orbit-memberships)))
+            (if (null intersecting-orbit)
+                (push (copy-seq orbit-membership) orbit-memberships)
+                (membership-set-nunion intersecting-orbit orbit-membership)))))
+      ;; Return the orbits.
+      (mapcar #'membership-set-to-orbit orbit-memberships))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;; Debug Routines ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun print-trans (group)
   (loop
