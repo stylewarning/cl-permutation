@@ -333,6 +333,23 @@
           :do (setf (aref perm*-spec (perm-eval perm i)) i)
           :finally (return (%make-perm :rep perm*-spec)))))
 
+(defun perm-point-fixed-p (perm k)
+  "Is K fixed in the perm PERM?"
+  (= k (perm-eval* perm k)))
+
+(defun perm-last-non-fixpoint (perm)
+  "Find the last non-fixed point of the perm PERM. If it exists, return the index A and the point B as two values. These satisfy
+
+    (PERM-EVAL PERM A) = B
+
+If a fixed point doesn't exist, return NIL."
+  (let ((size (perm-size perm)))
+    (loop :for i :from size :downto 1
+          :for x := (perm-eval perm i)
+          :when (/= i x)
+            :do (return (values i x))
+          :finally (return nil))))
+
 ;;; This can be a bit more optimized. We can just look at the internal
 ;;; representation.
 (defun perm-fixpoints (perm &optional (n (perm-size perm)))
@@ -443,16 +460,29 @@ An asterisk in printed syntax denotes that the cycle has not been canonicalized 
         :until (= n k)
         :finally (return i)))
 
-(defun orbit-of (n perm)
-  "Compute the orbit of the element N in the permutation PERM. Return a cycle representing the orbit of N."
+(defun map-orbit (f n perm)
+  "Given a unary function F, apply it to each element of the orbit of N within the perm PERM."
+  ;; N will be the first element of the orbit.
+  (funcall f n)
+  ;; Call F on the rest of the orbit.
   (loop :with len := (orbit-length n perm)
-        :with spec := (make-array len :element-type 'cycle-element
-                                      :initial-element n)
         :for i :from 1 :below len
         :for k := (perm-eval perm n) :then (perm-eval perm k)
         :until (= n k)
-        :do (setf (aref spec i) k)
-        :finally (return (%make-cycle :rep spec))))
+        :do (funcall f k)))
+
+(defun orbit-of (n perm)
+  "Compute the orbit of the element N in the permutation PERM. Return a cycle representing the orbit of N."
+  (let ((spec (make-array (orbit-length n perm) :element-type 'cycle-element
+                                                :initial-element n))
+        (i 0))
+    (flet ((assign (k)
+             (setf (aref spec i) k)
+             (incf i)))
+      ;; Assign all elements of the orbit.
+      (map-orbit #'assign n perm)
+      ;; Return the representative cycle.
+      (%make-cycle :rep spec))))
 
 (defun rotate-vector! (vec n)
   "Rotate the vector VEC a total of N elements left/counterclockwise in-place. If N is negative, rotate in the opposite direction."

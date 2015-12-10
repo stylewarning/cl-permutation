@@ -37,6 +37,8 @@
    #:perm-transpose-indexes
    #:perm-transpose-entries
    #:perm-inverse
+   #:perm-point-fixed-p
+   #:perm-last-non-fixpoint
    #:perm-fixpoints
    #:permute
    
@@ -70,6 +72,7 @@
   ;; permutation-group.lisp
   (:export
    #:perm-group
+   #:group-degree
    #:group-identity
    #:generate-perm-group
    #:group-from

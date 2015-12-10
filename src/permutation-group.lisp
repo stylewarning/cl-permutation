@@ -17,9 +17,24 @@
   strong-generators
   transversal-system)
 
+(defun group-degree (group &key true)
+  "What is the degree of the group GROUP?
+
+If TRUE is a true-value, then the true degree will be returned (i.e., the maximum non-fixed point index). For example, consider
+
+    G = <(1 3 2 4 5)>
+
+then
+
+    (group-degree G :true nil) ==> 5  [default]
+    (group-degree G :true t)   ==> 3."
+  (if true
+      (maximum (perm-group.generators group) :key #'perm-last-non-fixpoint)
+      (perm-group.element-size group)))
+
 (defun group-identity (group)
   "Return the identity element of the group GROUP."
-  (perm-identity (perm-group.element-size group)))
+  (perm-identity (group-degree group)))
 
 (deftype transversal ()
   ;; It is actually (simple-array (or null hash-table) (*)), but we
