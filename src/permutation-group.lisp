@@ -63,6 +63,8 @@ then
   (print-unreadable-object (group stream :type t :identity nil)
     (format stream "of ~D generator~:p" (length (perm-group.generators group)))))
 
+;;; SIGMAs are elements of the transversal system. A SIGMA is either
+;;; NIL or some permutation that maps K to J.
 (defun sigma (trans k j)
   (gethash j (transversal-ref trans k)))
 
@@ -98,6 +100,9 @@ If all K and J are accumulated into a list, then the list would represent the tr
     (next perm k initial-value)))
 
 (defun trans-decomposition (perm trans &optional (k (perm-size perm)))
+  "Decompose PERM into a list of sigmas within the transversal system TRANS.
+
+The sigma (SIGMA K J) is represented by the cons cell (K . J)."
   (flet ((collector (decomp k j)
            (acons k j decomp)))
     (declare (dynamic-extent #'collector))
