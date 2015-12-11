@@ -113,7 +113,7 @@ If all K and J are accumulated into a list, then the list would represent the tr
     trans
     k)))
 
-(defun add-generator (perm sgs trans &optional (k (perm-size perm)))
+(defun add-generator (perm sgs trans k)
   ;; Add the permutation to the generating set.
   (pushnew perm (gethash k sgs))
   
@@ -135,7 +135,7 @@ If all K and J are accumulated into a list, then the list would represent the tr
       ;; Reset the REDO flag.
       (setf redo nil))))
 
-(defun update-transversal (perm sgs trans &optional (k (perm-size perm)))
+(defun update-transversal (perm sgs trans k)
   (let ((j (perm-eval perm k)))
     (multiple-value-bind (sigma exists?) (sigma trans k j)
       (cond
@@ -168,7 +168,7 @@ If all K and J are accumulated into a list, then the list would represent the tr
       ;; Add the generators.
       (dolist (generator generators)
         (multiple-value-setq (sgs trans)
-          (add-generator generator sgs trans)))
+          (add-generator generator sgs trans n)))
       
       ;; Return the group.
       (make-perm-group :element-size (maximum generators :key #'perm-size)
