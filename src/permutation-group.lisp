@@ -49,14 +49,14 @@ then
   (make-array n :initial-element nil))
 
 (declaim (inline transversal-ref))
-(defun transversal-ref (trans n)
+(defun transversal-ref (trans k)
   "Get the Nth element of the transversal TRANS."
   (declare (type transversal trans))
-  (svref trans (1- n)))
+  (svref trans (1- k)))
 
-(defun (setf transversal-ref) (new-value trans n)
+(defun (setf transversal-ref) (new-value trans k)
   (declare (type transversal trans))
-  (setf (svref trans (1- n)) new-value))
+  (setf (svref trans (1- k)) new-value))
 
 (defun perm-group-printer (group stream depth)
   (declare (ignore depth))
