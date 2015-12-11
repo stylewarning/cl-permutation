@@ -66,6 +66,9 @@ then
 (defun sigma (trans k j)
   (gethash j (transversal-ref trans k)))
 
+(defun (setf sigma) (new-value trans k j)
+  (setf (gethash j (transversal-ref trans k)) new-value))
+
 (defun reduce-over-trans-decomposition (f initial-value perm trans &optional (k (perm-size perm)))
   "Reduce F over the transversal decomposition of PERM within the transversal system TRANS. Return two values:
 
@@ -143,7 +146,7 @@ If all K and J are accumulated into a list, then the list would represent the tr
                (values sgs trans)
                (add-generator new-perm sgs trans (1- k)))))
         (t
-         (setf (gethash j (transversal-ref trans k)) perm)
+         (setf (sigma trans k j) perm)
          (values sgs trans))))))
 
 (defun generate-perm-group (generators)
