@@ -36,6 +36,19 @@ then
   "Return the identity element of the group GROUP."
   (perm-identity (group-degree group)))
 
+;;; Implementation of the group protocol.
+
+(defmethod identity-element ((g perm-group))
+  (group-identity g))
+
+(defmethod compose ((g perm-group) a b)
+  (perm-compose a b))
+
+(defmethod inverse ((g perm-group) a)
+  (perm-inverse a))
+
+;;; Transversal systems and Schreier-Sims
+
 (deftype transversal ()
   ;; It is actually (simple-array (or null hash-table) (*)), but we
   ;; will want to use SVREF. While such a type would collapse into

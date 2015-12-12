@@ -16,6 +16,7 @@
                  (:file "permutation")
                  (:file "bruhat")
                  (:file "permutation-generation")
+                 (:file "group")
                  (:file "permutation-group")
                  (:file "do-group-elements")
                  (:file "combinatorial-ranking")
