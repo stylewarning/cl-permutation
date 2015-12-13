@@ -77,10 +77,10 @@
 (deftest test-generator-decomposition (group p)
   "Check that the perm P decomposes into generators within the perm group GROUP which reconstruct the perm."
   (let ((gens (generator-decomposition p group)))
-    (is (perm=* p
-                (reduce #'perm-compose
-                        gens
-                        :initial-value (group-identity group))))))
+    (is (perm= p
+               (reduce #'perm-compose
+                       gens
+                       :initial-value (group-identity group))))))
 
 (deftest test-generator-decomposition-randomly ()
   (let ((rubik (make-rubik-2x2)))
