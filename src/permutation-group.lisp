@@ -47,6 +47,12 @@ then
 (defmethod inverse ((g perm-group) a)
   (perm-inverse a))
 
+(defmethod generators ((g perm-group))
+  (copy-list (perm-group.generators g)))
+
+(defmethod num-generators ((g perm-group))
+  (length (perm-group.generators g)))
+
 ;;; Transversal systems and Schreier-Sims
 
 (deftype transversal ()
@@ -74,7 +80,7 @@ then
 (defun perm-group-printer (group stream depth)
   (declare (ignore depth))
   (print-unreadable-object (group stream :type t :identity nil)
-    (format stream "of ~D generator~:p" (length (perm-group.generators group)))))
+    (format stream "of ~D generator~:p" (num-generators group))))
 
 ;;; SIGMAs are elements of the transversal system. A SIGMA is either
 ;;; NIL or some permutation that maps K to J.
@@ -279,7 +285,7 @@ The sigma (SIGMA K J) is represented by the cons cell (K . J)."
         (unless (orbit-completed-for-element i)
           (clear-membership-set orbit-membership)
           ;; Compute the orbit of the element across all generators.
-          (dolist (g (perm-group.generators group))
+          (dolist (g (generators group))
             (map-orbit (lambda (k)
                          (setf (sbit orbit-membership k) 1))
                        i
@@ -319,7 +325,7 @@ The sigma (SIGMA K J) is represented by the cons cell (K . J)."
                                        (to-cycles g)))
                 len)))
       (generate-perm-group
-       (remove-if #'perm-identity-p (mapcar #'process-generator (perm-group.generators original-group)))))))
+       (remove-if #'perm-identity-p (mapcar #'process-generator (generators original-group)))))))
 
 (defun subdirect-factors (group)
   "Compute \"subdirect factors\" of the group GROUP.
