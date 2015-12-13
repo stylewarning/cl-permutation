@@ -25,49 +25,49 @@
                (make-cycle 7 9 17 21)
                (make-cycle 8 11 16 20))
 
-         (list (make-cycle 5 6 8 7)     ; U
-               (make-cycle 2 20 14 10)
-               (make-cycle 1 19 13 9))
-
          (list (make-cycle 9 10 12 11)  ; R
                (make-cycle 2 6 15 17)
-               (make-cycle 4 8 13 18)))
+               (make-cycle 4 8 13 18))
+         
+         (list (make-cycle 5 6 8 7)     ; U
+               (make-cycle 2 20 14 10)
+               (make-cycle 1 19 13 9)))
    21))
 
 ;; 43252003274489856000
 (defun make-rubik-3x3 ()
-  (group-from-cycles   
-   (list (list (make-cycle 11 35 27 19) 
-               (make-cycle 10 34 26 18) 
-               (make-cycle 9 33 25 17)
-               (make-cycle 2 5 7 4)
-               (make-cycle 1 3 8 6))
-         
-         (list (make-cycle 10 13 15 12)
-               (make-cycle 9 11 16 14)
-               (make-cycle 6 22 46 35)
-               (make-cycle 4 20 44 37)
-               (make-cycle 1 17 41 40))
-         
-         (list (make-cycle 18 21 23 20)
+  (group-from-cycles
+   (list (list (make-cycle 18 21 23 20) ; F
                (make-cycle 17 19 24 22)
                (make-cycle 8 30 41 11)
                (make-cycle 7 28 42 13)
                (make-cycle 6 25 43 16))
-         
-         (list (make-cycle 26 29 31 28)
+
+         (list (make-cycle 26 29 31 28) ; R
                (make-cycle 25 27 32 30)
                (make-cycle 8 33 48 24)
                (make-cycle 5 36 45 21)
                (make-cycle 3 38 43 19))
          
-         (list (make-cycle 34 37 39 36)
+         (list (make-cycle 11 35 27 19) ; U
+               (make-cycle 10 34 26 18)
+               (make-cycle 9 33 25 17)
+               (make-cycle 2 5 7 4)
+               (make-cycle 1 3 8 6))
+
+         (list (make-cycle 34 37 39 36) ; B
                (make-cycle 33 35 40 38)
                (make-cycle 3 9 46 32)
                (make-cycle 2 12 47 29)
                (make-cycle 1 14 48 27))
-         
-         (list (make-cycle 42 45 47 44)
+
+         (list (make-cycle 10 13 15 12) ; L
+               (make-cycle 9 11 16 14)
+               (make-cycle 6 22 46 35)
+               (make-cycle 4 20 44 37)
+               (make-cycle 1 17 41 40))
+
+         (list (make-cycle 42 45 47 44) ; D
                (make-cycle 41 43 48 46)
                (make-cycle 16 24 32 40)
                (make-cycle 15 23 31 39)
