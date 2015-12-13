@@ -5,6 +5,9 @@
 (defpackage #:cl-permutation-tests
   (:use #:cl)
   (:nicknames #:perm-tests)
+  (:use #:hu.dwim.stefil
+        #:cl-permutation
+        #:cl-permutation-examples)
   
   ;; suite.lisp
   (:export

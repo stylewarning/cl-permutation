@@ -4,8 +4,7 @@
 
 (in-package #:cl-permutation-tests)
 
-(fiveam:def-suite cl-permutation-suite
-  :description "Tests for the CL-PERMUTATION package.")
+(defsuite cl-permutation-suite)
 
 (defun run-tests ()
-  (fiveam:run! 'cl-permutation-suite))
+  (cl-permutation-suite))
