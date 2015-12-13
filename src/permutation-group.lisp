@@ -113,13 +113,14 @@ If all K and J are accumulated into a list, then the list would represent the tr
     (next perm k initial-value)))
 
 (defun trans-decomposition (perm trans &optional (k (perm-size perm)))
-  "Decompose PERM into a list of sigmas within the transversal system TRANS.
+  "Decompose PERM into a list of sigmas within the transversal system TRANS. The composition of the sigmas equals the original perm up to K.
 
 The sigma (SIGMA K J) is represented by the cons cell (K . J)."
+  ;; XXX: Could avoid NREVERSE by collecting correctly.
   (flet ((collector (decomp k j)
            (acons k j decomp)))
     (declare (dynamic-extent #'collector))
-    (values (reduce-over-trans-decomposition #'collector nil perm trans k))))
+    (values (nreverse (reduce-over-trans-decomposition #'collector nil perm trans k)))))
 
 (defun trans-element-p (perm trans &optional (k (perm-size perm)))
   #+#:equivalent (not (null (trans-decomposition perm trans k)))
