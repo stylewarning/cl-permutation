@@ -6,7 +6,8 @@
   :description "A library for operating on permutations and permutation groups."
   :author "Robert Smith <quad@symbo1ics.com>"
   :license "BSD 3-clause (See LICENSE)"
-  :depends-on (#:alexandria)
+  :depends-on (#:alexandria
+               #:cl-algebraic-data-type)
   :serial t
   :components ((:module src
                 :serial t
@@ -18,6 +19,7 @@
                  (:file "permutation-generation")
                  (:file "group")
                  (:file "free-group")
+                 (:file "straight-line-program")
                  (:file "permutation-group")
                  (:file "do-group-elements")
                  (:file "combinatorial-ranking")

@@ -41,7 +41,7 @@
    #:perm-last-non-fixpoint
    #:perm-fixpoints
    #:permute
-   
+
    #:cycle-element
    #:cycle
    #:make-cycle
@@ -57,17 +57,20 @@
    #:to-cycles
    #:from-cycles
    #:cycle-type
-   #:cycles-to-one-line)                ; Possibly will be removed.
-  
+   #:cycles-to-one-line                 ; Possibly will be removed.
+   )
+
   ;; bruhat.lisp
   (:export
    #:bruhat<=
-   #:bruhat<)
-  
+   #:bruhat<
+   )
+
   ;; permutation-generation.lisp
   (:export
    #:make-perm-generator
-   #:doperms)
+   #:doperms
+   )
 
   ;; group.lisp
   (:export
@@ -85,6 +88,20 @@
    #:make-free-group-element            ; FUNCTION
    )
 
+  ;; straight-line-program.lisp
+  (:export
+   #:slp                                ; TYPE
+   #:slp-element                        ; TYPE, CONSTRUCTOR
+   #:slp-symbol                         ; TYPE, CONSTRUCTOR
+   #:slp-composition                    ; TYPE, CONSTRUCTOR
+   #:slp-inversion                      ; TYPE, CONSTRUCTOR
+   #:slp-context                        ; CLASS
+   #:symbol-assignment                  ; ACCESSOR
+   #:compose-slp                        ; FUNCTION
+   #:invert-slp                         ; FUNCTION
+   #:evaluate-slp                       ; FUNCTION
+   )
+
   ;; permutation-group.lisp
   (:export
    #:perm-group
@@ -99,7 +116,8 @@
    #:transversal-decomposition
    #:group-orbits
    #:group-from-orbit
-   #:subdirect-factors)
+   #:subdirect-factors
+   )
 
   ;; combinatorial-ranking.lisp
   (:export
@@ -111,8 +129,8 @@
    #:perm-spec                          ; CLASS
    #:combination-spec                   ; ClASS
    #:word-spec                          ; CLASS
-   
-   #:cardinality                        ; GENERIC FUNCTION, METHOD
+
+   #:cardinality                        ; GENERIC, METHOD
 
    #:make-perm-spec                     ; FUNCTION
    #:make-combination-spec              ; FUNCTION
@@ -120,11 +138,10 @@
    #:vector-to-mixed-radix-spec         ; FUNCTION
    #:vector-to-word-spec                ; FUNCTION
 
-   #:rank                               ; GENERIC FUNCTION, METHOD
-   #:unrank                             ; GENERIC FUNCTION, METHOD
+   #:rank                               ; GENERIC, METHOD
+   #:unrank                             ; GENERIC, METHOD
 
    #:map-spec                           ; FUNCTION
    #:print-objects-of-spec              ; FUNCTION
    )
   )
-
