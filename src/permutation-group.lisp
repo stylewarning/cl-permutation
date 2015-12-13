@@ -456,16 +456,16 @@ The sigma (SIGMA K J) is represented by the cons cell (K . J)."
 
 Note: The result is likely very long and inefficient."
   (let* ((d (transversal-decomposition perm group :remove-identities t))
-         (asn (perm-group.slp-context group))
+         (ctx (perm-group.slp-context group))
          (fg (perm-group.free-group group))
-         (homo (free-group->perm-group-homomorphism fg group)))
+         (hom (free-group->perm-group-homomorphism fg group)))
     (labels ((to-sigma-symbol (tt)
                (sigma-symbol (car tt) (cdr tt)))
              (find-slp (tt)
-               (symbol-assignment asn (to-sigma-symbol tt)))
+               (symbol-assignment ctx (to-sigma-symbol tt)))
              (eval-slp (slp)
-               (evaluate-slp fg asn slp)))
-      (mapcar homo                          ; Free -> Perm
+               (evaluate-slp fg ctx slp)))
+      (mapcar hom                           ; Free -> Perm
               (delete (identity-element fg) ; Remove identities.
                       (mapcan #'eval-slp    ; Eval SLPs
                               (mapcar #'find-slp d)))))))

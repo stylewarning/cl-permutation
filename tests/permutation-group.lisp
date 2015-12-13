@@ -50,7 +50,7 @@
 (deftest test-sigma-slps (group)
   "Test that the sigma SLPs match the transversal system"
   (loop :with free-group := (perm::perm-group.free-group group)
-        :with homo := (perm::free-group->perm-group-homomorphism
+        :with hom := (perm::free-group->perm-group-homomorphism
                        free-group
                        group)
         :with wrong := 0
@@ -62,7 +62,7 @@
           (multiple-value-bind (k j)
               (parse-sigma-symbol sym)
             (let ((found (perm::sigma (perm::perm-group.transversal-system group) k j))
-                  (val (funcall homo (evaluate-slp free-group ctx slp))))
+                  (val (funcall hom (evaluate-slp free-group ctx slp))))
               (unless (perm=* val found)
                 (incf wrong))))
         :finally (is (zerop wrong) "There were ~D wrong sigma SLPs." wrong)))
