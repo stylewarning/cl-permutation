@@ -6,13 +6,19 @@
 
 ;;; Definition of the group protocol.
 
-;;; A group G is a set along with a binary operation * such that:
+;;; Refresher:
 ;;;
-;;;    - G is closed under *
-;;;    - identity element e in G, s.t. e*g = g = g*e
-;;;    - elements have an inverse: a' inv of a
-;;;            a'*a = e = a*a'
-;;;    - (a*b)*c = a*(b*c)
+;;; A group G is a set along with a binary operation @ such that:
+;;;
+;;;    * G is closed under @
+;;;
+;;;    * There's an identity element e in G such that for an element g
+;;;      in G, e@g = g@e = g
+;;;
+;;;    * All elements in g in G have an inverse g' such that g'@g =
+;;;      g@g' = e
+;;;
+;;;    * The binary operation is associative: (a@b)@c = a@(b@c)
 
 (defgeneric identity-element (G)
   (:documentation "Return the identity element of the group G."))
