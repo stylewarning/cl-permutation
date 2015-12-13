@@ -117,6 +117,7 @@
    #:group-orbits
    #:group-from-orbit
    #:subdirect-factors
+   #:generator-decomposition            ; FUNCTION
    )
 
   ;; combinatorial-ranking.lisp
