@@ -218,10 +218,10 @@ The sigma (SIGMA K J) is represented by the cons cell (K . J)."
   "Generate a random element of the group GROUP."
   (loop :for v :across (perm-group.transversal-system group)
         :collect (random-hash-table-value v) :into random-sigmas
-        :finally (return (let ((maxlen (maximum random-sigmas :key #'perm-size)))
-                           (reduce #'perm-compose
-                                   random-sigmas
-                                   :key (lambda (s) (perm-compose (perm-identity maxlen) s)))))))
+        :finally (return
+                   (reduce #'perm-compose
+                           random-sigmas
+                           :initial-value (group-identity group)))))
 
 ;;; XXX: This can be made more efficient by directly reducing over,
 ;;; removing identities within the fold function.
