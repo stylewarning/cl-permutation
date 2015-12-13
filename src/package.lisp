@@ -78,6 +78,13 @@
    #:num-generators                     ; GENERIC
    )
 
+  ;; free-group.lisp
+  (:export
+   #:free-group                         ; CLASS
+   #:make-free-group                    ; FUNCTION
+   #:make-free-group-element            ; FUNCTION
+   )
+
   ;; permutation-group.lisp
   (:export
    #:perm-group

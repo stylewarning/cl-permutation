@@ -17,6 +17,7 @@
                  (:file "bruhat")
                  (:file "permutation-generation")
                  (:file "group")
+                 (:file "free-group")
                  (:file "permutation-group")
                  (:file "do-group-elements")
                  (:file "combinatorial-ranking")
