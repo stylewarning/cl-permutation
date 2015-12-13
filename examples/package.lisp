@@ -21,6 +21,7 @@
    #:make-rubik-2x2                     ; FUNCTION
    #:make-rubik-3x3                     ; FUNCTION
    #:make-rubik-4x4                     ; FUNCTION
+   #:make-skewb                         ; FUNCTION
    #:make-megaminx                      ; FUNCTION
    )
   )

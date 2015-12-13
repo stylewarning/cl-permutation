@@ -150,6 +150,31 @@
      65 66 67 68 69 70 71 72 25 26 27 28 77 78 79 80
      81 82 83 84 85 86 87 88 89 90 91 92 93 94 95 96))))
 
+(defun make-skewb ()
+  (group-from-cycles
+   (list
+    (list (make-cycle  1 11 17)
+          (make-cycle  2 12 20)
+          (make-cycle  4 10 18)
+          (make-cycle 22  6 14)
+          (make-cycle 25 27 29))
+    (list (make-cycle  2 10 22)
+          (make-cycle  1  9 23)
+          (make-cycle  3 11 21)
+          (make-cycle 17  5 15)
+          (make-cycle 25 27 30))
+    (list (make-cycle  4 14 20)
+          (make-cycle  1 15 19)
+          (make-cycle  3 13 17)
+          (make-cycle  7 11 23)
+          (make-cycle 25 28 29))
+    (list (make-cycle  6 12 18)
+          (make-cycle  5 11 19)
+          (make-cycle  7  9 17)
+          (make-cycle 21  1 13)
+          (make-cycle 26 27 29)))
+   30))
+
 ;;; 100669616553523347122516032313645505168688116411019768627200000000000
 (defun make-megaminx ()
   (group-from-cycles
@@ -207,7 +232,7 @@
           (make-cycle 24 36 98 108 74)
           (make-cycle 81 83 85 87 89)
           (make-cycle 25 37 99 109 75))
-    
+
     (list (make-cycle 90 92 94 96 98)
           (make-cycle 36 48 112 102 86)
           (make-cycle 34 46 110 100 84)
