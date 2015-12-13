@@ -34,7 +34,7 @@ then
 
 (defun group-identity (group)
   "Return the identity element of the group GROUP."
-  (perm-identity (group-degree group)))
+  (perm-identity (group-degree group :true nil)))
 
 ;;; Implementation of the group protocol.
 
