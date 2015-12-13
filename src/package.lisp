@@ -68,7 +68,16 @@
   (:export
    #:make-perm-generator
    #:doperms)
-  
+
+  ;; group.lisp
+  (:export
+   #:identity-element                   ; GENERIC
+   #:compose                            ; GENERIC
+   #:inverse                            ; GENERIC
+   #:generators                         ; GENERIC
+   #:num-generators                     ; GENERIC
+   )
+
   ;; permutation-group.lisp
   (:export
    #:perm-group
