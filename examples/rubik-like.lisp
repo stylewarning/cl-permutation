@@ -180,18 +180,18 @@
   (group-from-cycles
    (list
     (list (make-cycle 1 9 7 5 3)
-          (make-cycle 50 40 30 200 11)
+          (make-cycle 50 40 30 120 11)
           (make-cycle 52 42 32 22 13)
           (make-cycle 2 10 8 6 4)
           (make-cycle 51 41 31 21 12))
 
     (list (make-cycle 11 13 15 17 19)
-          (make-cycle 3 200 72 62 54)
+          (make-cycle 3 120 72 62 54)
           (make-cycle 5 28 70 60 52)
           (make-cycle 12 14 16 18 20)
           (make-cycle 4 29 71 61 53))
 
-    (list (make-cycle 200 22 24 26 28)
+    (list (make-cycle 120 22 24 26 28)
           (make-cycle 5 30 82 74 15)
           (make-cycle 7 38 80 72 13)
           (make-cycle 21 23 25 27 29)
@@ -250,4 +250,6 @@
           (make-cycle 94 44 56 66 102)
           (make-cycle 111 113 115 117 119)
           (make-cycle 95 45 57 67 103)))
-   200))                                ; size
+   (* 12 ; faces
+      10 ; stickers per face
+      )))
