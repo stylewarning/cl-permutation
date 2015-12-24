@@ -22,6 +22,7 @@
                  (:file "free-group")
                  (:file "straight-line-program")
                  (:file "permutation-group")
+                 (:file "block")
                  (:file "do-group-elements")
                  (:file "combinatorial-ranking")
                  (:file "find-subgroups")
