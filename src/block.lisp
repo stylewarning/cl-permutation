@@ -178,7 +178,7 @@ GROUP must be transitive in order for this to produce truly non-trivial block sy
 Returns a list of block systems."
   (labels ((find-block-system (orbit)
              (loop :with first := (aref orbit 0)
-                   :for i :from 1 :to (length orbit)
+                   :for i :from 1 :below (length orbit)
                    :for p := (aref orbit i)
                    :for bs := (find-minimal-block-system-containing
                                group
