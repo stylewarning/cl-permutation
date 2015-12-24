@@ -20,4 +20,5 @@
                  (:file "suite")
                  (:file "permutation")
                  (:file "straight-line-program")
-                 (:file "permutation-group")))))
+                 (:file "permutation-group")
+                 (:file "block")))))

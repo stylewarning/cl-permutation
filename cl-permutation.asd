@@ -7,7 +7,8 @@
   :author "Robert Smith <quad@symbo1ics.com>"
   :license "BSD 3-clause (See LICENSE)"
   :depends-on (#:alexandria
-               #:cl-algebraic-data-type)
+               #:cl-algebraic-data-type
+               #:queues.simple-queue)
   :in-order-to ((asdf:test-op (asdf:test-op #:cl-permutation-tests)))
   :serial t
   :components ((:module src

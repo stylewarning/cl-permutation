@@ -120,6 +120,14 @@
    #:generator-decomposition            ; FUNCTION
    )
 
+  ;; block.lisp
+  (:export
+   #:find-minimal-block-system-containing
+                                        ; FUNCTION
+   #:trivial-block-system-p             ; FUNCTION
+   #:find-non-trivial-block-system      ; FUNCTION
+   )
+
   ;; combinatorial-ranking.lisp
   (:export
    #:combinatorial-spec                 ; CLASS
