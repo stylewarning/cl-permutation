@@ -114,13 +114,13 @@ If the group PERM-GROUP is not transitive, then the resulting list will contain 
              (rep (point)
                "Find the class representative of the point POINT."
                (djs-value (djs-find (class point)))))
-      (let ((q (queues:make-queue ':simple-queue)))
+      (let ((q (make-queue)))
         ;; Initialize the queue with ALPHA_I for I > 1.
         (dolist (alpha (rest alphas))
-          (queues:qpush q alpha))
+          (enqueue q alpha))
         ;; Iterate until queue is empty.
-        (loop :until (zerop (queues:qsize q)) :do
-          (let ((gamma (queues:qpop q)))
+        (loop :until (queue-empty-p q) :do
+          (let ((gamma (dequeue q)))
             (dolist (g (generators perm-group))
               (let* ((delta (rep gamma))
                      (kappa (rep (perm-eval g gamma)))
@@ -133,7 +133,7 @@ If the group PERM-GROUP is not transitive, then the resulting list will contain 
                     ;; Make kappa the representative of merged class.
                     (djs-change-representative kappa-class)
                     ;; Add LAM for processing.
-                    (queues:qpush q lam))))))))
+                    (enqueue q lam))))))))
       ;; Return equivalence classes.
       (let ((table (make-hash-table :test 'eql)))
         (loop :for j :from 1 :to degree
