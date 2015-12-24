@@ -206,3 +206,21 @@ This function just guarantees we can map N to some hash table key."
 (defun dequeue (queue)
   "Remove and return an element from the queue QUEUE."
   (pop (queue-elements queue)))
+
+;;; Membership Sets
+
+(defun make-membership-set (size)
+  ;; 1+ to account for 1-based indexing
+  (make-array (1+ size) :element-type 'bit :initial-element 0))
+
+(defun membership-sets-intersect-p (set-a set-b)
+  (some (lambda (a b) (= 1 a b)) set-a set-b))
+
+(defun membership-set-nunion (set-a set-b)
+  (map-into set-a #'logior set-a set-b))
+
+(defun membership-set-count (set)
+  (count 1 set))
+
+(defun clear-membership-set (set)
+  (map-into set (constantly 0)))
