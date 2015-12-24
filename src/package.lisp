@@ -124,8 +124,8 @@
   (:export
    #:find-minimal-block-system-containing
                                         ; FUNCTION
-   #:trivial-block-system-p             ; FUNCTION
    #:find-non-trivial-block-system      ; FUNCTION
+   #:block-systems                      ; FUNCTION
    )
 
   ;; combinatorial-ranking.lisp

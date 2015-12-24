@@ -79,10 +79,9 @@ The representative of the union will be that of B."
 (defun find-minimal-block-system-containing (perm-group alphas)
   "Find the minimal blocks of the permutation group PERM-GROUP which contain the list of points ALPHAS.
 
-Returns a list of lists. Each sub-list represents a block.
-
-If the group PERM-GROUP is not transitive, then the resulting list will contain all points as unit sub-lists which are not a part of the equivalence class of ALPHAS."
-  ;; This is an implementation of Atkinson's algorithm.
+Returns a list of lists. Each sub-list represents a block. Each block is an image of one another under the generators of the group."
+  ;; This is an implementation of Atkinson's algorithm, along with
+  ;; additional features I've added.
   (check-type perm-group perm-group)
   (assert (not (null alphas)) (alphas) "ALPHAS must contain at least 1 point.")
   (assert (listp alphas) (alphas) "ALPHAS must be a list.")
@@ -90,7 +89,11 @@ If the group PERM-GROUP is not transitive, then the resulting list will contain 
          ;; CLASSES is a map from point to DJS. We can reverse this
          ;; map by inspecting the value of DJS via DJS-VALUE. See the
          ;; functions CLASS and REP below.
-         (classes (make-array (1+ degree) :initial-element nil)))
+         (classes (make-array (1+ degree) :initial-element nil))
+         ;; PROCESSED-ELEMENTS tells us which elements we've
+         ;; processed, so we can return only the elements that are a
+         ;; part of the block system.
+         (processed-elements (make-membership-set degree)))
     (assert (every (lambda (alpha) (<= 1 alpha degree)) alphas)
             ()
             "ALPHAS contains invalid points. They must be between 1 and ~
@@ -101,6 +104,7 @@ If the group PERM-GROUP is not transitive, then the resulting list will contain 
     ;; First, initialize all classes..
     (loop :for i :from 1 :to degree :do
       (setf (aref classes i) (djs i)))
+
     ;; Next, put all ALPHA_I in the same equivalence class.
     (let ((alpha_1-class (aref classes (first alphas))))
       (loop :for i :in (rest alphas) :do
@@ -108,6 +112,10 @@ If the group PERM-GROUP is not transitive, then the resulting list will contain 
           ;; Ensure that alpha_1-class is the representative of this
           ;; union. Currently, this is implicit in the DJS-UNION call.
           (djs-union alpha_i-class alpha_1-class))))
+    ;; Note that we have processed all ALPHA elements.
+    (dolist (alpha alphas)
+      (setf (sbit processed-elements alpha) 1))
+    ;; Now for the main algorithm...
     (labels ((class (point)
                "Find the class of the point POINT."
                (aref classes point))
@@ -128,6 +136,9 @@ If the group PERM-GROUP is not transitive, then the resulting list will contain 
                 (unless (= kappa lam)
                   (let ((kappa-class (class kappa))
                         (lam-class (class lam)))
+                    (setf (sbit processed-elements lam)   1)
+                    (setf (sbit processed-elements kappa) 1)
+                    (setf (sbit processed-elements delta) 1)
                     ;; Merge the kappa and lambda classes.
                     (djs-union lam-class kappa-class)
                     ;; Make kappa the representative of merged class.
@@ -137,22 +148,22 @@ If the group PERM-GROUP is not transitive, then the resulting list will contain 
       ;; Return equivalence classes.
       (let ((table (make-hash-table :test 'eql)))
         (loop :for j :from 1 :to degree
-              :for rep := (rep j)
-              :do (push j (gethash rep table nil))
+              :when (= 1 (sbit processed-elements j))
+                :do (push j (gethash (rep j) table nil))
               :finally (let ((equiv-classes nil))
                          (maphash (lambda (k v)
                                     (declare (ignore k))
                                     (push (nreverse v) equiv-classes))
                                   table)
-                         (return (nreverse equiv-classes))))))))
+                         (return (values (nreverse equiv-classes)
+                                         processed-elements))))))))
 
-(defun trivial-block-system-p (group bs)
-  "Is the block system BS a trivial block system for the transitive permutation group GROUP?"
-  (let ((l (length bs)))
-    (or (= l 1)
-        (= l (group-degree group)))))
+(defun trivial-block-system-p (bs)
+  "Is the block system BS a trivial block system?"
+  (or (= 1 (length bs))
+      (every (lambda (b) (= 1 (length b))) bs)))
 
-(defun find-non-trivial-block-system (group)
+(defun find-non-trivial-block-system (group orbit)
   "Find a non-trivial block system of the permutation group GROUP.
 
 GROUP must be transitive in order for this to produce truly non-trivial block systems."
@@ -161,4 +172,19 @@ GROUP must be transitive in order for this to produce truly non-trivial block sy
         :unless (trivial-block-system-p group bs)
           :do (return bs)))
 
+(defun block-systems (group)
+  "Compute all minimal, disjoint block systems of the group GROUP.
 
+Returns a list of block systems."
+  (labels ((find-block-system (orbit)
+             (loop :with first := (aref orbit 0)
+                   :for i :from 1 :to (length orbit)
+                   :for p := (aref orbit i)
+                   :for bs := (find-minimal-block-system-containing
+                               group
+                               (list first p))
+                   :unless (trivial-block-system-p bs)
+                     :do (return bs)
+                   :finally (return (coerce orbit 'list)))))
+    (let ((orbits (group-orbits group)))
+      (mapcar #'find-block-system orbits))))
