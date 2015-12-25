@@ -18,8 +18,8 @@
 
 (deftest test-rubik-block-system ()
   "Compute the block system of subdirect factors, and ensure they look right."
-  (destructuring-bind (edges corners)
-      (subdirect-factors (perm-examples:make-rubik-3x3))
-    (values
-     (is (every (lambda (b) (= 2 (length b))) (find-non-trivial-block-system edges)))
-     (is (every (lambda (b) (= 3 (length b))) (find-non-trivial-block-system corners))))))
+  (let ((bss (block-systems (perm-examples:make-rubik-3x3))))
+    (destructuring-bind (edges corners) bss
+      (values
+       (is (every (lambda (b) (= 2 (length b))) edges))
+       (is (every (lambda (b) (= 3 (length b))) corners))))))
