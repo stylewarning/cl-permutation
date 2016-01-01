@@ -83,6 +83,10 @@ then
   ;; Elements of the transversal are constructed by MAKE-SIGMA-TABLE.
   `simple-vector)
 
+(deftype sgs ()
+  ;; vector of lists of perms
+  `simple-vector)
+
 (declaim (inline make-transversal))
 (defun make-transversal (n)
   "Make a transversal of size N."
@@ -307,6 +311,19 @@ The sigma (SIGMA K J) is represented by the cons cell (K . J)."
                    :transversal-system trans
                    :slp-context *context*
                    :free-group fg)))
+
+(defun group-bsgs (perm-group)
+  "Retrieve the base and strong generating set (BSGS) as two values respectively for the permutation group PERM-GROUP."
+  (loop :with base := nil
+        :with sgs  := nil
+        :for k :from 1
+        :for k-generators :across (perm-group.strong-generators perm-group)
+        :when k-generators :do
+          (push k base)
+          (push k-generators sgs)
+        :finally (return
+                   (values (nreverse base)
+                           (nreverse sgs)))))
 
 (defun group-from (generators-as-lists)
   "Generate a permutation group from a list of generators, which are represented as lists."
