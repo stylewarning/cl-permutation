@@ -104,19 +104,19 @@
 
   ;; permutation-group.lisp
   (:export
-   #:perm-group
-   #:group-degree
-   #:group-identity
-   #:generate-perm-group
-   #:group-from
-   #:group-from-cycles
-   #:group-order
-   #:group-element-p
-   #:random-group-element
-   #:transversal-decomposition
-   #:group-orbits
-   #:group-from-orbit
-   #:subdirect-factors
+   #:perm-group                         ; CLASS
+   #:group-degree                       ; FUNCTION
+   #:group-identity                     ; FUNCTION
+   #:generate-perm-group                ; FUNCTION
+   #:group-from                         ; FUNCTION
+   #:group-from-cycles                  ; FUNCTION
+   #:group-order                        ; FUNCTION
+   #:group-element-p                    ; FUNCTION
+   #:random-group-element               ; FUNCTION
+   #:transversal-decomposition          ; FUNCTION
+   #:group-orbits                       ; FUNCTION
+   #:group-from-orbit                   ; FUNCTION
+   #:subdirect-factors                  ; FUNCTION
    #:generator-decomposition            ; FUNCTION
    )
 
