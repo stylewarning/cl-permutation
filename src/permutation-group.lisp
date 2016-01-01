@@ -10,14 +10,25 @@
 ;;;
 ;;;    K -> (J -> sigma_kj)
 
-(defstruct (perm-group (:conc-name perm-group.)
-                       (:print-function perm-group-printer))
-  element-size                          ; Non-negative integer
-  generators
-  strong-generators
-  transversal-system
-  free-group
-  slp-context)
+(defclass perm-group ()
+  ((element-size :initarg :element-size
+                 :accessor perm-group.element-size
+                 :documentation "The size of the elements of the group. This is a non-negative integer and may be larger than the true degree of the group.")
+   (generators :initarg :generators
+               :accessor perm-group.generators
+               :documentation "A list of generators of the group.")
+   (strong-generators :initarg :strong-generators
+                      :accessor perm-group.strong-generators
+                      :documentation "The strong generating set of the group. This is a hash table mapping integers to lists of generators.")
+   (transversal-system :initarg :transversal-system
+                       :accessor perm-group.transversal-system
+                       :documentation "The transversal system of the group. This is a vector mapping integers K to a table of sigmas SIGMA_K.")
+   (free-group :initarg :free-group
+               :accessor perm-group.free-group
+               :documentation "A free group corresponding to the given permutation group.")
+   (slp-context :initarg :slp-context
+                :accessor perm-group.slp-context
+                :documentation "SLPs corresponding to all sigmas and strong generators.")))
 
 (defun group-degree (group &key true)
   "What is the degree of the group GROUP?
@@ -55,6 +66,10 @@ then
 (defmethod num-generators ((g perm-group))
   (length (perm-group.generators g)))
 
+(defmethod print-object ((group perm-group) stream)
+  (print-unreadable-object (group stream :type t :identity nil)
+    (format stream "of ~D generator~:p" (num-generators group))))
+
 
 ;;;;;;;;;;;;;;; Transversal Systems and Schreier-Sims ;;;;;;;;;;;;;;;;
 
@@ -81,11 +96,6 @@ then
 (defun (setf transversal-ref) (new-value trans k)
   (declare (type transversal trans))
   (setf (svref trans (1- k)) new-value))
-
-(defun perm-group-printer (group stream depth)
-  (declare (ignore depth))
-  (print-unreadable-object (group stream :type t :identity nil)
-    (format stream "of ~D generator~:p" (num-generators group))))
 
 (defun make-sigma-table (k)
   "Make a representation of sigma_K, initialized witk sigma_KK = identity.
@@ -277,12 +287,13 @@ The sigma (SIGMA K J) is represented by the cons cell (K . J)."
                                (slp-element fg-generator))))
     
     ;; Return the group.
-    (make-perm-group :element-size (maximum generators :key #'perm-size)
-                     :generators (copy-list generators)
-                     :strong-generators sgs
-                     :transversal-system trans
-                     :slp-context *context*
-                     :free-group fg)))
+    (make-instance 'perm-group
+                   :element-size (maximum generators :key #'perm-size)
+                   :generators (copy-list generators)
+                   :strong-generators sgs
+                   :transversal-system trans
+                   :slp-context *context*
+                   :free-group fg)))
 
 (defun group-from (generators-as-lists)
   "Generate a permutation group from a list of generators, which are represented as lists."
@@ -435,7 +446,7 @@ The sigma (SIGMA K J) is represented by the cons cell (K . J)."
                                           (free-group-generator-to-perm-group-generator perm-group i)))
                   :finally (return result))))))
 
-(defun generator-decomposition (perm group)
+(defun generator-decomposition (perm group &key free-group-generators-p)
   "Compute the generator decomposition of the permutation PERM of the group GROUP.
 
 Note: The result is likely very long and inefficient."
@@ -449,7 +460,7 @@ Note: The result is likely very long and inefficient."
                (symbol-assignment ctx (to-sigma-symbol tt)))
              (eval-slp (slp)
                (evaluate-slp fg ctx slp)))
-      (mapcar hom                           ; Free -> Perm
+      (mapcar (if free-group-generators-p #'identity hom)                           ; Free -> Perm
               (delete (identity-element fg) ; Remove identities.
                       (mapcan #'eval-slp    ; Eval SLPs
                               (mapcar #'find-slp d)))))))
