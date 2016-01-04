@@ -28,6 +28,8 @@
 
 (defstruct (djs (:constructor %make-djs))
   "Representation of a disjoint-set data structure. Each node has a representative element denoted by REPRESENTATIVE, which points to a DJS-REP node representing the canonical element of that disjoint-set."
+  ;; FIXME: This type produces a warning because the compiler
+  ;; presumably doesn't know about DJS-REP yet.
   (representative nil :type (or null djs-rep))
   value)
 
