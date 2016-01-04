@@ -169,7 +169,7 @@ Returns a list of lists. Each sub-list represents a block. Each block is an imag
 GROUP must be transitive in order for this to produce truly non-trivial block systems."
   (loop :for i :from 2 :to (group-degree group)
         :for bs := (find-minimal-block-system-containing group (list 1 i))
-        :unless (trivial-block-system-p group bs)
+        :unless (trivial-block-system-p bs)
           :do (return bs)))
 
 (defun block-systems (group)
