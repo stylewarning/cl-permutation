@@ -313,7 +313,7 @@ The sigma (SIGMA K J) is represented by the cons cell (K . J)."
                    :free-group fg)))
 
 (defun group-bsgs (perm-group)
-  "Retrieve the base and strong generating set (BSGS) as two values respectively for the permutation group PERM-GROUP."
+  "Retrieve a base and associated strong generating set (BSGS) as two values respectively for the permutation group PERM-GROUP."
   (loop :with base := nil
         :with sgs  := nil
         :for k :from 1
