@@ -44,30 +44,37 @@
       ;; Return the orbits.
       (mapcar #'membership-set-to-orbit orbit-memberships))))
 
+(defun orbit-group-homomorphism (original-group orbit)
+  "Compute a homomorphism between elements of the permutation group ORIGINAL-GROUP to the naturally induced group of an orbit ORBIT of ORIGINAL-GROUP."
+  (let* ((len (length orbit))
+         (element-map (make-array (1+ (group-degree original-group)))))
+    ;; Compute a map between points in the original group and points
+    ;; in the resulting orbit group. This is used to construct the
+    ;; homomorphism.
+    (loop :for i :from 1
+          :for x :across orbit
+          :do (setf (aref element-map x) i))
+    ;; Create an actual homomorphism function.
+    (labels ((homomorphism (g)
+               (let ((result (allocate-perm-vector len)))
+                 (loop :for i :from 1 :to len
+                       :for x :across orbit
+                       :do (setf (aref result i)
+                                 (aref element-map (perm-eval g x)))
+                       :finally (return (%make-perm :rep result))))))
+      #'homomorphism)))
+
 ;;; XXX: We may want to store the group was derived from and the
 ;;; function from the factor group to the original group.
 (defun group-from-orbit (original-group orbit)
-  "Produce a group by having the group ORIGINAL-GROUP act on the orbit ORBIT of that group."
-  (let ((len (length orbit)))
-    (labels ((relevant-cycle-p (cycle)
-               "Is the cycle CYCLE at all relevant? This equates to finding an element in the cycle that exists within the orbit."
-               (some (lambda (cycle-element)
-                       (find cycle-element orbit))
-                     (cycle-rep cycle)))
-             (remap-element (element)
-               (1+ (position element orbit)))
-             (remap-cycle (cycle)
-               (let ((c (copy-seq (cycle-rep cycle))))
-                 (%make-cycle :canonicalized nil
-                              :rep (map-into c #'remap-element c))))
-             (process-generator (g)
-               (from-cycles
-                (mapcar #'remap-cycle
-                        (remove-if-not #'relevant-cycle-p
-                                       (to-cycles g)))
-                len)))
-      (generate-perm-group
-       (remove-if #'perm-identity-p (mapcar #'process-generator (generators original-group)))))))
+  "Produce a group by having the group ORIGINAL-GROUP act on the orbit ORBIT of that group.
+
+As a second value, the homomorphism will be returned."
+  (let ((hom (orbit-group-homomorphism original-group orbit)))
+    (values
+     (generate-perm-group
+      (remove-if #'perm-identity-p (mapcar hom (generators original-group))))
+     hom)))
 
 (defun subdirect-factors (group)
   "Compute \"subdirect factors\" of the group GROUP.

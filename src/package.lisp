@@ -115,6 +115,7 @@
    #:random-group-element               ; FUNCTION
    #:transversal-decomposition          ; FUNCTION
    #:group-orbits                       ; FUNCTION
+   #:orbit-group-homomorphism           ; FUNCTION
    #:group-from-orbit                   ; FUNCTION
    #:subdirect-factors                  ; FUNCTION
    #:generator-decomposition            ; FUNCTION
