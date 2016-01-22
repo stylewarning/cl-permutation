@@ -564,23 +564,31 @@ An asterisk in printed syntax denotes that the cycle has not been canonicalized 
           (canonicalize-cycles cycles)
           cycles))))
 
-(defun map-cycle-mappings (f cycle)
-  "Apply a binary function F to all pairs (a_i, b_i) such that the cycle is the composition of a_i |-> b_i."
-  (loop :for i :below (cycle-length (canonicalize-cycle cycle))
+(defun map-cycle-mappings (f cycle &key omit-last)
+  "Apply a binary function F to all pairs (a_i, b_i) such that the cycle is the composition of a_i |-> b_i.
+
+If OMIT-LAST is T, then the last mapping will be omitted. For example, for the cycle (P1 P2 ... Pn), the mapping Pn |-> P1 will be excluded."
+  (loop :for i :below  (if omit-last
+                           (1- (cycle-length (canonicalize-cycle cycle)))
+                           (cycle-length (canonicalize-cycle cycle))) 
         :do (funcall f
                      (cycle-ref cycle i)
                      (cycle-ref cycle (1+ i)))))
 
 (defun from-cycles (cycles &optional (size 0))
-  "Convert a cycle representation of a permutation CYCLES to the standard representation."
+  "Convert a cycle representation of a permutation CYCLES to the standard representation.
+
+SIZE is ignored if it is less than the maximum point within the cycles."
   (let* ((maximum (max size (loop :for cycle :in cycles
                                   :maximize (loop :for i :across (cycle-rep cycle)
                                                   :maximize i))))
          (perm (iota-vector (1+ maximum))))
     (dolist (cycle cycles (%make-perm :rep perm))
       (map-cycle-mappings (lambda (from to)
-                            (setf (aref perm from) to))
-                          cycle))))
+                            (rotatef (aref perm from)
+                                     (aref perm to)))
+                          cycle
+                          :omit-last t))))
 
 (defun cycle-type (perm)
   "Compute the cycle type of a perm PERM.
