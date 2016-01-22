@@ -8,6 +8,8 @@
   :license "BSD 3-clause (See LICENSE)"
   :depends-on (#:alexandria
                #:cl-algebraic-data-type)
+               #:cl-algebraic-data-type
+               #:closer-mop)
   :in-order-to ((asdf:test-op (asdf:test-op #:cl-permutation-tests)))
   :serial t
   :components ((:module src
@@ -22,6 +24,7 @@
                  (:file "free-group")
                  (:file "straight-line-program")
                  (:file "permutation-group")
+                 (:file "homomorphism")
                  (:file "orbit")
                  (:file "block")
                  (:file "do-group-elements")

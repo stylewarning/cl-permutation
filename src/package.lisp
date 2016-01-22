@@ -121,6 +121,16 @@
    #:generator-decomposition            ; FUNCTION
    )
 
+  ;; homomorphism.lisp
+  (:export
+   #:image                              ; GENERIC, METHOD
+   #:homomorphism-preimage              ; GENERIC, METHOD
+   #:homomorphism-image                 ; GENERIC, METHOD
+   #:generator-homomorphism             ; CLASS
+   #:function-homomorphism              ; CLASS
+   #:homomorphism-induced-perm-group    ; FUNCTION
+   )
+
   ;; block.lisp
   (:export
    #:find-minimal-block-system-containing
