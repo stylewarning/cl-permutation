@@ -63,11 +63,11 @@
   (assert (every 'integerp elements)
           nil
           "Permutation must only have integers.")
-  
+
   (assert (every 'plusp elements)
           nil
           "Permutation must contain positive numbers only.")
-  
+
   (assert (contains-1-to-N elements)
           nil
           "Given permutation must contain the numbers 1 to ~A"
@@ -84,13 +84,13 @@
 
 (defun enable-perm-reader ()
   "Enable the use of #[...] for perms."
-  
+
   ;; Enable special printing
   (setf *print-with-perm-syntax* t)
-  
+
   ;; Set #[
   (set-dispatch-macro-character #\# #\[ #'perm-reader)
-  
+
   ;; Set ]
   (set-macro-character #\] (get-macro-character #\))))
 
@@ -234,7 +234,7 @@
                     :when (> (perm-eval perm i)
                              (perm-eval perm j))
                     :do (incf inv-count)))
-    
+
     inv-count))
 
 (defun perm-even-p (perm)
@@ -259,7 +259,7 @@ Example: If P1 = 2 |-> 3 and P2 = 1 |-> 2 then (perm-compose P1 P2) = 1 |-> 3."
           nil
           "Permutations ~A and ~A must have the same size."
           p1 p2)
-  
+
   (let* ((n        (perm-size p1))
          (p12-spec (allocate-perm-vector n)))
     (loop :for i :from 1 :to n
@@ -271,7 +271,7 @@ Example: If P1 = 2 |-> 3 and P2 = 1 |-> 2 then (perm-compose P1 P2) = 1 |-> 3."
   "Raise a permutation PERM to the Nth power. If N is negative, then the inverse will be raised to the -Nth power."
   (check-type n integer)
   (labels ((rec (current-perm n)
-             (if (= n 1) 
+             (if (= n 1)
                  current-perm
                  (rec (perm-compose perm current-perm) (1- n)))))
     (cond
@@ -294,13 +294,13 @@ Example: If P1 = 2 |-> 3 and P2 = 1 |-> 2 then (perm-compose P1 P2) = 1 |-> 3."
           "The first transposition index ~A must be in the range of ~
            the permutation."
           a)
-  
+
   (assert (<= 1 b (perm-size perm))
           (b)
           "The second transposition index ~A must be in the range of ~
            the permutation."
           b)
-  
+
   (let ((transposed-spec (copy-seq (perm.rep perm))))
     (rotatef (aref transposed-spec a)
              (aref transposed-spec b))
@@ -313,13 +313,13 @@ Example: If P1 = 2 |-> 3 and P2 = 1 |-> 2 then (perm-compose P1 P2) = 1 |-> 3."
           "The first transposition index ~A must be in the range of ~
            the permutation."
           a)
-  
+
   (assert (<= 1 b (perm-size perm))
           (b)
           "The second transposition index ~A must be in the range of ~
            the permutation."
           b)
-  
+
   (let* ((transposed-spec (copy-seq (perm.rep perm)))
          (pos-a (position a transposed-spec))
          (pos-b (position b transposed-spec)))
@@ -367,7 +367,7 @@ If a fixed point doesn't exist, return NIL."
               (length a))
           (perm a)
           "Only able to permute arrays whose size is greater or equal to PERM.")
-  
+
   (let* ((len (length a))
          (result (make-array len)))
     (loop :for i :below len
@@ -422,7 +422,7 @@ An asterisk in printed syntax denotes that the cycle has not been canonicalized 
                      elements))
           ()
           "Elements of a cycle must be positive integers acceptable to MAKE-PERM.")
-  
+
   ;;; XXX: This can be done much more efficiently.
   (assert (= (length elements)
              (length (remove-duplicates elements)))
@@ -432,7 +432,7 @@ An asterisk in printed syntax denotes that the cycle has not been canonicalized 
 (defun make-cycle (&rest elements)
   "Create a new cycle with the elements ELEMENTS."
   (check-cycle-elements elements)
-  
+
   (let ((cycle (%make-cycle :rep (make-array (length elements)
                                              :element-type 'cycle-element
                                              :initial-contents elements))))
