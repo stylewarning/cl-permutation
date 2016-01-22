@@ -81,6 +81,12 @@ As a second value, the homomorphism will be returned."
 (defun subdirect-factors (group)
   "Compute \"subdirect factors\" of the group GROUP.
 
- These are groups whose direct product has GROUP as a subgroup."
-  (mapcar (lambda (o) (group-from-orbit group o))
-          (group-orbits group)))
+ These are groups whose direct product has GROUP as a subgroup.
+
+As a second value, return the corresponding list of homomorphisms between GROUP and the subdirect factors."
+  (iter:iter
+    (iter:for o :in (group-orbits group))
+    (iter:for (values g hom) := (group-from-orbit group o))
+    (iter:collect g :into groups)
+    (iter:collect hom :into homs)
+    (iter:finally (return (values groups homs)))))
