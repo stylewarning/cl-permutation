@@ -54,22 +54,26 @@
 
 ;;; "Evaluation" is a map from an SLP to an element of a group.
 
-(defun evaluate-slp (group ctx slp)
-  "Within a group GROUP, and given the context CTX and the straight line program SLP, compute its evaluation (the value of the SLP in the target group)."
-  (adt:match slp slp
-    ((slp-element x) x)
-    ((slp-symbol s)
-     (let ((assignment (symbol-assignment ctx s)))
-       (assert (not (null assignment))
-               ()
-               "Encountered a symbol ~S which has no assignment when ~
-                evaluating an SLP."
-               s)
-       (evaluate-slp group ctx assignment)))
-    ((slp-composition a b)
-     (compose group
-              (evaluate-slp group ctx a)
-              (evaluate-slp group ctx b)))
-    ((slp-inversion x)
-     (inverse group (evaluate-slp group ctx x)))))
+(defun evaluate-slp (group ctx slp &key homomorphism)
+  "Within a group GROUP, and given the context CTX and the straight line program SLP, compute its evaluation (the value of the SLP in the target group).
 
+If HOMOMORPHISM is provided, then the image of each SLP-ELEMENT will be computed. The image of the homomorphism should be GROUP."
+  (let ((phi (if (null homomorphism)
+                 (lambda (x) x)
+                 homomorphism)))
+    (labels ((ev (slp)
+               (adt:match slp slp
+                 ((slp-element x) (funcall phi x))
+                 ((slp-symbol s)
+                  (let ((assignment (symbol-assignment ctx s)))
+                    (assert (not (null assignment))
+                            ()
+                            "Encountered a symbol ~S which has no assignment ~
+                           when evaluating an SLP."
+                            s)
+                    (ev assignment)))
+                 ((slp-composition a b)
+                  (compose group (ev a) (ev b)))
+                 ((slp-inversion x)
+                  (inverse group (ev x))))))
+      (ev slp))))
