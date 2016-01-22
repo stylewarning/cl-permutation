@@ -8,7 +8,7 @@
   ((num-generators :initarg :num-generators
                    :reader  free-group-num-generators))
   (:documentation "Representation of a free group whose symbols are:
-    
+
     * identity element: 0
     * generators: 1 .. N
     * inverse generators: -N .. -1

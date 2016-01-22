@@ -87,8 +87,3 @@
   (let ((rubik (make-rubik-2x2)))
     (loop :repeat 10 :do
       (test-generator-decomposition rubik (random-group-element rubik)))))
-
-(deftest test-rubik-subdirect-factor-count ()
-  "Check that there are exactly two subdirect factors of the cube group."
-  (let ((subdirect-factors (subdirect-factors (make-rubik-3x3))))
-    (is (= 2 (length subdirect-factors)))))

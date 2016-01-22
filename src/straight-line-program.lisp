@@ -40,7 +40,7 @@
       (cerror "Assign to it anyway."
               "The symbol ~S is already assigned to."
               symbol))
-    
+
     (values (setf (gethash symbol (symbol-table ctx))
                   representation))))
 

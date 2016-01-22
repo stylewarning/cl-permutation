@@ -164,7 +164,7 @@ If all K and J are accumulated into a list, then the list would represent the tr
                        (multiple-value-bind (j-val j-exists-p) (gethash j k-val)
                          (if (null j-exists-p)
                              (values nil nil)
-                             (next (perm-compose (perm-inverse j-val) perm) 
+                             (next (perm-compose (perm-inverse j-val) perm)
                                    (1- k)
                                    (funcall f acc k j)))))))))
     (declare (dynamic-extent #'next))
@@ -218,7 +218,7 @@ The sigma (SIGMA K J) is represented by the cons cell (K . J)."
 ;;; #'GENERATE-PERM-GROUP.
 
 ;;; Algorithm B from Knuth, with my own modifications.
-(defun add-generator (perm sgs trans k slp)  
+(defun add-generator (perm sgs trans k slp)
   ;; Add the perm to the SGS.
   (pushnew perm (sgs-ref sgs k))
 
@@ -226,7 +226,7 @@ The sigma (SIGMA K J) is represented by the cons cell (K . J)."
   (let ((t-sym (tau-symbol)))
     (setf (gethash perm *taus*) t-sym)
     (setf (symbol-assignment *context* t-sym) slp))
- 
+
   ;; Process the perm, adding it to the group structure.
   (let ((redo nil))
     (loop
@@ -241,13 +241,13 @@ The sigma (SIGMA K J) is represented by the cons cell (K . J)."
                   (unless (trans-element-p prod trans)
                     (multiple-value-setq (sgs trans)
                       (update-transversal prod sgs trans k prod-slp))
-                    
+
                     (setf redo t)))))
-      
+
       ;; Break out?
       (unless redo
         (return-from add-generator (values sgs trans)))
-      
+
       ;; Reset the REDO flag.
       (setf redo nil))))
 
@@ -260,7 +260,7 @@ The sigma (SIGMA K J) is represented by the cons cell (K . J)."
        (let ((new-perm (perm-compose (perm-inverse sigma)
                                      perm))
              (new-perm-slp (compose-slp
-                            (invert-slp 
+                            (invert-slp
                              (slp-symbol (sigma-symbol k j)))
                             slp)))
          (if (trans-element-p new-perm trans (1- k))
@@ -287,7 +287,7 @@ The sigma (SIGMA K J) is represented by the cons cell (K . J)."
       (setf (transversal-ref trans k) (make-sigma-table k))
       (setf (symbol-assignment *context* (sigma-symbol k k))
             (slp-element (identity-element fg))))
-    
+
     ;; Add the generators.
     ;;
     ;; We iterate through the generators of the induced free group
@@ -302,7 +302,7 @@ The sigma (SIGMA K J) is represented by the cons cell (K . J)."
                                trans
                                n
                                (slp-element fg-generator))))
-    
+
     ;; Return the group.
     (make-instance 'perm-group
                    :element-size (maximum generators :key #'perm-size)
@@ -366,81 +366,6 @@ The sigma (SIGMA K J) is represented by the cons cell (K . J)."
                         (cdr sigma)))
                    decomp)
         decomp)))
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;; Group Orbits ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defun group-orbits (group)
-  "Compute the orbits of the group GROUP. This will be a list of arrays of points."
-  (let* ((d (group-degree group))
-         (orbit-membership (make-membership-set d))
-         (orbit-memberships nil))
-    (flet ((orbit-completed-for-element (x)
-             (some (lambda (orbit)
-                     (= 1 (sbit orbit x)))
-                   orbit-memberships))
-           (membership-set-to-orbit (set)
-             (let ((orbit (make-array (membership-set-count set)))
-                   (j 0))
-               (loop :for i :from 1 :to d
-                     :when (= 1 (sbit set i))
-                       :do (setf (aref orbit j) i)
-                           (incf j)
-                     :finally (return orbit)))))
-      ;; We compute the orbit of each point for each generator,
-      ;; intersecting each time.
-      (loop :for i :from 1 :to d :do
-        (unless (orbit-completed-for-element i)
-          (clear-membership-set orbit-membership)
-          ;; Compute the orbit of the element across all generators.
-          (dolist (g (generators group))
-            (map-orbit (lambda (k)
-                         (setf (sbit orbit-membership k) 1))
-                       i
-                       g))
-          ;; Incorporate that orbit anywhere it has intersected.
-          (let ((intersecting-orbit (find-if (lambda (set)
-                                               (membership-sets-intersect-p
-                                                orbit-membership
-                                                set))
-                                             orbit-memberships)))
-            (if (null intersecting-orbit)
-                (push (copy-seq orbit-membership) orbit-memberships)
-                (membership-set-nunion intersecting-orbit orbit-membership)))))
-      ;; Return the orbits.
-      (mapcar #'membership-set-to-orbit orbit-memberships))))
-
-;;; XXX: We may want to store the group was derived from and the
-;;; function from the factor group to the original group.
-(defun group-from-orbit (original-group orbit)
-  "Produce a group by having the group ORIGINAL-GROUP act on the orbit ORBIT of that group."
-  (let ((len (length orbit)))
-    (labels ((relevant-cycle-p (cycle)
-               "Is the cycle CYCLE at all relevant? This equates to finding an element in the cycle that exists within the orbit."
-               (some (lambda (cycle-element)
-                       (find cycle-element orbit))
-                     (cycle-rep cycle)))
-             (remap-element (element)
-               (1+ (position element orbit)))
-             (remap-cycle (cycle)
-               (let ((c (copy-seq (cycle-rep cycle))))
-                 (%make-cycle :canonicalized nil
-                              :rep (map-into c #'remap-element c))))
-             (process-generator (g)
-               (from-cycles
-                (mapcar #'remap-cycle
-                        (remove-if-not #'relevant-cycle-p
-                                       (to-cycles g)))
-                len)))
-      (generate-perm-group
-       (remove-if #'perm-identity-p (mapcar #'process-generator (generators original-group)))))))
-
-(defun subdirect-factors (group)
-  "Compute \"subdirect factors\" of the group GROUP.
-
- These are groups whose direct product has GROUP as a subgroup."
-  (mapcar (lambda (o) (group-from-orbit group o))
-          (group-orbits group)))
 
 
 ;;;;;;;;;;;;;;;;;;;;;; Generator Decomposition ;;;;;;;;;;;;;;;;;;;;;;;
