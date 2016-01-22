@@ -70,11 +70,13 @@
   "Produce a group by having the group ORIGINAL-GROUP act on the orbit ORBIT of that group.
 
 As a second value, the homomorphism will be returned."
-  (let ((hom (orbit-group-homomorphism original-group orbit)))
+  (let* ((hom (orbit-group-homomorphism original-group orbit))
+         (induced-group (homomorphism-induced-perm-group original-group hom)))
     (values
-     (generate-perm-group
-      (remove-if #'perm-identity-p (mapcar hom (generators original-group))))
-     hom)))
+     induced-group
+     (make-instance 'function-homomorphism :from-group original-group
+                                           :to-group induced-group
+                                           :function hom))))
 
 (defun subdirect-factors (group)
   "Compute \"subdirect factors\" of the group GROUP.
