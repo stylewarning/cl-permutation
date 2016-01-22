@@ -21,5 +21,6 @@
                  (:file "permutation")
                  (:file "straight-line-program")
                  (:file "permutation-group")
+                 (:file "homomorphism")
                  (:file "orbit")
                  (:file "block")))))
