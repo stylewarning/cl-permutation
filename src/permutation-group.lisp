@@ -4,7 +4,7 @@
 
 (in-package #:cl-permutation)
 
-;;; A TRANSVERSAL SYSTEM (trans) is represented as a hash table, which
+;;; A TRANSVERSAL SYSTEM (trans) is represented as an alist, which
 ;;; takes a K and returns a table which takes a J and returns
 ;;; sigma_kj. That is
 ;;;
