@@ -28,7 +28,7 @@
          (list (make-cycle 9 10 12 11)  ; R
                (make-cycle 2 6 15 17)
                (make-cycle 4 8 13 18))
-         
+
          (list (make-cycle 5 6 8 7)     ; U
                (make-cycle 2 20 14 10)
                (make-cycle 1 19 13 9)))
@@ -48,7 +48,7 @@
                (make-cycle 8 33 48 24)
                (make-cycle 5 36 45 21)
                (make-cycle 3 38 43 19))
-         
+
          (list (make-cycle 11 35 27 19) ; U
                (make-cycle 10 34 26 18)
                (make-cycle 9 33 25 17)
