@@ -8,20 +8,18 @@
   :license "BSD 3-clause (See LICENSE)"
   :depends-on (#:cl-permutation
                #:cl-permutation-examples
-               #:hu.dwim.stefil)
+               #:fiasco)
   :perform (asdf:test-op (o s)
                          (uiop:symbol-call :cl-permutation-tests
                                            '#:run-tests))
+  :pathname "tests/"
   :serial t
-  :components ((:module tests
-                :serial t
-                :components
-                ((:file "package")
-                 (:file "suite")
-                 (:file "permutation")
-                 (:file "straight-line-program")
-                 (:file "permutation-group")
-                 (:file "do-group-elements")
-                 (:file "homomorphism")
-                 (:file "orbit")
-                 (:file "block")))))
+  :components ((:file "package")
+               (:file "suite")
+               (:file "permutation")
+               (:file "straight-line-program")
+               (:file "permutation-group")
+               (:file "do-group-elements")
+               (:file "homomorphism")
+               (:file "orbit")
+               (:file "block")))

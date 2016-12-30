@@ -4,8 +4,6 @@
 
 (in-package #:cl-permutation-tests)
 
-(in-suite cl-permutation-suite)
-
 (deftest test-rank-unrank ()
   (let ((g (perm-examples:make-S5))
         (i 0)

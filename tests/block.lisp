@@ -4,8 +4,6 @@
 
 (in-package #:cl-permutation-tests)
 
-(in-suite cl-permutation-suite)
-
 (deftest test-simple-block-system ()
   "Compute the block system for a simple group."
   (let ((g (group-from-cycles (list (list (make-cycle 1 2 3 4 5 6))

@@ -4,7 +4,5 @@
 
 (in-package #:cl-permutation-tests)
 
-(defsuite cl-permutation-suite)
-
 (defun run-tests ()
-  (cl-permutation-suite))
+  (fiasco:run-package-tests :package '#:cl-permutation-tests))

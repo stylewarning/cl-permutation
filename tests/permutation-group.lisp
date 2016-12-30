@@ -4,8 +4,6 @@
 
 (in-package #:cl-permutation-tests)
 
-(in-suite cl-permutation-suite)
-
 (deftest test-random-group-element ()
   "Test the generation of random group elements actually produces elements of the group."
   (loop :with g := (make-rubik-3x3)

@@ -4,8 +4,6 @@
 
 (in-package #:cl-permutation-tests)
 
-(in-suite cl-permutation-suite)
-
 (defun convert-homomorphism (func-hom)
   (let ((preimage (homomorphism-preimage func-hom))
         (image    (homomorphism-image    func-hom)))

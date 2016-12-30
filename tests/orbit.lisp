@@ -4,8 +4,6 @@
 
 (in-package #:cl-permutation-tests)
 
-(in-suite cl-permutation-suite)
-
 (deftest test-rubik-subdirect-factor-count ()
   "Check that there are exactly two subdirect factors of the cube group."
   (let ((subdirect-factors (subdirect-factors (make-rubik-3x3))))

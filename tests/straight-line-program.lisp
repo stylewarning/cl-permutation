@@ -4,8 +4,6 @@
 
 (in-package #:cl-permutation-tests)
 
-(in-suite cl-permutation-suite)
-
 (deftest test-slp ()
   "Test some example SLPs using all possible constructors."
   (let ((f (make-free-group 5))
@@ -26,6 +24,6 @@
       (assign :x4 (compose-slp (invert-slp (slp-symbol :x3))
                                (compose-slp (slp-element 2)
                                             (slp-symbol :x2))))
-      
+
       (is (equal (make-free-group-element f -5 -4 2 5)
                  (evaluate-slp f ctx (slp-symbol :x4)))))))
