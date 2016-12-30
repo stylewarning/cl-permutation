@@ -114,13 +114,14 @@ then
 (defun (setf sgs-ref) (new-value sgs k)
   (setf (svref sgs (1- k)) new-value))
 
-(defun make-sigma-table (k)
+(defun make-sigma-table (k &optional (identity (perm-identity k)))
   "Make a representation of sigma_K, initialized witk sigma_KK = identity.
+
+The optional argument IDENTITY allows the caller to provide the identity permutation for sigma_kk.
 
 This is represented as a hash table mapping J to permutations sigma_KJ."
   (let ((ht (make-hash-table :test 'eql)))
-    (setf (gethash k ht)
-          (perm-identity k))
+    (setf (gethash k ht) identity)
     ht))
 
 ;;; SIGMAs are elements of the transversal system. A SIGMA is either
@@ -283,10 +284,11 @@ The sigma (SIGMA K J) is represented by the cons cell (K . J)."
     ;; Initialize TRANS to map sigma_KK: K -> (K -> Identity(K)).
     ;;
     ;; Also record their SLPs as (SLP-ELEMENT <fg identity>).
-    (loop :for k :from 1 :to n :do
-      (setf (transversal-ref trans k) (make-sigma-table k))
-      (setf (symbol-assignment *context* (sigma-symbol k k))
-            (slp-element (identity-element fg))))
+    (loop :with identity := (perm-identity n)
+          :for k :from 1 :to n :do
+            (setf (transversal-ref trans k) (make-sigma-table k identity))
+            (setf (symbol-assignment *context* (sigma-symbol k k))
+                  (slp-element (identity-element fg))))
 
     ;; Add the generators.
     ;;
@@ -350,6 +352,7 @@ The sigma (SIGMA K J) is represented by the cons cell (K . J)."
   (every (lambda (g) (group-element-p g group))
          (generators subgroup)))
 
+;;; XXX FIXME: Avoid consing here.
 (defun random-group-element (group)
   "Generate a random element of the group GROUP."
   (loop :for v :across (perm-group.transversal-system group)
