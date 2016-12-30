@@ -4,13 +4,14 @@
 
 (in-package #:cl-permutation-tests)
 
-(deftest test-rank-unrank ()
-  (let ((g (perm-examples:make-S5))
-        (i 0)
+(defun test-rank-unrank (group &optional (limit (group-order group)))
+  (let ((i 0)
         (failures nil))
     (multiple-value-bind (rank-el unrank-el)
-        (group-element-rank-functions g)
-      (do-group-elements (el g)
+        (group-element-rank-functions group)
+      (do-group-elements (el group failures)
+        (when (= i limit)
+          (return-from test-rank-unrank failures))
         (let ((ranked (funcall rank-el el))
               (unranked (funcall unrank-el i)))
           (unless (= i ranked)
@@ -20,7 +21,13 @@
           ;; Check that identity is 0.
           (when (perm-identity-p el)
             (is (zerop i))))
-        (incf i))
+        (incf i)))))
 
-      ;; Make sure we have no failures.
-      (is (null failures)))))
+(deftest test-rank-unrank-s5 ()
+  (is (null (test-rank-unrank (make-s5)))))
+
+(deftest test-rank-unrank-2x2 ()
+  (is (null (test-rank-unrank (make-rubik-2x2) 10000))))
+
+(deftest test-rank-unrank-3x3 ()
+  (is (null (test-rank-unrank (make-rubik-3x3) 1000))))

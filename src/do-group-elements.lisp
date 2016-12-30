@@ -11,7 +11,11 @@
   "Compute the radix of the group GROUP."
   (map 'simple-vector #'length (perm-group.transversal-system group)))
 
-;;; TODO: Make this cons less.
+;;; Note, in the below ranking/unranking functions, everything is
+;;; based on the transversal decomposition, and the *position* of the
+;;; sigma_kj in the sigma_k list. This is almost surely not at
+;;; position j!
+
 (defun group-element-from-signature (group signature)
   ;; SIGNATURE is the output of ranking a MIXED-RADIX-SPEC, and has
   ;; elements between 0 and the position's radix. Since zero
@@ -34,13 +38,24 @@
     2. The inverse of the above function."
   (let ((spec (vector-to-mixed-radix-spec (group-radix group))))
     (flet ((rank-element (el)
-             (let* ((trans (transversal-decomposition el
-                                                      group
-                                                      :remove-identities nil))
-                    (set (nreverse
-                          (map 'simple-vector
-                               (lambda (sigma) (mod (cdr sigma) (car sigma)))
-                               trans))))
+             (let* ((trans (perm-group.transversal-system group))
+                    (set (make-array (size spec))))
+               ;; Get the SET data structure filled.
+               (reduce-over-trans-decomposition
+                (lambda (decomp k j)
+                  (declare (ignore decomp))
+                  ;; Identity is 0, everything else is 1 + position as
+                  ;; found in the built-up transversal system.
+                  (setf (svref set (1- k))
+                        (if (= j k)
+                            0
+                            (1+ (position j (svref trans (1- k)) :key #'car))))
+                  nil)
+                nil
+                el
+                trans)
+
+               ;; Finally, rank it.
                (rank spec set)))
            (unrank-element (idx)
              (group-element-from-signature group (unrank spec idx))))
