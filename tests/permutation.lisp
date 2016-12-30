@@ -18,6 +18,17 @@
                                 (make-cycle 4 5)))
              (make-perm 2 3 1 5 4))))
 
+(deftest test-perm-compose ()
+  (let ((a (make-perm 2 1))
+        (b (make-perm 2 1 4 3))
+        (c (make-perm 1 3 2)))
+    (is (perm= (make-perm 1 2 4 3) (perm-compose a b)))
+    (is (perm= (make-perm 2 3 1)   (perm-compose a c)))
+    (is (perm= (make-perm 2 4 1 3) (perm-compose b c)))
+    (is (perm= (make-perm 1 2 4 3) (perm-compose b a)))
+    (is (perm= (make-perm 3 1 2)   (perm-compose c a)))
+    (is (perm= (make-perm 3 1 4 2) (perm-compose c b)))))
+
 (defun naive-from-cycles (cycles size)
   (reduce #'perm-compose cycles
           :initial-value (perm-identity size)

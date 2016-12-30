@@ -249,24 +249,23 @@
   "The sign of a permutation PERM."
   (if (perm-even-p perm) 1 -1))
 
+(declaim (inline %perm-compose-upto))
+(defun %perm-compose-upto (p1 p2 n)
+  ;; N limits the resulting perm size.
+  (let* ((p12-spec (allocate-perm-vector n)))
+    (loop :for i :from 1 :to n
+          :do (setf (aref p12-spec i)
+                    (perm-eval* p1 (perm-eval* p2 i)))
+          :finally (return (%make-perm :rep p12-spec)))))
+(declaim (notinline %perm-compose-upto))
+
 (declaim (inline perm-compose))
 (defun perm-compose (p1 p2)
   "Compose the permutations P1 and P2: x |-> P1(P2(x)).
 
 Example: If P1 = 2 |-> 3 and P2 = 1 |-> 2 then (perm-compose P1 P2) = 1 |-> 3."
-  #+#:ignore
-  (assert (= (perm-size p1)
-             (perm-size p2))
-          nil
-          "Permutations ~A and ~A must have the same size."
-          p1 p2)
-
-  (let* ((n        (perm-size p1))
-         (p12-spec (allocate-perm-vector n)))
-    (loop :for i :from 1 :to n
-          :do (setf (aref p12-spec i)
-                    (perm-eval* p1 (perm-eval* p2 i)))
-          :finally (return (%make-perm :rep p12-spec)))))
+  (declare (inline %perm-compose-upto))
+  (%perm-compose-upto p1 p2 (max (perm-size p1) (perm-size p2))))
 (declaim (notinline perm-compose))
 
 (defun perm-compose-flipped (p1 p2)
