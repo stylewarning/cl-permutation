@@ -14,6 +14,21 @@
   (is (= 100669616553523347122516032313645505168688116411019768627200000000000
          (group-order (make-megaminx)))))
 
+(deftest test-subgroup-test ()
+  "Test that SUBGROUP-P works."
+  (let ((G (group-from-cycles (list
+                               (list (make-cycle 1 2))
+                               (list (make-cycle 2 3)))
+                              4))
+        (H (group-from-cycles (list
+                               (list (make-cycle 1 3)))
+                              4))
+        (J (group-from-cycles (list
+                               (list (make-cycle 1 4)))
+                              4)))
+    (is (subgroup-p G H))
+    (is (not (subgroup-p G J)))))
+
 (deftest test-transversal-decomposition (group p)
   "Test that the transversal decomposition of the perm P can reconstruct the perm."
   (is (perm=*

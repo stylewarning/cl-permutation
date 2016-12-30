@@ -345,6 +345,11 @@ The sigma (SIGMA K J) is represented by the cons cell (K . J)."
   "Decide if the permutation PERM is an element of the group GROUP."
   (trans-element-p perm (perm-group.transversal-system group)))
 
+(defun subgroup-p (group subgroup)
+  "Is the group SUBGROUP a subgroup of GROUP?"
+  (every (lambda (g) (group-element-p g group))
+         (generators subgroup)))
+
 (defun random-group-element (group)
   "Generate a random element of the group GROUP."
   (loop :for v :across (perm-group.transversal-system group)
