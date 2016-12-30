@@ -6,6 +6,12 @@
 
 (in-suite cl-permutation-suite)
 
+(deftest test-random-group-element ()
+  "Test the generation of random group elements actually produces elements of the group."
+  (loop :with g := (make-rubik-3x3)
+        :repeat 10
+        :do (is (group-element-p (random-group-element g) g))))
+
 (deftest test-group-orders ()
   "Test that the group order is being computed correctly for a few known examples."
   (is (= 3674160 (group-order (make-rubik-2x2))))

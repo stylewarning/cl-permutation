@@ -22,7 +22,7 @@
                       :documentation "The strong generating set of the group. This is a vector mapping integers to lists of generators.")
    (transversal-system :initarg :transversal-system
                        :accessor perm-group.transversal-system
-                       :documentation "The transversal system of the group. This is a vector mapping integers K to a table of sigmas SIGMA_K.")
+                       :documentation "The transversal system of the group. This is a vector mapping integers K to a table of sigmas SIGMA_K. Every permutation in the group can be represented by a product of permutations SIGMA_K * ... * SIGMA_2 * SIGMA_1.")
    (free-group :initarg :free-group
                :accessor perm-group.free-group
                :documentation "A free group corresponding to the given permutation group.")
@@ -157,7 +157,7 @@ F is a function of three arguments:
     ACCUM: The \"accumulator\" argument. INITIAL-VALUE is the initial value of this argument.
     K, J : Two arguments representing the sigma.
 
-If all K and J are accumulated into a list, then the list would represent the transversal decomposition of PERM."
+N.B.! The sigma_kj are visited in \"right-to-left\" compositional order. That is, if S1, S2, ..., Sk are visited sequentially, then PERM is the composition Sk * ... * S2 * S1."
   (labels ((next (perm k acc)
              (if (zerop k)
                  (values acc t)
@@ -175,7 +175,7 @@ If all K and J are accumulated into a list, then the list would represent the tr
   "Decompose PERM into a list of sigmas within the transversal system TRANS. The composition of the sigmas equals the original perm up to K.
 
 The sigma (SIGMA K J) is represented by the cons cell (K . J)."
-  ;; XXX: Could avoid NREVERSE by collecting correctly.
+  ;; XXX: Could avoid NREVERSE by collecting more cleverly.
   (flet ((collector (decomp k j)
            (acons k j decomp)))
     (declare (dynamic-extent #'collector))
@@ -354,12 +354,10 @@ The sigma (SIGMA K J) is represented by the cons cell (K . J)."
 ;;; XXX FIXME: Avoid consing here.
 (defun random-group-element (group)
   "Generate a random element of the group GROUP."
-  (loop :for v :across (perm-group.transversal-system group)
-        :collect (cdr (random-element v)) :into random-sigmas
-        :finally (return
-                   (reduce #'perm-compose
-                           random-sigmas
-                           :initial-value (group-identity group)))))
+  (reduce #'perm-compose-flipped
+          (perm-group.transversal-system group)
+          :initial-value (group-identity group)
+          :key (lambda (sigma_k) (cdr (random-element sigma_k)))))
 
 ;;; XXX: This can be made more efficient by directly reducing over,
 ;;; removing identities within the fold function.
@@ -367,12 +365,12 @@ The sigma (SIGMA K J) is represented by the cons cell (K . J)."
   "Decompose the permutation PERM into transversal sigmas of the group GROUP."
   (let ((decomp
           (trans-decomposition perm (perm-group.transversal-system group))))
-    (if remove-identities
+    (if (not remove-identities)
+        decomp
         (delete-if (lambda (sigma)
                      (= (car sigma)
                         (cdr sigma)))
-                   decomp)
-        decomp)))
+                   decomp))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;; Generator Decomposition ;;;;;;;;;;;;;;;;;;;;;;;
@@ -422,7 +420,7 @@ Note: The result is likely very long and inefficient."
                (symbol-assignment ctx (to-sigma-symbol tt)))
              (eval-slp (slp)
                (evaluate-slp fg ctx slp)))
-      (mapcar (if free-group-generators-p #'identity hom)                           ; Free -> Perm
+      (mapcar (if free-group-generators-p #'identity hom) ; Free -> Perm
               (delete (identity-element fg) ; Remove identities.
                       (mapcan #'eval-slp    ; Eval SLPs
                               (mapcar #'find-slp d)))))))

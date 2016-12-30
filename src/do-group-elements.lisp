@@ -18,11 +18,13 @@
   ;; corresponds to identity, we can skip them. When it is non-zero,
   ;; we subtract one, since the identity element is guaranteed to be
   ;; sigma_kk, which we don't want.
-  (let ((perms (loop :for sigma_k :across (perm-group.transversal-system group)
-                     :for n :across signature
-                     :unless (zerop n)
-                       :collect (cdr (nth (1- n) sigma_k)))))
-    (reduce #'perm-compose (reverse perms) :initial-value (group-identity group))))
+  (loop :with result := (group-identity group)
+        :for sigma_k :across (perm-group.transversal-system group)
+        :for n :across signature
+        :unless (zerop n)
+          :do (setf result (perm-compose (cdr (nth (1- n) sigma_k))
+                                         result))
+        :finally (return result)))
 
 (defun group-element-rank-functions (group)
   "Generate two functions as values:
