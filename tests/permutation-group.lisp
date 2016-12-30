@@ -4,7 +4,7 @@
 
 (in-package #:cl-permutation-tests)
 
-(deftest test-random-group-element ()
+(deftest test-random-group-element-randomly ()
   "Test the generation of random group elements actually produces elements of the group."
   (loop :with g := (make-rubik-3x3)
         :repeat 10
@@ -12,6 +12,7 @@
 
 (deftest test-group-orders ()
   "Test that the group order is being computed correctly for a few known examples."
+  (is (= 120 (group-order (make-s5))))
   (is (= 3674160 (group-order (make-rubik-2x2))))
   (is (= 43252003274489856000 (group-order (make-rubik-3x3))))
   #+#:skip-test
