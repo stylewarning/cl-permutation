@@ -249,6 +249,7 @@
   "The sign of a permutation PERM."
   (if (perm-even-p perm) 1 -1))
 
+(declaim (inline perm-compose))
 (defun perm-compose (p1 p2)
   "Compose the permutations P1 and P2: x |-> P1(P2(x)).
 
@@ -266,6 +267,12 @@ Example: If P1 = 2 |-> 3 and P2 = 1 |-> 2 then (perm-compose P1 P2) = 1 |-> 3."
           :do (setf (aref p12-spec i)
                     (perm-eval* p1 (perm-eval* p2 i)))
           :finally (return (%make-perm :rep p12-spec)))))
+(declaim (notinline perm-compose))
+
+(defun perm-compose-flipped (p1 p2)
+  "Compose the permutatons P1 and P2: x |-> P2(P1(x)). This is equivalent to (PERM-COMPOSE P2 P1)."
+  (declare (inline perm-compose))
+  (perm-compose p2 p1))
 
 (defun perm-expt (perm n)
   "Raise a permutation PERM to the Nth power. If N is negative, then the inverse will be raised to the -Nth power."

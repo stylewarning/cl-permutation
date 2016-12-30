@@ -32,6 +32,7 @@
    #:perm-odd-p
    #:perm-sign
    #:perm-compose
+   #:perm-compose-flipped
    #:perm-expt
    #:perm-order
    #:perm-transpose-indexes
