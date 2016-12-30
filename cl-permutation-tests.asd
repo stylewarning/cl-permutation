@@ -1,6 +1,6 @@
 ;;;; cl-permutation-tests.asd
 ;;;;
-;;;; Copyright (c) 2014-2015 Robert Smith
+;;;; Copyright (c) 2014-2016 Robert Smith
 
 (asdf:defsystem #:cl-permutation-tests
   :description "Regression tests for the library CL-PERMUTATION."
@@ -21,6 +21,7 @@
                  (:file "permutation")
                  (:file "straight-line-program")
                  (:file "permutation-group")
+                 (:file "do-group-elements")
                  (:file "homomorphism")
                  (:file "orbit")
                  (:file "block")))))

@@ -20,12 +20,29 @@
   ;; sigma_kk, which we don't want.
   (let ((perms (loop :for sigma_k :across (perm-group.transversal-system group)
                      :for n :across signature
-                     :collect (nth-value 1 (hash-table-elt trans n)))))
-    (reduce #'perm-compose
-            perms
-            :key (let ((id (perm-identity (maximum perms :key #'perm-size))))
-                   (lambda (s)
-                     (perm-compose id s))))))
+                     :unless (zerop n)
+                       :collect (cdr (nth (1- n) sigma_k)))))
+    (reduce #'perm-compose (reverse perms) :initial-value (group-identity group))))
+
+(defun group-element-rank-functions (group)
+  "Generate two functions as values:
+
+    1. A function to map elements of the permutation group GROUP to integers [0, 2^|GROUP| - 1].
+
+    2. The inverse of the above function."
+  (let ((spec (vector-to-mixed-radix-spec (group-radix group))))
+    (flet ((rank-element (el)
+             (let* ((trans (transversal-decomposition el
+                                                      group
+                                                      :remove-identities nil))
+                    (set (nreverse
+                          (map 'simple-vector
+                               (lambda (sigma) (mod (cdr sigma) (car sigma)))
+                               trans))))
+               (rank spec set)))
+           (unrank-element (idx)
+             (group-element-from-signature group (unrank spec idx))))
+      (values #'rank-element #'unrank-element))))
 
 (defmacro do-group-elements ((var group &optional return) &body body)
   "Iterate through all of the elements of the group GROUP, binding each element to VAR and executing BODY. Optionally return a value specified by RETURN."

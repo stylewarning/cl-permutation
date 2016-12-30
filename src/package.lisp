@@ -165,4 +165,10 @@
    #:map-spec                           ; FUNCTION
    #:print-objects-of-spec              ; FUNCTION
    )
+
+  ;; do-group-elements.lisp
+  (:export
+   #:group-element-rank-functions       ; FUNCTION
+   #:do-group-elements                  ; FUNCTION
+   )
   )
