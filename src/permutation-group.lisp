@@ -155,7 +155,7 @@ F is a function of three arguments:
 
 If all K and J are accumulated into a list, then the list would represent the transversal decomposition of PERM."
   (labels ((next (perm k acc)
-             (if (= 1 k)
+             (if (zerop k)
                  (values acc t)
                  (let* ((j (perm-eval perm k))
                         (k-val (transversal-ref trans k)))
