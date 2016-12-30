@@ -9,11 +9,16 @@
 
 (defun group-radix (group)
   "Compute the radix of the group GROUP."
-  (map 'simple-vector #'hash-table-count (perm-group.transversal-system group)))
+  (map 'simple-vector #'length (perm-group.transversal-system group)))
 
 ;;; TODO: Make this cons less.
 (defun group-element-from-signature (group signature)
-  (let ((perms (loop :for trans :across (perm-group.transversal-system group)
+  ;; SIGNATURE is the output of ranking a MIXED-RADIX-SPEC, and has
+  ;; elements between 0 and the position's radix. Since zero
+  ;; corresponds to identity, we can skip them. When it is non-zero,
+  ;; we subtract one, since the identity element is guaranteed to be
+  ;; sigma_kk, which we don't want.
+  (let ((perms (loop :for sigma_k :across (perm-group.transversal-system group)
                      :for n :across signature
                      :collect (nth-value 1 (hash-table-elt trans n)))))
     (reduce #'perm-compose

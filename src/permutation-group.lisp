@@ -19,7 +19,7 @@
                :documentation "A list of generators of the group.")
    (strong-generators :initarg :strong-generators
                       :accessor perm-group.strong-generators
-                      :documentation "The strong generating set of the group. This is a hash table mapping integers to lists of generators.")
+                      :documentation "The strong generating set of the group. This is a vector mapping integers to lists of generators.")
    (transversal-system :initarg :transversal-system
                        :accessor perm-group.transversal-system
                        :documentation "The transversal system of the group. This is a vector mapping integers K to a table of sigmas SIGMA_K.")
@@ -75,7 +75,7 @@ then
 ;;;;;;;;;;;;;;; Transversal Systems and Schreier-Sims ;;;;;;;;;;;;;;;;
 
 (deftype transversal ()
-  ;; It could actually be (simple-array (or null hash-table) (*)), but
+  ;; It could actually be (simple-array list (*)), but
   ;; we will want to use SVREF. While such a type would collapse into
   ;; SIMPLE-VECTOR in most implementations, we don't want to assume
   ;; such.
@@ -119,20 +119,23 @@ then
 
 The optional argument IDENTITY allows the caller to provide the identity permutation for sigma_kk.
 
-This is represented as a hash table mapping J to permutations sigma_KJ."
-  (let ((ht (make-hash-table :test 'eql)))
-    (setf (gethash k ht) identity)
-    ht))
+This is represented as an alist mapping J to permutations sigma_KJ."
+  (acons k identity nil))
 
 ;;; SIGMAs are elements of the transversal system. A SIGMA is either
 ;;; NIL or some permutation that maps K to J.
 (defun sigma (trans k j)
-  "Retrieve sigma_kj for the transversal system TRANS."
+  "Retrieve sigma_kj for the transversal system TRANS, or NIL if it doesn't exist."
   (let ((sigma_k (transversal-ref trans k)))
-    (values (gethash j sigma_k))))
+    (cdr (assoc j sigma_k))))
 
 (defun (setf sigma) (new-value trans k j)
-  (setf (gethash j (transversal-ref trans k)) new-value))
+  (let* ((sigma_k (transversal-ref trans k))
+         (sigma_kj (assoc j sigma_k)))
+    (if (null sigma_kj)
+        (setf (transversal-ref trans k) (acons j new-value sigma_k))
+        (rplacd sigma_kj new-value)))
+  new-value)
 
 (defun sigma-symbol (k j)
   "Return a symbol representing sigma_kj. This is used for perms that are added to the transversal system during group construction."
@@ -159,15 +162,12 @@ If all K and J are accumulated into a list, then the list would represent the tr
              (if (zerop k)
                  (values acc t)
                  (let* ((j (perm-eval perm k))
-                        (k-val (transversal-ref trans k)))
-                   (if (null k-val)
+                        (sigma_kj (sigma trans k j)))
+                   (if (null sigma_kj)
                        (values nil nil)
-                       (multiple-value-bind (j-val j-exists-p) (gethash j k-val)
-                         (if (null j-exists-p)
-                             (values nil nil)
-                             (next (perm-compose (perm-inverse j-val) perm)
-                                   (1- k)
-                                   (funcall f acc k j)))))))))
+                       (next (perm-compose (perm-inverse sigma_kj) perm)
+                             (1- k)
+                             (funcall f acc k j)))))))
     (declare (dynamic-extent #'next))
     (next perm k initial-value)))
 
@@ -231,8 +231,7 @@ The sigma (SIGMA K J) is represented by the cons cell (K . J)."
   ;; Process the perm, adding it to the group structure.
   (let ((redo nil))
     (loop
-      (loop :for s :being :the :hash-values :of (transversal-ref trans k)
-              :using (hash-key j)
+      (loop :for (j . s) :in (transversal-ref trans k)
             :for s-sym := (sigma-symbol k j) :do
               (dolist (tau (sgs-ref sgs k))
                 (let* ((prod (perm-compose tau s))
@@ -341,7 +340,7 @@ The sigma (SIGMA K J) is represented by the cons cell (K . J)."
 (defun group-order (group)
   "Compute the order of the permutation group GROUP."
   (let ((transversals (perm-group.transversal-system group)))
-    (product transversals :key #'hash-table-count)))
+    (product transversals :key #'length)))
 
 (defun group-element-p (perm group)
   "Decide if the permutation PERM is an element of the group GROUP."
@@ -356,7 +355,7 @@ The sigma (SIGMA K J) is represented by the cons cell (K . J)."
 (defun random-group-element (group)
   "Generate a random element of the group GROUP."
   (loop :for v :across (perm-group.transversal-system group)
-        :collect (random-hash-table-value v) :into random-sigmas
+        :collect (cdr (random-element v)) :into random-sigmas
         :finally (return
                    (reduce #'perm-compose
                            random-sigmas

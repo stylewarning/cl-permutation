@@ -310,14 +310,14 @@
 
         ;; This will divide evenly.
         (decf idx (/ (* current-cardinality current-offset) length-remaining))
-        
+
         (assert (integerp idx))
 
         ;; This will divide evenly.
         (setf current-cardinality
               (/ (* current-cardinality (aref unprocessed-type-counts current-type))
                  length-remaining))
-        
+
         (assert (integerp current-cardinality))
 
         (decf (aref unprocessed-type-counts current-type))

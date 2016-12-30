@@ -84,76 +84,9 @@ function KEY."
     ((zerop x)  0)
     (t         -1)))
 
-(defun hash-table-key-exists-p (hash-table key)
-  "Check of KEY exists in HASH-TABLE."
-  (multiple-value-bind (val existsp) (gethash key hash-table)
-    (declare (ignore val))
-    existsp))
-
-(defun hash-table-keys (hash-table)
-  "Return a list of the hash table keys of HASH-TABLE."
-  (loop :for k :being :the :hash-keys :of hash-table
-        :collect k))
-
-(defun hash-table-values (hash-table)
-  "Return a list of the hash table values of HASH-TABLE."
-  (loop :for v :being :the :hash-values :of hash-table
-        :collect v))
-
-(defun print-hash-table (hash-table)
-  (loop :for k :being :the :hash-keys :of hash-table
-        :for v := (gethash k hash-table)
-        :do (format t "~S ==> ~S~%" k v))
-  (terpri))
-
-(defun index-to-hash-table-key (hash-table n)
-  "Get the Nth key from HASH-TABLE. Ordering is not specified.
-
-This function just guarantees we can map N to some hash table key."
-  (maphash (lambda (k v)
-             (declare (ignore v))
-             (when (zerop n)
-               (return-from index-to-hash-table-key k))
-             (decf n))
-           hash-table))
-
-(defun random-hash-table-key (hash-table)
-  "Obtain a random hash table key."
-  (index-to-hash-table-key hash-table
-                           (random (hash-table-count hash-table))))
-
-(defun random-hash-table-value (hash-table)
-  "Obtain a random hash table value."
-  (gethash (random-hash-table-key hash-table) hash-table))
-
-;; XXX: Not used.
-(define-condition hash-table-access-error (cell-error)
-  ((table :initarg :table :reader hash-table-access-error-table)
-   (key :initarg :key :reader hash-table-access-error-key))
-  (:documentation "An error to be signalled if a key doesn't exist in
-  a hash-table."))
-
-(defun hash-table-elt (hash-table n)
-  "Extract the Nth element from the hash table HASH-TABLE, given some arbitrary ordering of the keys and values. Return the Nth KEY and VALUE as two values."
-  (check-type n integer)
-  (assert (<= 0 n (1- (hash-table-count hash-table)))
-          (n)
-          "The index ~S provided is out of bounds.")
-  (maphash #'(lambda (k v)
-               (if (zerop n)
-                   (return-from hash-table-elt (values k v))
-                   (decf n)))
-           hash-table))
-
-;; XXX: Not used.
-(defun safe-gethash (key hash-table)
-  "Throw an error in the event that KEY foes not exist in HASH-TABLE. Othwerwise return the value."
-  (multiple-value-bind (val existsp) (gethash key hash-table)
-    (if existsp
-        val
-        (error 'hash-table-access-error :name 'gethash
-                                        :table hash-table
-                                        :key key))))
+(defun random-element (seq)
+  "Select a random element from the sequence SEQ."
+  (elt seq (random (length seq))))
 
 (defun singletonp (x)
   "Does X contain one element?"
@@ -191,7 +124,7 @@ This function just guarantees we can map N to some hash table key."
         ;; QUEUE-ELEMENTS and QUEUE-LAST.
         (setf (queue-elements queue) last
               (queue-last queue)     last)
-        
+
         ;; We can now append elements to QUEUE-ELEMENTS simply by
         ;; modifying QUEUE-LAST, whose reference is shared by
         ;; QUEUE-ELEMENTS,

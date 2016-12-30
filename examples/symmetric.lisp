@@ -4,7 +4,7 @@
 
 (in-package #:cl-permutation-examples)
 
-;;; 120
+;;; Order: 120
 (defun make-S5 ()
   (group-from
    '((2 1 3 4 5)
