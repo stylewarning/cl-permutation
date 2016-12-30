@@ -145,7 +145,6 @@ This is represented as an alist mapping J to permutations sigma_KJ."
   "Return a freshly made symbol for tau."
   (gensym "TAU-"))
 
-;;; XXX: Can we simplify this by just looking for SIGMA?
 (defun reduce-over-trans-decomposition (f initial-value perm trans &optional (k (perm-size perm)))
   "Reduce F over the transversal decomposition of PERM within the transversal system TRANS. Return two values:
 
@@ -165,7 +164,9 @@ N.B.! The sigma_kj are visited in \"right-to-left\" compositional order. That is
                         (sigma_kj (sigma trans k j)))
                    (if (null sigma_kj)
                        (values nil nil)
-                       (next (perm-compose (perm-inverse sigma_kj) perm)
+                       (next (if (= j k)
+                                 perm
+                                 (perm-compose (perm-inverse sigma_kj) perm))
                              (1- k)
                              (funcall f acc k j)))))))
     (declare (dynamic-extent #'next))
@@ -234,13 +235,13 @@ The sigma (SIGMA K J) is represented by the cons cell (K . J)."
       (loop :for (j . s) :in (transversal-ref trans k)
             :for s-sym := (sigma-symbol k j) :do
               (dolist (tau (sgs-ref sgs k))
-                (let* ((prod (perm-compose tau s))
-                       (t-sym (gethash tau *taus*))
-                       (prod-slp (compose-slp (slp-symbol t-sym)
-                                              (slp-symbol s-sym))))
+                (let ((prod (perm-compose tau s)))
                   (unless (trans-element-p prod trans)
-                    (multiple-value-setq (sgs trans)
-                      (update-transversal prod sgs trans k prod-slp))
+                    (let* ((t-sym (gethash tau *taus*))
+                           (prod-slp (compose-slp (slp-symbol t-sym)
+                                                  (slp-symbol s-sym))))
+                      (multiple-value-setq (sgs trans)
+                        (update-transversal prod sgs trans k prod-slp)))
 
                     (setf redo t)))))
 
@@ -257,15 +258,17 @@ The sigma (SIGMA K J) is represented by the cons cell (K . J)."
          (sigma (sigma trans k j)))
     (cond
       ((not (null sigma))
-       (let ((new-perm (perm-compose (perm-inverse sigma)
-                                     perm))
-             (new-perm-slp (compose-slp
-                            (invert-slp
-                             (slp-symbol (sigma-symbol k j)))
-                            slp)))
+       (let ((new-perm (%perm-compose-upto
+                        (perm-inverse sigma)
+                        perm
+                        (1- k))))
          (if (trans-element-p new-perm trans (1- k))
              (values sgs trans)
-             (add-generator new-perm sgs trans (1- k) new-perm-slp))))
+             (let ((new-perm-slp (compose-slp
+                                  (invert-slp
+                                   (slp-symbol (sigma-symbol k j)))
+                                  slp)))
+               (add-generator new-perm sgs trans (1- k) new-perm-slp)))))
       (t
        (setf (sigma trans k j) perm)
        (setf (symbol-assignment *context* (sigma-symbol k j))
@@ -283,11 +286,10 @@ The sigma (SIGMA K J) is represented by the cons cell (K . J)."
     ;; Initialize TRANS to map sigma_KK: K -> (K -> Identity(K)).
     ;;
     ;; Also record their SLPs as (SLP-ELEMENT <fg identity>).
-    (loop :with identity := (perm-identity n)
-          :for k :from 1 :to n :do
-            (setf (transversal-ref trans k) (make-sigma-table k identity))
-            (setf (symbol-assignment *context* (sigma-symbol k k))
-                  (slp-element (identity-element fg))))
+    (loop :for k :from 1 :to n :do
+      (setf (transversal-ref trans k) (make-sigma-table k))
+      (setf (symbol-assignment *context* (sigma-symbol k k))
+            (slp-element (identity-element fg))))
 
     ;; Add the generators.
     ;;
