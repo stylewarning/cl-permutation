@@ -1,6 +1,6 @@
 ;;;; tests/permutation-group.lisp
 ;;;;
-;;;; Copyright (c) 2015 Robert Smith
+;;;; Copyright (c) 2015-2018 Robert Smith
 
 (in-package #:cl-permutation-tests)
 
@@ -94,9 +94,30 @@
   #+#:skip-test
   (test-sigma-slps (make-rubik-3x3)))
 
+(deftest test-naive-generator-decomposition (group p)
+  "Check that the perm P decomposes into generators within the perm group GROUP which reconstruct the perm. (Naive method.)"
+  (let ((gens (naive-generator-decomposition p group :return-original-generators t)))
+    (is (perm= p
+               (reduce #'perm-compose
+                       gens
+                       :initial-value (group-identity group))))))
+
+(deftest test-naive-generator-decomposition-randomly ()
+  "Check veracity of generator decomposition of random elements of the 2x2 cube group. (Naive method.)"
+  (let ((rubik (make-rubik-2x2)))
+    (loop :repeat 10 :do
+      (test-generator-decomposition rubik (random-group-element rubik)))))
+
+(deftest test-factorization-using-free-group (group p)
+  "Test that P correctly factorizes as free group generators."
+  (let* ((f (generator-decomposition p group :return-original-generators nil))
+         (ϕ (perm::free-group->perm-group-homomorphism
+             (perm::perm-group.free-group group) group)))
+    (is (perm= p (funcall ϕ f)))))
+
 (deftest test-generator-decomposition (group p)
   "Check that the perm P decomposes into generators within the perm group GROUP which reconstruct the perm."
-  (let ((gens (generator-decomposition p group)))
+  (let ((gens (generator-decomposition p group :return-original-generators t)))
     (is (perm= p
                (reduce #'perm-compose
                        gens
@@ -105,5 +126,9 @@
 (deftest test-generator-decomposition-randomly ()
   "Check veracity of generator decomposition of random elements of the 2x2 cube group."
   (let ((rubik (make-rubik-2x2)))
-    (loop :repeat 10 :do
-      (test-generator-decomposition rubik (random-group-element rubik)))))
+    (loop :repeat 10
+          :for r := (random-group-element rubik)
+          :do (test-generator-decomposition rubik r)
+              (test-factorization-using-free-group rubik r))))
+
+

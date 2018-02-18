@@ -58,6 +58,13 @@ An empty list corresponds to an empty composition, which is identity (0)."))
             "The provided free group contains invalid elements.")
     (mapcan #'process elements)))
 
+(defun free-group-identity-p (x)
+  "Is X an identity element of a free group?"
+  (cond
+    ((integerp x) (zerop x))
+    ((listp x) (every #'zerop x))
+    (t nil)))
+
 (defmethod identity-element ((g free-group))
   0)
 

@@ -273,6 +273,10 @@ Example: If P1 = 2 |-> 3 and P2 = 1 |-> 2 then (perm-compose P1 P2) = 1 |-> 3."
   (declare (inline perm-compose))
   (perm-compose p2 p1))
 
+(defun perm-conjugate (p g)
+  "Conjugate the permutation P by G. This is G^-1 P G"
+  (perm-compose (perm-inverse g) (perm-compose p g)))
+
 (defun perm-expt (perm n)
   "Raise a permutation PERM to the Nth power. If N is negative, then the inverse will be raised to the -Nth power."
   (check-type n integer)

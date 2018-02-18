@@ -33,6 +33,7 @@
    #:perm-sign
    #:perm-compose
    #:perm-compose-flipped
+   #:perm-conjugate
    #:perm-expt
    #:perm-order
    #:perm-transpose-indexes
@@ -87,6 +88,7 @@
    #:free-group                         ; CLASS
    #:make-free-group                    ; FUNCTION
    #:make-free-group-element            ; FUNCTION
+   #:free-group-identity-p              ; FUNCTION
    )
 
   ;; straight-line-program.lisp
@@ -120,6 +122,7 @@
    #:orbit-group-homomorphism           ; FUNCTION
    #:group-from-orbit                   ; FUNCTION
    #:subdirect-factors                  ; FUNCTION
+   #:naive-generator-decomposition      ; FUNCTION
    #:generator-decomposition            ; FUNCTION
    )
 

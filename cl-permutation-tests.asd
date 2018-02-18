@@ -11,7 +11,7 @@
                #:fiasco)
   :perform (asdf:test-op (o s)
                          (uiop:symbol-call :cl-permutation-tests
-                                           '#:run-tests))
+                                           '#:run-the-tests))
   :pathname "tests/"
   :serial t
   :components ((:file "package")

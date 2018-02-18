@@ -1,8 +1,10 @@
 ;;;; permutation-group.lisp
 ;;;;
-;;;; Copyright (c) 2012-2014 Robert Smith
+;;;; Copyright (c) 2012-2018 Robert Smith
 
 (in-package #:cl-permutation)
+
+(defvar *perm-group-verbose* nil)
 
 ;;; A TRANSVERSAL SYSTEM (trans) is represented as an alist, which
 ;;; takes a K and returns a table which takes a J and returns
@@ -19,13 +21,17 @@
                :documentation "A list of generators of the group.")
    (strong-generators :initarg :strong-generators
                       :accessor perm-group.strong-generators
-                      :documentation "The strong generating set of the group. This is a vector mapping integers to lists of generators.")
+                      :documentation "The strong generating set of the group. This is a vector mapping integers to lists of generators which generate the i'th stabilizer.")
    (transversal-system :initarg :transversal-system
                        :accessor perm-group.transversal-system
                        :documentation "The transversal system of the group. This is a vector mapping integers K to a table of sigmas SIGMA_K. Every permutation in the group can be represented by a product of permutations SIGMA_K * ... * SIGMA_2 * SIGMA_1.")
    (free-group :initarg :free-group
                :accessor perm-group.free-group
                :documentation "A free group corresponding to the given permutation group.")
+   (factorization-generators :initarg :factorization-generators
+                             :accessor perm-group.factorization-generators
+                             :documentation "A vector whose length is the same length as the base of the group, whose values are vectors of free-group elements that are coset representatives of the stabilizer G^(i+1)/G^(i). This collection of generators is *also* a strong generating set. This is optionally computed with #'COMPUTE-FACTORIZATION-GENERATORS."
+                             :initform nil)
    (slp-context :initarg :slp-context
                 :accessor perm-group.slp-context
                 :documentation "SLPs corresponding to all sigmas and strong generators."))
@@ -375,7 +381,9 @@ The sigma (SIGMA K J) is represented by the cons cell (K . J)."
                    decomp))))
 
 
-;;;;;;;;;;;;;;;;;;;;;; Generator Decomposition ;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;; Generator Decomposition Using SLPs ;;;;;;;;;;;;;;;;;
+
+;;; These functions are for pedagogy.
 
 (defun free-group-generator-to-perm-group-generator (perm-group free-group-generator)
   "Convert the free group generator FREE-GROUP-GENERATOR to a generator within the perm group PERM-GROUP."
@@ -388,6 +396,8 @@ The sigma (SIGMA K J) is represented by the cons cell (K . J)."
                     perm-group
                     (- i)))))))
 
+;; FIXME: We should improve this to use the stuff from
+;; homomorphism.lisp, maybe.
 (defun free-group->perm-group-homomorphism (free-group perm-group)
   "Construct a homomorphism from the perm group PERM-GROUP's free group to elements of the perm group itself."
   (assert (= (num-generators free-group)
@@ -408,8 +418,10 @@ The sigma (SIGMA K J) is represented by the cons cell (K . J)."
                                           (free-group-generator-to-perm-group-generator perm-group i)))
                   :finally (return result))))))
 
-(defun generator-decomposition (perm group &key free-group-generators-p)
-  "Compute the generator decomposition of the permutation PERM of the group GROUP.
+(defun naive-generator-decomposition (perm group &key return-original-generators)
+  "Compute the generator decomposition of the permutation PERM of the group GROUP. By default, return a sequence of free generators.
+
+If RETURN-ORIGINAL-GENERATORS is true, return the group's original generators as permutations.
 
 Note: The result is likely very long and inefficient."
   (let* ((d (transversal-decomposition perm group :remove-identities t))
@@ -422,7 +434,233 @@ Note: The result is likely very long and inefficient."
                (symbol-assignment ctx (to-sigma-symbol tt)))
              (eval-slp (slp)
                (evaluate-slp fg ctx slp)))
-      (mapcar (if free-group-generators-p #'identity hom) ; Free -> Perm
+      (mapcar (if return-original-generators hom #'identity) ; Free -> Perm
               (delete (identity-element fg) ; Remove identities.
                       (mapcan #'eval-slp    ; Eval SLPs
                               (mapcar #'find-slp d)))))))
+
+;;;;;;;;;;;;;;;;;; Improved Generator Decomposition ;;;;;;;;;;;;;;;;;;
+
+(defun word-length (w)
+  (cond
+    ((integerp w) 1)
+    ((listp w) (max 1 (length w)))
+    (t (error "invalid word: ~A" w))))
+
+(defun word-generator (group)
+  (check-type group free-group)
+  (let* ((b/2 (free-group-num-generators group))
+         (b (* 2 b/2)))
+    (labels ((process (x)
+               (if (<= x b/2)
+                   x
+                   (- b/2 x)))
+             (words-in-level (l)
+               (expt b l))
+             (words-below-level (l)
+               (loop :for i :below l :sum (words-in-level i)))
+             (find-level (n)
+               (if (zerop n)
+                   0
+                   (loop :for l :from 0
+                         :when (<= (words-below-level l)
+                                   n
+                                   (1- (words-below-level (1+ l))))
+                           :do (return l))))
+             (generate (n l)
+               (let ((n (- n (words-below-level l))))
+                 (loop :repeat l
+                       :collect (multiple-value-bind (quo rem) (floor n b)
+                                  (setf n quo)
+                                  (1+ rem))))))
+      (lambda (n)
+        (mapcar #'process (generate n (find-level n)))))))
+
+(defun %compute-factorization-generators (group &key max-rounds
+                                                     improve-every
+                                                     l)
+  (declare (optimize (speed 0) safety debug))
+  
+  ;; every s rounds, improve
+  ;;
+  ;; l should be small in the beginning and grow slowly; small l
+  ;; terminates rounds earlier.
+  (check-type group perm-group)
+  (check-type max-rounds (or null integer))
+  (check-type improve-every (or null integer))
+  (check-type l (or null real))
+  (uiop:nest
+   (let* ((deg (group-degree group))
+          (base (group-bsgs group))
+          (k (length base))
+          (free-group (perm-group.free-group group))
+          (ϕ (free-group->perm-group-homomorphism free-group group))
+          (next (word-generator free-group))
+          (ν nil)))
+   (labels ((%step (i tt)
+              (check-type i unsigned-byte)
+              (assert (free-group-element-valid-p free-group tt))
+              (assert (<= 1 i k))
+              ;; tt is a free group word
+              (let* ((νᵢ (aref ν (1- i)))
+                     (bᵢ (elt base (1- i)))
+                     (ω (perm-eval (funcall ϕ tt) bᵢ)))
+                (symbol-macrolet ((b′ (aref νᵢ (1- ω))))
+                  (cond
+                    ((not (null b′))
+                     (prog1 (compose free-group (car b′) tt)
+                       (when (< (word-length tt) (word-length (car b′)))
+                         (setf b′ (cons (inverse free-group tt) t))
+                         (%step i (inverse free-group tt)))))
+                    (t
+                     (setf b′ (cons (inverse free-group tt) t))
+                     (%step i (inverse free-group tt))
+                     (identity-element free-group))))))
+            
+            (%round (l c tt)
+              (check-type l real)
+              (check-type c unsigned-byte)
+              (assert (<= 1 c k))
+              ;; tt is a free group word
+              (loop :while (and (not (free-group-identity-p tt))
+                                (< (word-length tt) l)
+                                (<= c k)) ; is this right?
+                    :do (setf tt (%step c tt))
+                        (incf c)))
+            
+            (%improve (l)
+              (dotimes (j k)
+                (loop :for x :across (aref ν j) :do
+                  (when x
+                    (loop :for y :across (aref ν j) :do
+                      (when y
+                        (when (or (cdr x) (cdr y))
+                          (rplacd x nil)
+                          (rplacd y nil)
+                          ;; 1+j because it refers to the j'th stabilizer G⁽ʲ⁾
+                          (%round l (1+ j) (compose free-group (car y) (car x))))))))))
+
+            (%fill-orbits (l)
+              (loop :for i :below k
+                    :for bᵢ :in base
+                    :for νᵢ := (aref ν i)
+                    :do (let ((orb (delete-duplicates
+                                    (loop :for y :across νᵢ
+                                          :when y
+                                            :collect (perm-eval (funcall ϕ (car y)) bᵢ)))))
+                          (loop :for j :from (1+ i) :below k :do
+                            (loop :for x :across (aref ν j) :do
+                              (when x
+                                (let* ((x (car x))
+                                       (ϕx (funcall ϕ x))
+                                       (ϕx⁻¹ (perm-inverse ϕx)))
+                                  (dolist (p (set-difference
+                                              (mapcar (lambda (o) (perm-eval ϕx o)) orb)
+                                              orb))
+                                    (let ((tt (compose
+                                               free-group
+                                               x
+                                               (car (aref νᵢ (1- (perm-eval ϕx⁻¹ p)))))))
+                                      (when (< (word-length tt) l)
+                                        (setf (aref νᵢ (1- p))
+                                              (cons (inverse free-group tt) t))))))))))))
+
+            (%table-fullp ()
+              (let ((size (%table-size))
+                    (order (group-order group)))
+                (assert (<= size order))
+                (= size order)))
+            
+            (%table-size ()
+              (loop :with p := 1
+                    :for νᵢ :across ν
+                    :do (setf p (* p (count-if-not #'null νᵢ)))
+                    :finally (return p)))
+
+            (%make-table ()
+              (let ((ν′ (make-array
+                         k
+                         :initial-contents (loop
+                                             :repeat k
+                                             :collect (make-array
+                                                       deg
+                                                       :initial-element nil)))))
+                (loop :for b :in base
+                      :for νᵢ :across ν′ :do
+                        ;; (CONS 0 NIL) ==> CAR is the item being
+                        ;; stored, CDR is whether it was newly
+                        ;; generated by the algorithm.
+                        (setf (aref νᵢ (1- b)) (cons (identity-element free-group) nil)))
+                (setf ν ν′)))))
+   (progn
+     (when (null improve-every) (setf improve-every (* k k)))
+     (when (null l) (setf l 2))
+    ;; set all νᵢ to be undefined, except νᵢ(bᵢ) = identity
+    (%make-table)
+    (loop :for count :from 1
+          :while (if (null max-rounds)
+                     (not (%table-fullp))
+                     (or (<= count max-rounds) (not (%table-fullp))))
+          :do (let ((tt (funcall next count)))
+                (%round l 1 tt)
+                (when (zerop (mod count improve-every))
+                  (when *perm-group-verbose*
+                    (format t "p[~3,1F] @ ~A: ~A~%"
+                            (* 100 (/ (%table-size) (group-order group)))
+                            (round l)
+                            tt))
+                  (%improve l)
+                  (unless (%table-fullp)
+                    #+ig
+                    (%fill-orbits l)
+                    (setf l (* 101/100 l))
+                    ))))
+    ;; Return the table, cleaning the usage flags out.
+    (loop :for νᵢ :across ν
+          :do (map-into νᵢ #'car νᵢ))
+    ν)))
+
+(defun compute-factorization-generators (group)
+  "Modify the permutation group PERM-GROUP so that it is capable of factorizing elements into generators."
+  (unless (perm-group.factorization-generators group)
+    (setf (perm-group.factorization-generators group)
+          (%compute-factorization-generators group)))
+  t)
+
+(defun generator-decomposition (g group &key return-original-generators)
+  "Given an element g ∈ GROUP, factorize it into a sequence of generators, represented as a list of elements in the homomorphic FREE-GROUP.
+
+If RETURN-ORIGINAL-GENERATORS is true, return the group's original generators as permutations.
+
+This is also called \"factorization\"."
+  (check-type g perm)
+  (check-type group perm-group)
+  (compute-factorization-generators group)
+  (let* ((fg (perm-group.free-group group))
+         (ϕ (free-group->perm-group-homomorphism fg group))
+         (ν (perm-group.factorization-generators group)))
+    (labels ((walk-stabilizer (i π base-left factorization)
+               (cond
+                 ((null base-left)
+                  (assert (perm-identity-p π)
+                          ()
+                          "Inconsistency in FACTORIZE. Possibly an issue with the table?")
+                  (inverse fg (remove-if #'free-group-identity-p
+                                         (canonicalize-free-group-element
+                                          fg
+                                          factorization))))
+                 (t
+                  (let* ((νᵢ (aref ν i))
+                         (bᵢ (first base-left))
+                         (ωᵢ (perm-eval π bᵢ))
+                         (νᵢωᵢ (aref νᵢ (1- ωᵢ)))
+                         (νᵢπ (perm-compose (funcall ϕ νᵢωᵢ) π)))
+                    (walk-stabilizer (1+ i) νᵢπ (rest base-left) (cons νᵢωᵢ factorization)))))))
+      (let ((decomp (walk-stabilizer 0
+                                     g
+                                     (group-bsgs group)
+                                     nil)))
+        (if (not return-original-generators)
+            decomp
+            (mapcar ϕ decomp))))))
+

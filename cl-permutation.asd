@@ -1,15 +1,16 @@
 ;;;; cl-permutation.asd
 ;;;;
-;;;; Copyright (c) 2012-2016 Robert Smith
+;;;; Copyright (c) 2012-2018 Robert Smith
 
 (asdf:defsystem #:cl-permutation
   :description "A library for operating on permutations and permutation groups."
-  :author "Robert Smith <quad@symbo1ics.com>"
+  :author "Robert Smith <robert@stylewarning.com>"
   :license "BSD 3-clause (See LICENSE)"
   :depends-on (#:alexandria
                #:iterate
                #:cl-algebraic-data-type
-               #:closer-mop)
+               #:closer-mop
+               #:uiop)
   :in-order-to ((asdf:test-op (asdf:test-op #:cl-permutation-tests)))
   :pathname "src/"
   :serial t
