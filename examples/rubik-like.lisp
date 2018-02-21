@@ -34,6 +34,32 @@
                (make-cycle 1 19 13 9)))
    21))
 
+;;                +--------------+
+;;                |              |
+;;                |  1    2    3 |
+;;                |              |
+;;                |  4   up    5 |
+;;                |              |
+;;                |  6    7    8 |
+;;                |              |
+;; +--------------+--------------+--------------+--------------+
+;; |              |              |              |              |
+;; |  9   10   11 | 17   18   19 | 25   26   27 | 33   34   35 |
+;; |              |              |              |              |
+;; | 12  left  13 | 20 front  21 | 28 right  29 | 36  back  37 |
+;; |              |              |              |              |
+;; | 14   15   16 | 22   23   24 | 30   31   32 | 38   39   40 |
+;; |              |              |              |              |
+;; +--------------+--------------+--------------+--------------+
+;;                |              |
+;;                | 41   42   43 |
+;;                |              |
+;;                | 44  down  45 |
+;;                |              |
+;;                | 46   47   48 |
+;;                |              |
+;;                +--------------+
+
 ;; 43252003274489856000
 (defun make-rubik-3x3 ()
   (group-from-cycles
@@ -73,6 +99,49 @@
                (make-cycle 15 23 31 39)
                (make-cycle 14 22 30 38)))
    48))                                 ; size
+
+;;                +--------------+
+;;                |              |
+;;                |  1    2    3 |
+;;                |              |
+;;                |  4    5    6 |
+;;                |              |
+;;                |  7    8    9 |
+;;                |              |
+;; +--------------+--------------+--------------+--------------+
+;; |              |              |              |              |
+;; | 19   20   21 | 10   11   12 | 13   14   15 | 16   17   18 |
+;; |              |              |              |              |
+;; | **  left  ** | **   22   ** | ** right  ** | **   28   ** |
+;; |              |              |              |              |
+;; | **   **   ** | **   23   ** | **   **   ** | **   27   ** |
+;; |              |              |              |              |
+;; +--------------+--------------+--------------+--------------+
+;;                |              |
+;;                | **   24   ** |
+;;                |              |
+;;                | **   25   ** |
+;;                |              |
+;;                | **   26   ** |
+;;                |              |
+;;                +--------------+
+
+
+(defun make-rubik-MU-group ()
+  "Create the <M, U> group of the 3x3 cube."
+  (group-from-cycles
+   (list
+    ;; U
+    (list (make-cycle 1 3 9 7)
+          (make-cycle 2 6 8 4)
+          (make-cycle 11 20 17 14)
+          (make-cycle 12 21 18 15)
+          (make-cycle 10 19 16 13))
+    ;; M'
+    (list (make-cycle 24 11 2 27)
+          (make-cycle 25 22 5 28)
+          (make-cycle 26 23 8 17)))
+   28))
 
 ;;; Doesn't work *as intended*
 (defun make-rubik-4x4 ()
@@ -126,27 +195,27 @@
           (make-cycle 31 47 63 79)
           (make-cycle 30 46 62 78)
           (make-cycle 29 45 61 77))
-    (list (make-cycle 24 72 56 40) 
+    (list (make-cycle 24 72 56 40)
           (make-cycle 23 71 55 39)
-          (make-cycle 22 70 54 38) 
+          (make-cycle 22 70 54 38)
           (make-cycle 21 69 53 37))
     (list (make-cycle 12 62 85 19)
           (make-cycle 11 58 86 23)
           (make-cycle 10 54 87 27)
           (make-cycle 9 50 88 31))
-    (list (make-cycle 15 66 95 47) 
+    (list (make-cycle 15 66 95 47)
           (make-cycle 11 70 91 43)
-          (make-cycle 7 74 87 39) 
+          (make-cycle 7 74 87 39)
           (make-cycle 3 78 83 35))
     (list (make-cycle 14 46 94 67)
           (make-cycle 10 44 90 71)
           (make-cycle 6 38 86 75)
           (make-cycle 2 34 82 79))
-    (list (make-cycle 8 18 89 63) 
-          (make-cycle 7 22 90 58) 
+    (list (make-cycle 8 18 89 63)
+          (make-cycle 7 22 90 58)
           (make-cycle 6 26 91 55)
           (make-cycle 5 30 92 51))
-    (list (make-cycle 28 44 60 76) 
+    (list (make-cycle 28 44 60 76)
           (make-cycle 27 43 59 75)
           (make-cycle 26 42 58 74)
           (make-cycle 25 41 57 73)))
