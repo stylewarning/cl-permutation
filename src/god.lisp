@@ -14,7 +14,7 @@
    (generators :initarg :generators
                :reader god-table-generators)))
 
-;; TODO: Change to IDDFS
+;; TODO: Change to IDDFS?
 (defun compute-god-table (group &key (target (group-identity group))
                                      (verbose t))
   (let ((generators (loop :for i :from 0
@@ -33,10 +33,10 @@
         (setf (svref table target-rank) (cons -1 target-rank)))
 
       ;; Start iterating.
-      (loop :for i :from 1
+      (loop :for num-elements-explored :from 1
             :for next := (dequeue positions-left)
             :do
-               (when (and verbose (zerop (mod i 50000)))
+               (when (and verbose (zerop (mod num-elements-explored 50000)))
                  (format t "~D~%" (length (queue-elements positions-left))))
                (loop :for (i . g) :in generators
                      :for p := (perm-compose g next)
