@@ -29,4 +29,5 @@
                (:file "do-group-elements")
                (:file "combinatorial-ranking")
                (:file "find-subgroups")
+               (:file "god")
                (:file "extra-functions")))
