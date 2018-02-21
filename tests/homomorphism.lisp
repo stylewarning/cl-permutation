@@ -24,7 +24,5 @@
                            (funcall gen-hom r)))))))
 
 (deftest test-generator-homomorphism-correctness ()
-  (randomly-test-generator-homomorphism-correctness-for-group (make-rubik-3x3) 25)
-  ;; too slow
-  ;;(randomly-test-generator-homomorphism-correctness-for-group (make-megaminx) 1)
-  )
+  (randomly-test-generator-homomorphism-correctness-for-group *3x3* 25)
+  (randomly-test-generator-homomorphism-correctness-for-group *mm* 25))

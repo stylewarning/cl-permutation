@@ -28,19 +28,35 @@
           (clear-membership-set orbit-membership)
           ;; Compute the orbit of the element across all generators.
           (dolist (g (generators group))
-            (map-orbit (lambda (k)
-                         (setf (sbit orbit-membership k) 1))
+            (map-orbit (lambda (k) (setf (sbit orbit-membership k) 1))
                        i
                        g))
           ;; Incorporate that orbit anywhere it has intersected.
-          (let ((intersecting-orbit (find-if (lambda (set)
-                                               (membership-sets-intersect-p
-                                                orbit-membership
-                                                set))
-                                             orbit-memberships)))
-            (if (null intersecting-orbit)
-                (push (copy-seq orbit-membership) orbit-memberships)
-                (membership-set-nunion intersecting-orbit orbit-membership)))))
+          (multiple-value-bind (intersecting non-intersecting)
+              (partition-if (lambda (set)
+                              (membership-sets-intersect-p
+                               orbit-membership
+                               set))
+                            orbit-memberships)
+            (cond
+              ((endp intersecting)
+               ;; Add the newly found orbit.
+               (push (copy-seq orbit-membership) orbit-memberships))
+              ((endp (rest intersecting)) ; 1 element
+               ;; Modify the single orbit this intersects with.
+               (membership-set-nunion (first intersecting) orbit-membership))
+              (t
+               ;; Multiple orbits intersect, so we need to coalesce
+               ;; them all. First, we nunion into our fresh orbit. (I
+               ;; promise I am not a shill for Orbit® Gum.)
+               (dolist (orb intersecting)
+                 (membership-set-nunion orbit-membership orb))
+               ;; Now tack this on to our set of non-intersecting
+               ;; orbits, and save them. We are wasting space by
+               ;; copying, but oh well. Who's counting anyway?
+               (setf orbit-memberships (cons
+                                        (copy-seq orbit-membership)
+                                        non-intersecting)))))))
       ;; Return the orbits.
       (mapcar #'membership-set-to-orbit orbit-memberships))))
 

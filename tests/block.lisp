@@ -16,7 +16,7 @@
 
 (deftest test-rubik-block-system ()
   "Compute the block system of subdirect factors, and ensure they look right."
-  (let ((bss (block-systems (perm-examples:make-rubik-3x3))))
+  (let ((bss (block-systems *3x3*)))
     (destructuring-bind (edges corners) bss
       (values
        (is (every (lambda (b) (= 2 (length b))) edges))

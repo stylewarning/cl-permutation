@@ -6,18 +6,16 @@
 
 (deftest test-random-group-element-randomly ()
   "Test the generation of random group elements actually produces elements of the group."
-  (loop :with g := (make-rubik-3x3)
-        :repeat 10
-        :do (is (group-element-p (random-group-element g) g))))
+  (loop :repeat 10
+        :do (is (group-element-p (random-group-element *3x3*) *3x3*))))
 
 (deftest test-group-orders ()
   "Test that the group order is being computed correctly for a few known examples."
   (is (= 120 (group-order (make-s5))))
-  (is (= 3674160 (group-order (make-rubik-2x2))))
-  (is (= 43252003274489856000 (group-order (make-rubik-3x3))))
-  #+#:skip-test
+  (is (= 3674160 (group-order *2x2*)))
+  (is (= 43252003274489856000 (group-order *3x3*)))
   (is (= 100669616553523347122516032313645505168688116411019768627200000000000
-         (group-order (make-megaminx)))))
+         (group-order *mm*))))
 
 (deftest test-subgroup-test ()
   "Test that SUBGROUP-P works."
@@ -49,11 +47,9 @@
 
 (deftest test-transversal-decomposition-randomly ()
   "Randomly test transversal decompositions."
-  (let ((rubik2 (make-rubik-2x2))
-        (rubik3 (make-rubik-3x3)))
-    (loop :repeat 10 :do
-      (test-transversal-decomposition rubik2 (random-group-element rubik2))
-      (test-transversal-decomposition rubik3 (random-group-element rubik3)))))
+  (loop :repeat 10 :do
+    (test-transversal-decomposition *2x2* (random-group-element *2x2*))
+    (test-transversal-decomposition *3x3* (random-group-element *3x3*))))
 
 (defun parse-sigma-symbol (s)
   "Given a sigma symbol like |SIGMA_(k,j)|, return two values, K and J. Error it's invalid."
@@ -90,9 +86,9 @@
 (deftest test-sigma-slps-for-rubik ()
   "Test that the sigma SLPs are sensible for the 2x2x2 and 3x3x3 Rubik's cubes."
   (test-sigma-slps (make-S5))
-  (test-sigma-slps (make-rubik-2x2))
+  (test-sigma-slps *2x2*)
   #+#:skip-test
-  (test-sigma-slps (make-rubik-3x3)))
+  (test-sigma-slps *3x3*))
 
 (deftest test-naive-generator-decomposition (group p)
   "Check that the perm P decomposes into generators within the perm group GROUP which reconstruct the perm. (Naive method.)"
@@ -104,9 +100,8 @@
 
 (deftest test-naive-generator-decomposition-randomly ()
   "Check veracity of generator decomposition of random elements of the 2x2 cube group. (Naive method.)"
-  (let ((rubik (make-rubik-2x2)))
-    (loop :repeat 10 :do
-      (test-generator-decomposition rubik (random-group-element rubik)))))
+  (loop :repeat 10 :do
+    (test-naive-generator-decomposition *2x2* (random-group-element *2x2*))))
 
 (deftest test-factorization-using-free-group (group p)
   "Test that P correctly factorizes as free group generators."
@@ -125,10 +120,9 @@
 
 (deftest test-generator-decomposition-randomly ()
   "Check veracity of generator decomposition of random elements of the 2x2 cube group."
-  (let ((rubik (make-rubik-2x2)))
-    (loop :repeat 10
-          :for r := (random-group-element rubik)
-          :do (test-generator-decomposition rubik r)
-              (test-factorization-using-free-group rubik r))))
+  (loop :repeat 10
+        :for r := (random-group-element *2x2*)
+        :do (test-generator-decomposition *2x2* r)
+            (test-factorization-using-free-group *2x2* r)))
 
 

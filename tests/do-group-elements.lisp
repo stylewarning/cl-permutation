@@ -27,7 +27,7 @@
   (is (null (test-rank-unrank (make-s5)))))
 
 (deftest test-rank-unrank-2x2 ()
-  (is (null (test-rank-unrank (make-rubik-2x2) 10000))))
+  (is (null (test-rank-unrank *2x2* 10000))))
 
 (deftest test-rank-unrank-3x3 ()
-  (is (null (test-rank-unrank (make-rubik-3x3) 1000))))
+  (is (null (test-rank-unrank *3x3* 1000))))

@@ -157,3 +157,19 @@ function KEY."
 
 (defun clear-membership-set (set)
   (map-into set (constantly 0)))
+
+;;; Partitioning
+
+;;; Taken from Quickutil: http://quickutil.org/list?q=partition%2Dif
+(defun partition-if (f seq)
+  "Given a predicate F, partition SEQ into two sublists, the first
+of which has elements that satisfy F, the second which do not."
+  (let ((yes nil)
+        (no nil))
+    (map nil
+         #'(lambda (x)
+             (if (funcall f x)
+                 (push x yes)
+                 (push x no)))
+         seq)
+    (values yes no)))
