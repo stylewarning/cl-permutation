@@ -25,4 +25,8 @@
    #:make-skewb                         ; FUNCTION
    #:make-megaminx                      ; FUNCTION
    )
+
+  (:export
+   #:make-bicycle                       ; FUNCTION
+   )
   )
