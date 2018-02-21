@@ -47,7 +47,7 @@
 
 (defclass perm-spec (combinatorial-spec)
   ()
-  (:documentation "Representation of a perm of size SIZE."))
+  (:documentation "Representation of a perm of size SIZE. Canonically this is a permutation of the set {1, ..., SIZE}. (Though it's possible to rank the permutation of any subset of numbers.)"))
 
 (defclass combination-spec (combinatorial-spec)
   ((zero-count :initarg :zero-count
