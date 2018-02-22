@@ -1,6 +1,6 @@
 ;;;; tests/block.lisp
 ;;;;
-;;;; Copyright (c) 2015 Robert Smith
+;;;; Copyright (c) 2015-2018 Robert Smith
 
 (in-package #:cl-permutation-tests)
 
@@ -13,6 +13,16 @@
     (let ((blocks (find-minimal-block-system-containing g '(1 3))))
       (is (find '(1 3 5) blocks :test 'equalp))
       (is (find '(2 4 6) blocks :test 'equalp)))))
+
+(deftest test-bike-blocks ()
+  "Test that blocks are computed correctly for the bicycle groups."
+  (let* ((bike (perm-examples:make-bicycle 3))
+         (bike-blocks (block-systems bike))
+         (broke-bike (perm-examples:make-bicycle-with-fixed-wheel 3))
+         (broke-bike-blocks (block-systems broke-bike)))
+    (is (= 1 (length bike-blocks)))
+    (is (= 1 (length broke-bike-blocks)))
+    (is (equal bike-blocks broke-bike-blocks))))
 
 (deftest test-rubik-block-system ()
   "Compute the block system of subdirect factors, and ensure they look right."
