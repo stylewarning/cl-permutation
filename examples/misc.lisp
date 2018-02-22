@@ -19,3 +19,12 @@
       (list (apply #'make-cycle right-wheel))
       (mapcar #'make-cycle left-wheel right-wheel))
      (* 2 n))))
+
+(defun make-bicycle-with-fixed-wheel (n)
+  (let ((left-wheel (alexandria:iota n :start 1))
+        (right-wheel (alexandria:iota n :start (1+ n))))
+    (group-from-cycles
+     (list
+      (list (apply #'make-cycle right-wheel))
+      (mapcar #'make-cycle left-wheel right-wheel))
+     (* 2 n))))
