@@ -94,6 +94,12 @@ function KEY."
     (sequence (= 1 (length x)))
     (t nil)))
 
+(defun list-minimum (list)
+  "Find the minimum element of the list via CL:MIN."
+  (if (endp list)
+      (error "Can't find minimum of empty list.")
+      (reduce #'min list)))
+
 ;;; Queue Implementation
 ;;; from tarballs_are_good/lisp-random/stack-queue.lisp
 
