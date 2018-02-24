@@ -476,6 +476,8 @@ Note: The result is likely very long and inefficient."
       (lambda (n)
         (mapcar #'process (generate n (find-level n)))))))
 
+
+;; TODO FIXME: This isn't fully working or implemented.
 (defun %compute-factorization-generators (group &key max-rounds
                                                      improve-every
                                                      l)
