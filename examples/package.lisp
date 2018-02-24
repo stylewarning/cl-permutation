@@ -28,6 +28,7 @@
 
   (:export
    #:make-bicycle                       ; FUNCTION
+   #:make-bicycle*                      ; FUNCTION
    #:make-bicycle-with-fixed-wheel      ; FUNCTION
    )
   )
