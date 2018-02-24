@@ -4,6 +4,15 @@
 
 (in-package #:cl-permutation)
 
+;;; This file has to do with the computation of "block systems". A
+;;; "block" is roughly a set of points that always "move together". I
+;;; am not sure where their name comes from, but blocks on a Rubik's
+;;; cube-like puzzle would be the actual physical cubelets. (Sometimes
+;;; cubelets don't make *minimal* blocks, however. An example of where
+;;; this is the case is the <M, U> subgroup of the cube.)
+
+;;; TODO: Do group theory within the blocks themselves.
+
 ;;; Disjoint-Set (DJS) Data Structure
 ;;;
 ;;; Below we implement the well known union-find algorithms. We don't
@@ -77,6 +86,9 @@ The representative of the union will be that of B."
       (setf (djs-rep-djs a-rep)
             (djs-rep-djs b-rep))))
   nil)
+
+
+;;; Internal driver algorithms for block system computation.
 
 (defun find-minimal-block-system-containing (perm-group alphas)
   "Find the minimal blocks of the permutation group PERM-GROUP which contain the list of points ALPHAS.
@@ -160,12 +172,70 @@ Returns a list of lists. Each sub-list represents a block. Each block is an imag
                          (return (values (nreverse equiv-classes)
                                          processed-elements))))))))
 
+(defun atkinson (ω gs)
+  "M. D. Atkinson's original algorithm as specified in his original paper \"An Algorithm for Finding Blocks of a Permutation Group\", with very light modifications.
+
+Given a point ω and a list of generators GS, return an array F whose size is max deg(gs), and whose elements are specified as follows:
+
+If a point p appears in F, then the minimal block containing p is the list of all positions of p in F."
+  ;; Step 1: Initialize
+  (let* ((C nil)
+         (n (loop :for g :in gs :maximize (perm-size g)))
+         (f (coerce (iota+1 n) 'vector)))
+    (prog (α β γ δ gs-left g)
+     STEP-2
+       (push ω C)
+       (setf (aref f (1- ω)) 1)
+
+     STEP-3
+       (setf β (pop C))
+       (setf α (aref f (1- β)))
+
+     STEP-4
+       ;; Atkinson instead sets an index j = 0 here to iterate through
+       ;; GS. We just iterate directly.
+       (setf gs-left gs)
+
+     STEP-5
+       ;; Atkinson would have done j += 1 here and accessed GS
+       ;; directly.
+       (setf g (pop gs-left))
+       (setf γ (perm-eval g α))
+       (setf δ (perm-eval g β))
+
+     STEP-6
+       (when (= (aref f (1- γ))
+                (aref f (1- δ)))
+         (go STEP-9))
+
+     STEP-7
+       (unless (< (aref f (1- δ))
+                  (aref f (1- γ)))
+         (rotatef δ γ))
+
+     STEP-8
+       (let ((fγ (aref f (1- γ)))
+             (fδ (aref f (1- δ))))
+         (setf f (nsubstitute fδ fγ f))
+         (push fγ C))
+
+     STEP-9
+       (unless (null gs-left)
+         (go STEP-5))
+
+     STEP-10
+       (unless (null C)
+         (go STEP-3))
+
+     STEP-11
+       (return f))))
+
 (defun trivial-block-system-p (bs)
   "Is the block system BS a trivial block system?"
   (or (= 1 (length bs))
       (every (lambda (b) (= 1 (length b))) bs)))
 
-(defun find-non-trivial-block-system (group orbit)
+(defun find-non-trivial-block-system (group)
   "Find a non-trivial block system of the permutation group GROUP.
 
 GROUP must be transitive in order for this to produce truly non-trivial block systems."
@@ -174,8 +244,16 @@ GROUP must be transitive in order for this to produce truly non-trivial block sy
         :unless (trivial-block-system-p bs)
           :do (return bs)))
 
-(defun block-systems (group)
-  "Compute all minimal, disjoint block systems of the group GROUP.
+(defun canonicalize-raw-block-subsystems (bss)
+  "Take a raw list of block systems BSS and canonicalize them."
+  (labels ((canonicalize-block (blk)
+             (sort (copy-list blk) #'<))
+           (canonicalize-system (bs)
+             (sort (mapcar #'canonicalize-block bs) #'< :key #'first)))
+    (mapcar #'canonicalize-system bss)))
+
+(defun raw-block-subsystems (group &key (canonicalize t))
+  "Compute all minimal, disjoint block subsystems of the group GROUP.
 
 Returns a list of block systems."
   (labels ((find-block-system (orbit)
@@ -187,6 +265,14 @@ Returns a list of block systems."
                                (list first p))
                    :unless (trivial-block-system-p bs)
                      :do (return bs)
-                   :finally (return (coerce orbit 'list)))))
-    (let ((orbits (group-orbits group)))
-      (mapcar #'find-block-system orbits))))
+                   :finally (return (list (coerce orbit 'list))))))
+    (let* ((orbits (group-orbits group))
+           (bss (mapcar #'find-block-system orbits)))
+      (if canonicalize
+          (canonicalize-raw-block-subsystems bss)
+          bss))))
+
+(defun primitive-group-p (group)
+  "Is the perm group GROUP primitive?"
+  (trivial-block-system-p (raw-block-subsystems group)))
+

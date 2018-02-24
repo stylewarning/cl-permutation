@@ -17,16 +17,16 @@
 (deftest test-bike-blocks ()
   "Test that blocks are computed correctly for the bicycle groups."
   (let* ((bike (perm-examples:make-bicycle 3))
-         (bike-blocks (block-systems bike))
+         (bike-blocks (perm::raw-block-subsystems bike))
          (broke-bike (perm-examples:make-bicycle-with-fixed-wheel 3))
-         (broke-bike-blocks (block-systems broke-bike)))
+         (broke-bike-blocks (perm::raw-block-subsystems broke-bike)))
     (is (= 1 (length bike-blocks)))
     (is (= 1 (length broke-bike-blocks)))
     (is (equal bike-blocks broke-bike-blocks))))
 
 (deftest test-rubik-block-system ()
   "Compute the block system of subdirect factors, and ensure they look right."
-  (let ((bss (block-systems *3x3*)))
+  (let ((bss (perm::raw-block-subsystems *3x3*)))
     (destructuring-bind (edges corners) bss
       (values
        (is (every (lambda (b) (= 2 (length b))) edges))

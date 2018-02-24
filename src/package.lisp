@@ -145,6 +145,7 @@
                                         ; FUNCTION
    #:find-non-trivial-block-system      ; FUNCTION
    #:block-systems                      ; FUNCTION
+   #:primitive-group-p                  ; FUNCTION
    )
 
   ;; combinatorial-ranking.lisp
