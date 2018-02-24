@@ -177,6 +177,10 @@
           n perm)
   (aref (perm.rep perm) n))
 
+(defun perm-evaluator (perm)
+  "Return an evaluation function for the permutation PERM (a la PERM-EVAL)."
+  (lambda (n) (perm-eval perm n)))
+
 (defun perm-eval* (perm n)
   "Evaluate the permutation PERM at index N. If N is larger than the size of the permutation, return the fixed point."
   (assert (<= 1 n)
@@ -186,6 +190,10 @@
   (if (> n (perm-size perm))
       n
       (aref (perm.rep perm) n)))
+
+(defun perm-evaluator* (perm)
+  "Return an evaluation function for the permutation PERM (a la PERM-EVAL*)."
+  (lambda (n) (perm-eval* perm n)))
 
 (defun perm-inverse-eval (perm n)
   "Evaluate the inverse of the permutation PERM at index N."

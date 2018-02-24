@@ -21,7 +21,9 @@
    #:random-perm
    #:perm-ref
    #:perm-eval
+   #:perm-evaluator
    #:perm-eval*
+   #:perm-evaluator*
    #:perm-inverse-eval
    #:perm-inverse-eval*
    #:perm=
