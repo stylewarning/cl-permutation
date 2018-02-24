@@ -281,9 +281,9 @@ Example: If P1 = 2 |-> 3 and P2 = 1 |-> 2 then (perm-compose P1 P2) = 1 |-> 3."
   (declare (inline perm-compose))
   (perm-compose p2 p1))
 
-(defun perm-conjugate (p g)
-  "Conjugate the permutation P by G. This is G^-1 P G"
-  (perm-compose (perm-inverse g) (perm-compose p g)))
+(defun perm-conjugate (p c)
+  "Conjugate the permutation P by G. This is G P G^-1."
+  (perm-compose c (perm-compose p (perm-inverse c))))
 
 (defun perm-expt (perm n)
   "Raise a permutation PERM to the Nth power. If N is negative, then the inverse will be raised to the -Nth power."
@@ -615,14 +615,29 @@ The cycle type is a partition of the perm's size, and is equal to the lengths of
   (sort (mapcar #'cycle-length (to-cycles perm :canonicalizep nil))
         #'>))
 
-;;; XXX FIXME: This is unsafe because it doesn't check that CYCLES
-;;; will produce a valid permutation in one-line notation.
 (defun cycles-to-one-line (cycles)
-  "Convert CYCLES to one-line notation.
+  "Convert CYCLES to one-line notation. This is the same as flattening the cycles.
 
 Note: This is not the same as FROM-CYCLES."
   (let ((elts (loop :for cycle :in cycles
                     :append (loop :for element :across (cycle-rep cycle)
                                   :collect element))))
     (assert-valid-permutation-elements elts)
-    (list-to-perm elts)))
+    elts))
+
+(defun find-conjugator (x y)
+  "Find an element that conjugates X to Y. In other words, find the permutation C such that
+
+    Y = C X C^-1."
+  (let ((x-cycles (sort (to-cycles x :canonicalizep nil) #'> :key #'cycle-length))
+        (y-cycles (sort (to-cycles y :canonicalizep nil) #'> :key #'cycle-length)))
+    (cond
+      ((or (not (= (length x-cycles) (length y-cycles)))
+           (not (every (lambda (cx cy) (= (cycle-length cx) (cycle-length cy)))
+                       x-cycles
+                       y-cycles)))
+       nil)
+      (t
+       (let ((x1 (cycles-to-one-line x-cycles))
+             (y1 (cycles-to-one-line y-cycles)))
+         (list-to-perm (mapcar #'cdr (sort (mapcar #'cons x1 y1) #'< :key #'car))))))))

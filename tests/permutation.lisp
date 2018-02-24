@@ -40,3 +40,12 @@
                       (make-cycle 1 9 4 8))))
     (is (perm= (from-cycles cycles)
                (naive-from-cycles cycles 9)))))
+
+(deftest test-conjugator ()
+  "Test that we can find conjugators by checking everything in S_5."
+  (perm:doperms (x 5)
+    (perm:doperms (c 5)
+      (let* ((y (perm:perm-conjugate x c))
+             (found-c (perm:find-conjugator x y)))
+        (is (not (null found-c)))
+        (is (perm:perm= y (perm:perm-conjugate x found-c)))))))

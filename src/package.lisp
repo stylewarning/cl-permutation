@@ -61,7 +61,8 @@
    #:to-cycles
    #:from-cycles
    #:cycle-type
-   #:cycles-to-one-line                 ; Possibly will be removed.
+   #:cycles-to-one-line
+   #:find-conjugator
    )
 
   ;; bruhat.lisp
