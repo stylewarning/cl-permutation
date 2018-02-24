@@ -1,6 +1,6 @@
 ;;;; block.lisp
 ;;;;
-;;;; Copyright (c) 2015 Robert Smith
+;;;; Copyright (c) 2015-2018 Robert Smith
 
 (in-package #:cl-permutation)
 
@@ -275,4 +275,51 @@ Returns a list of block systems."
 (defun primitive-group-p (group)
   "Is the perm group GROUP primitive?"
   (trivial-block-system-p (raw-block-subsystems group)))
+
+
+;;; Now we start wrapping this up into better packaging.
+
+(defstruct block-subsystem
+  "Representation of a block subsystem of a group. A \"block subsystem\" is a G-orbit of a block."
+  ;; The group it came from.
+  group
+  ;; The block in the lowest slot.
+  base-block
+  ;; Number of blocks in the subsystem.
+  size
+  ;; Block size (number of points per block).
+  block-size
+  ;; The block subsystem itself.
+  orbit
+  ;; The slot in which each block rests in identity, indexed by the
+  ;; block's minimum element. This is an a-list of (min-elt . slot)
+  ;; pairs.
+  block-slots)
+
+(defun block-slot (block-subsystem blk)
+  "In which slot is BLK found in the block subsystem BLOCK-SUBSYSTEM?"
+  (let ((found (assoc (list-minimum blk) (block-subsystem-block-slots block-subsystem))))
+    (assert found (block-subsystem blk)
+            "The block ~A was not found in the block subsystem ~A." blk block-subsystem)
+    (cdr found)))
+
+(defun group-block-subsystems (group)
+  "Return a list of block subsystems of the group GROUP."
+  (flet ((process-raw-block-subsystem (bs)
+           (assert (not (null bs)))
+           (let* ((sorted-blocks (sort (copy-list bs) #'< :key #'list-minimum))
+                  (num-blocks (length sorted-blocks))
+                  (base-block (first sorted-blocks))
+                  (block-size (length base-block)))
+             (make-block-subsystem
+              :group group
+              :base-block base-block
+              :size num-blocks
+              :block-size block-size
+              :orbit sorted-blocks
+              :block-slots (loop :for i :from 1
+                                 :for blk :in sorted-blocks
+                                 :for m := (list-minimum blk)
+                                 :collect (cons m i))))))
+    (mapcar #'process-raw-block-subsystem (raw-block-subsystems group :canonicalize t))))
 
