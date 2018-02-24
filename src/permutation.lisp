@@ -588,7 +588,7 @@ An asterisk in printed syntax denotes that the cycle has not been canonicalized 
 If OMIT-LAST is T, then the last mapping will be omitted. For example, for the cycle (P1 P2 ... Pn), the mapping Pn |-> P1 will be excluded."
   (loop :for i :below  (if omit-last
                            (1- (cycle-length (canonicalize-cycle cycle)))
-                           (cycle-length (canonicalize-cycle cycle))) 
+                           (cycle-length (canonicalize-cycle cycle)))
         :do (funcall f
                      (cycle-ref cycle i)
                      (cycle-ref cycle (1+ i)))))
