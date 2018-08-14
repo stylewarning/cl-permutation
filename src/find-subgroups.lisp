@@ -2,6 +2,13 @@
 ;;;;
 ;;;; Copyright (c) 2015 Robert Smith
 
+;;; This file contains a very simple heuristic for generating
+;;; subgroups, specifically for the purpose of computing generator
+;;; factorizations. The basic premise is that different powers of the
+;;; generators are tried in different combinations to find a group
+;;; that's significantly smaller than the group the generators are
+;;; from.
+
 (in-package #:cl-permutation)
 
 ;;; An "exponent subgroup" of a group
