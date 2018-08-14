@@ -395,6 +395,12 @@ If a fixed point doesn't exist, return NIL."
                                (coerce result type)
                                (coerce result (type-of a)))))))
 
+(defun permuter (from to &key (test 'eql))
+  "Compute a permutation P such that (PERMUTE P FROM) == TO."
+  (loop :for x :in from
+        :collect (1+ (position x to :test test)) :into m
+        :finally (return (apply #'make-perm m))))
+
 ; HI!!!
 ; HELLO
 
