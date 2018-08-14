@@ -363,10 +363,13 @@ computed reference frames."
       ;; block. We choose ρ = identity for the first (i.e., base) block.
       (setf (aref reference-frames 0) (block-subsystem-base-block subsys))
       ;; Now we seek to choose reference frames for each of the other
-      ;; slots. To do this, we start with a reference frame we know ρᵢ
-      ;; for slot i, and compute γ.ρ and check if we landed in a new
-      ;; slot j. If we did, then ρⱼ := γ.ρ is the reference frame for
-      ;; that slot j. We queue up ρⱼ as a slot to explore later.
+      ;; slots in such a way that our choice of coordinates (i.e., how
+      ;; we map from G to Aut n, or how we decide to order blocks
+      ;; themselves). To do this, we start with a reference frame we
+      ;; know ρᵢ for slot i, and compute γ.ρᵢ and check if we landed in
+      ;; a new slot j. If we did, then ρⱼ := γ.ρᵢ is the reference
+      ;; frame for that slot j. We queue up ρⱼ as a slot to explore
+      ;; later.
       ;;
       ;; We keep going until we've established reference frames for
       ;; all of the slots.
