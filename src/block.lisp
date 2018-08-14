@@ -6,7 +6,7 @@
 
 ;;; This file has to do with the computation of "block systems". A
 ;;; "block" is roughly a set of points that always "move together". I
-;;; am not sure where their name comes from, but blocks on a Rubik's
+;;; am not sure where its name comes from, but blocks on a Rubik's
 ;;; cube-like puzzle would be the actual physical cubelets. (Sometimes
 ;;; cubelets don't make *minimal* blocks, however. An example of where
 ;;; this is the case is the <M, U> subgroup of the cube.)
@@ -42,6 +42,8 @@
   (representative nil :type (or null djs-rep))
   value)
 
+;;; TODO: I think we can eliminate DJS-REP. We can just use a cons
+;;; cell.
 (defstruct (djs-rep (:constructor %make-djs-rep))
   "Pointer to the representative element of a DJS."
   (djs nil :type djs))
@@ -294,6 +296,9 @@ Returns a list of block systems."
   ;; The slot in which each block rests in identity, indexed by the
   ;; block's minimum element. This is an a-list of (min-elt . slot)
   ;; pairs.
+  ;;
+  ;; TODO: We don't actually need to store this. It's readily
+  ;; available from a canonicalized ORBIT.
   block-slots)
 
 (defun block-slot (block-subsystem blk)
@@ -323,3 +328,158 @@ Returns a list of block systems."
                                  :collect (cons m i))))))
     (mapcar #'process-raw-block-subsystem (raw-block-subsystems group :canonicalize t))))
 
+
+;;; Interblock Group & Permutations
+
+(defun block-subsystem-interblock-group-homomorphism (subsys)
+  "Given a block subsystem SUBSYS, compute a homomorphism to its interblock group."
+  (lambda (gen)
+    (list-to-perm
+     (loop :with gen. := (perm-evaluator gen)
+           :for blk :in (block-subsystem-orbit subsys)
+           :collect (block-slot subsys (mapcar gen. blk))))))
+
+(defun block-subsystem-interblock-group (subsys)
+  "Compute the interblock group of a block subsystem SUBSYS."
+  (let ((hom (block-subsystem-interblock-group-homomorphism subsys)))
+    (generate-perm-group (mapcar hom (generators (block-subsystem-group subsys))))))
+
+
+;;; Intrablock Group & Orientations
+
+(defun block-subsystem-intra-generators (subsys)
+  "Compute the generators of the intrablock group, along with the
+computed reference frames."
+  (check-type subsys block-subsystem)
+  (let* ((num-slots (block-subsystem-size subsys))
+         (G-generators (perm-group.generators (block-subsystem-group subsys)))
+         (blocks (block-subsystem-orbit subsys))
+         (reference-frames (make-array num-slots :initial-element nil))
+         (intra-gens '()))
+    (flet ((block-slot (blk)
+             "What's the slot of this block?"
+             (position (list-minimum blk) blocks :key #'first)))
+      ;; Arbitrarily choose a reference frame for an arbitrary
+      ;; block. We choose ρ = identity for the first (i.e., base) block.
+      (setf (aref reference-frames 0) (block-subsystem-base-block subsys))
+      ;; Now we seek to choose reference frames for each of the other
+      ;; slots. To do this, we start with a reference frame we know ρᵢ
+      ;; for slot i, and compute γ.ρ and check if we landed in a new
+      ;; slot j. If we did, then ρⱼ := γ.ρ is the reference frame for
+      ;; that slot j. We queue up ρⱼ as a slot to explore later.
+      ;;
+      ;; We keep going until we've established reference frames for
+      ;; all of the slots.
+      (loop :with unexplored-frames := (list-to-queue (list (block-subsystem-base-block subsys)))
+            :until (zerop (count nil reference-frames))
+            :for ρ := (dequeue unexplored-frames)
+            :do
+               (dolist (γ G-generators)
+                 (let* ((γ.ρ (mapcar (perm-evaluator γ) ρ))
+                        (j (block-slot γ.ρ))
+                        (ρⱼ (aref reference-frames j)))
+                   (unless ρⱼ
+                     (setf (aref reference-frames j) γ.ρ)
+                     (enqueue unexplored-frames γ.ρ)))))
+      ;; Now that we have all of the frames, we want to find
+      ;; generators for the intrablock group. To do this, we look at
+      ;; the action of each γ on each frame ρ. If the action isn't
+      ;; identity, then we've found a generator of the intrablock
+      ;; group.
+      (loop :for ρ :across reference-frames :do
+        (dolist (γ G-generators)
+          (let* ((γ.ρ (mapcar (perm-evaluator γ) ρ))
+                 (j (block-slot γ.ρ))
+                 (ρⱼ (aref reference-frames j)))
+            (assert (not (null ρⱼ)) () "Inconsistent state. Somehow we missed a reference frame.")
+            ;; Check whether this action isn't identity, and do it
+            ;; cheaply.
+            (unless (every #'= ρⱼ γ.ρ)
+              (pushnew (permuter ρⱼ γ.ρ) intra-gens :test #'perm=)))))
+      ;; All done. Return the values.
+      (values intra-gens reference-frames))))
+
+
+;;; TODO: Coordinates
+
+#+#:ignore
+(progn
+  (defun make-block-coord (permutation orientation)
+    (cons permutation orientation))
+
+  (defun block-coord-permutation (blk-coord)
+    (car blk-coord))
+
+  (defun block-coord-orientation (blk-coord)
+    (cdr blk-coord))
+
+  (defstruct (coord-transformations (:conc-name nil)
+                                    (:constructor %make-coord-trans))
+    block-subsystem
+    perm-cardinality
+    to-perm
+    from-perm
+    orient-cardinality
+    to-orient
+    from-orient
+    )
+
+
+
+  (defun make-coord-transformation (block-subsystem)
+    (let ((perm-group (block-subsystem-permutation-group block-subsystem))
+          (orientation-vector-spec
+            (make-radix-spec (block-subsystem-block-size block-subsystem)
+                             (block-subsystem-size block-subsystem)))
+          (orientation-spec
+            (make-perm-spec (block-subsystem-block-size block-subsystem))))
+      (flet ((to-orient (index)
+               (map 'vector
+                    (lambda (o) (let ((v (unrank orientation-spec o)))
+                                  (vector-to-perm (map-into v #'1+ v))))
+                    (unrank orientation-vector-spec index)))
+             (from-orient (o-vec)
+               (rank orientation-vector-spec
+                     (map 'vector (lambda (x) (rank orientation-spec (perm-to-vector x)))
+                          o-vec))))
+        (multiple-value-bind (from-perm to-perm)
+            (group-element-rank-functions perm-group)
+          (%make-coord-trans
+           :block-subsystem block-subsystem
+           :perm-cardinality (group-order perm-group)
+           :orient-cardinality (cardinality orientation-vector-spec)
+           :from-perm from-perm
+           :to-perm to-perm
+           :from-orient #'from-orient
+           :to-orient #'to-orient)))))
+
+  (defun identity-block-coordinate (subsys)
+    (loop :with ℓ := (block-subsystem-size subsys)
+          :with si := (perm-identity (block-subsystem-block-size subsys))
+          :for bs :in (block-subsystem-orbit subsys)
+          :collect (make-block-coordinate
+                    (perm-identity ℓ)
+                    (make-array ℓ :initial-element si))))
+
+
+  (defun perm-to-coords (perm block-systems)
+    (labels ((permute-bss (bss)
+               (loop :with ev := (alexandria:curry #'perm-eval perm)
+                     :for bs :in bss
+                     :collect (loop :for blk :in bs
+                                    :collect (mapcar ev blk))))
+             (rank-block (blk)
+               (rank (make-perm-spec (length blk)) (coerce blk 'vector))))
+      (let ((p-bss (permute-bss (group-bss-raw block-systems)))
+            ;; Allocate some fresh coords.
+            (coords (identity-block-coordinate block-systems)))
+        ;; First, we compute the permutation vectors.
+        (loop :for bs :in p-bss
+              :for (p . o) :in coords
+              :collect (make-block-coordinate
+                        (apply #'make-perm (mapcar (lambda (blk)
+                                                     (aref (group-bss-ordering block-systems)
+                                                           (list-minimum blk)))
+                                                   bs))
+                        (map 'vector #'rank-block bs))))))
+)

@@ -31,3 +31,20 @@
       (values
        (is (every (lambda (b) (= 2 (length b))) edges))
        (is (every (lambda (b) (= 3 (length b))) corners))))))
+
+(deftest test-rubik-intrablock-groups ()
+  "Test that the intrablock groups of the Rubik's cube are calculated correctly."
+  (let* ((subsystems (perm::group-block-subsystems *3x3*))
+         (corners (find 3 subsystems :test #'= :key #'perm::block-subsystem-block-size))
+         (edges   (find 2 subsystems :test #'= :key #'perm::block-subsystem-block-size))
+         (corner-gens (perm::block-subsystem-intra-generators corners))
+         (edge-gens   (perm::block-subsystem-intra-generators edges))
+         (corner-intra (perm:generate-perm-group corner-gens))
+         (edge-intra   (perm:generate-perm-group edge-gens)))
+    (is (= 3 (perm:group-degree corner-intra :true t)))
+    (is (= 3 (perm:group-order corner-intra)))
+    (is (perm:group-element-p (perm:make-perm 2 3 1) corner-intra))
+
+    (is (= 2 (perm:group-degree edge-intra :true t)))
+    (is (= 2 (perm:group-order edge-intra)))
+    (is (perm:group-element-p (perm:make-perm 2 1) edge-intra))))

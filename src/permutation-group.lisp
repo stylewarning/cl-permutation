@@ -482,7 +482,7 @@ Note: The result is likely very long and inefficient."
                                                      improve-every
                                                      l)
   (declare (optimize (speed 0) safety debug))
-  
+
   ;; every s rounds, improve
   ;;
   ;; l should be small in the beginning and grow slowly; small l
@@ -518,7 +518,7 @@ Note: The result is likely very long and inefficient."
                      (setf b′ (cons (inverse free-group tt) t))
                      (%step i (inverse free-group tt))
                      (identity-element free-group))))))
-            
+
             (%round (l c tt)
               (check-type l real)
               (check-type c unsigned-byte)
@@ -529,7 +529,7 @@ Note: The result is likely very long and inefficient."
                                 (<= c k)) ; is this right?
                     :do (setf tt (%step c tt))
                         (incf c)))
-            
+
             (%improve (l)
               (dotimes (j k)
                 (loop :for x :across (aref ν j) :do
@@ -572,7 +572,7 @@ Note: The result is likely very long and inefficient."
                     (order (group-order group)))
                 (assert (<= size order))
                 (= size order)))
-            
+
             (%table-size ()
               (loop :with p := 1
                     :for νᵢ :across ν
@@ -665,4 +665,3 @@ This is also called \"factorization\"."
         (if (not return-original-generators)
             decomp
             (mapcar ϕ decomp))))))
-
