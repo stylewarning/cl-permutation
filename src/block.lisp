@@ -11,7 +11,6 @@
 ;;; cubelets don't make *minimal* blocks, however. An example of where
 ;;; this is the case is the <M, U> subgroup of the cube.)
 
-;;; TODO: Do group theory within the blocks themselves.
 
 ;;; Disjoint-Set (DJS) Data Structure
 ;;;
@@ -291,41 +290,28 @@ Returns a list of block systems."
   size
   ;; Block size (number of points per block).
   block-size
-  ;; The block subsystem itself.
-  orbit
-  ;; The slot in which each block rests in identity, indexed by the
-  ;; block's minimum element. This is an a-list of (min-elt . slot)
-  ;; pairs.
-  ;;
-  ;; TODO: We don't actually need to store this. It's readily
-  ;; available from a canonicalized ORBIT.
-  block-slots)
+  ;; The block subsystem itself, in sorted order. This is the G-orbit
+  ;; of BASE-BLOCK.
+  orbit)
 
-(defun block-slot (block-subsystem blk)
+(defun block-slot (subsys blk)
   "In which slot is BLK found in the block subsystem BLOCK-SUBSYSTEM?"
-  (let ((found (assoc (list-minimum blk) (block-subsystem-block-slots block-subsystem))))
-    (assert found (block-subsystem blk)
-            "The block ~A was not found in the block subsystem ~A." blk block-subsystem)
-    (cdr found)))
+  ;; Ergh, we assume BLK is of the right size and is a valid block of
+  ;; SUBSYS.
+  (1+ (position (list-minimum blk) (block-subsystem-orbit subsys) :test #'= :key #'first)))
 
 (defun group-block-subsystems (group)
   "Return a list of block subsystems of the group GROUP."
   (flet ((process-raw-block-subsystem (bs)
            (assert (not (null bs)))
            (let* ((sorted-blocks (sort (copy-list bs) #'< :key #'list-minimum))
-                  (num-blocks (length sorted-blocks))
-                  (base-block (first sorted-blocks))
-                  (block-size (length base-block)))
+                  (base-block (first sorted-blocks)))
              (make-block-subsystem
               :group group
               :base-block base-block
-              :size num-blocks
-              :block-size block-size
-              :orbit sorted-blocks
-              :block-slots (loop :for i :from 1
-                                 :for blk :in sorted-blocks
-                                 :for m := (list-minimum blk)
-                                 :collect (cons m i))))))
+              :size (length sorted-blocks)
+              :block-size (length base-block)
+              :orbit sorted-blocks))))
     (mapcar #'process-raw-block-subsystem (raw-block-subsystems group :canonicalize t))))
 
 
@@ -348,8 +334,7 @@ Returns a list of block systems."
 ;;; Intrablock Group & Orientations
 
 (defun block-subsystem-intra-generators (subsys)
-  "Compute the generators of the intrablock group, along with the
-computed reference frames."
+  "Compute (possibly redundant) generators of the intrablock group, along with the computed reference frames."
   (check-type subsys block-subsystem)
   (let* ((num-slots (block-subsystem-size subsys))
          (G-generators (perm-group.generators (block-subsystem-group subsys)))
