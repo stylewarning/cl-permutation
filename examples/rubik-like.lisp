@@ -100,6 +100,40 @@
                (make-cycle 14 22 30 38)))
    48))                                 ; size
 
+(defun make-kociemba-g2 ()
+  ;; <U, D, R2, L2, F2, B2>
+  (group-from-cycles
+   (list
+    (list (make-cycle 11 35 27 19) ; U
+          (make-cycle 10 34 26 18)
+          (make-cycle 9 33 25 17)
+          (make-cycle 2 5 7 4)
+          (make-cycle 1 3 8 6))
+
+    (list (make-cycle 42 45 47 44) ; D
+          (make-cycle 41 43 48 46)
+          (make-cycle 16 24 32 40)
+          (make-cycle 15 23 31 39)
+          (make-cycle 14 22 30 38))
+
+    ;; R2
+    (list (make-cycle 28 29) (make-cycle 27 30) (make-cycle 26 31) (make-cycle 25 32)
+          (make-cycle 24 33) (make-cycle 21 36) (make-cycle 19 38) (make-cycle 8 48)
+          (make-cycle 5 45) (make-cycle 3 43))
+    ;; L2
+    (list (make-cycle 22 35) (make-cycle 20 37) (make-cycle 17 40) (make-cycle 12 13)
+          (make-cycle 11 14) (make-cycle 10 15) (make-cycle 9 16) (make-cycle 6 46)
+          (make-cycle 4 44) (make-cycle 1 41))
+    ;; F2
+    (list (make-cycle 20 21) (make-cycle 19 22) (make-cycle 18 23) (make-cycle 17 24)
+          (make-cycle 16 25) (make-cycle 13 28) (make-cycle 11 30) (make-cycle 8 41)
+          (make-cycle 7 42) (make-cycle 6 43))
+    ;; B2
+    (list (make-cycle 36 37) (make-cycle 35 38) (make-cycle 34 39) (make-cycle 33 40)
+          (make-cycle 14 27) (make-cycle 12 29) (make-cycle 9 32) (make-cycle 3 46)
+          (make-cycle 2 47) (make-cycle 1 48)))
+   48))
+
 ;;                +--------------+
 ;;                |              |
 ;;                |  1    2    3 |
