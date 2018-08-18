@@ -333,7 +333,7 @@ Returns a list of block systems."
 
 ;;; Intrablock Group & Orientations
 
-(defun block-subsystem-intra-generators (subsys)
+(defun block-subsystem-intrablock-group-generators (subsys)
   "Compute (possibly redundant) generators of the intrablock group, along with the computed reference frames."
   (check-type subsys block-subsystem)
   (let* ((num-slots (block-subsystem-size subsys))
@@ -348,17 +348,17 @@ Returns a list of block systems."
       ;; block. We choose ρ = identity for the first (i.e., base) block.
       (setf (aref reference-frames 0) (block-subsystem-base-block subsys))
       ;; Now we seek to choose reference frames for each of the other
-      ;; slots in such a way that our choice of coordinates (i.e., how
-      ;; we map from G to Aut n, or how we decide to order blocks
-      ;; themselves). To do this, we start with a reference frame we
-      ;; know ρᵢ for slot i, and compute γ.ρᵢ and check if we landed in
-      ;; a new slot j. If we did, then ρⱼ := γ.ρᵢ is the reference
-      ;; frame for that slot j. We queue up ρⱼ as a slot to explore
-      ;; later.
+      ;; slots in such a way that we don't depend upon our of
+      ;; coordinates (i.e., how we map from G to Aut n, or how we
+      ;; decide to order blocks themselves). To do this, we start with
+      ;; a reference frame we know ρᵢ for slot i, and compute γ.ρᵢ and
+      ;; check if we landed in a new slot j. If we did, then ρⱼ :=
+      ;; γ.ρᵢ is the reference frame for that slot j. We queue up ρⱼ
+      ;; as a slot to explore later.
       ;;
       ;; We keep going until we've established reference frames for
       ;; all of the slots.
-      (loop :with unexplored-frames := (list-to-queue (list (block-subsystem-base-block subsys)))
+      (loop :with unexplored-frames := (list-to-queue (list (aref reference-frames 0)))
             :until (zerop (count nil reference-frames))
             :for ρ := (dequeue unexplored-frames)
             :do
@@ -369,6 +369,7 @@ Returns a list of block systems."
                    (unless ρⱼ
                      (setf (aref reference-frames j) γ.ρ)
                      (enqueue unexplored-frames γ.ρ)))))
+
       ;; Now that we have all of the frames, we want to find
       ;; generators for the intrablock group. To do this, we look at
       ;; the action of each γ on each frame ρ. If the action isn't
@@ -384,9 +385,32 @@ Returns a list of block systems."
             ;; cheaply.
             (unless (every #'= ρⱼ γ.ρ)
               (pushnew (permuter ρⱼ γ.ρ) intra-gens :test #'perm=)))))
+      ;; TODO: Adjust the reference frames so the group identity always sits at coordinate 0.
+      ;;
       ;; All done. Return the values.
       (values intra-gens reference-frames))))
 
+(defun intrablock-coordinate-function (group)
+  (let* ((subsystems (group-block-subsystems group))
+         (intrablock-gens/refs (loop :for subsys :in subsystems
+                                     :collect (multiple-value-list
+                                               (block-subsystem-intrablock-group-generators subsys))))
+         (groups (loop :for gens :in (mapcar #'first intrablock-gens/refs)
+                       :collect (generate-perm-group gens)))
+         (frames (mapcar #'second intrablock-gens/refs))
+         (rank/unrank (loop :for grp :in groups
+                            :collect (multiple-value-list (group-element-rank-functions grp)))))
+    (lambda (g)
+      (let ((γ (perm-evaluator g)))
+        (loop :for subsys :in subsystems
+              :for frame :in frames
+              :for intra :in groups
+              :for (rank unrank) :in rank/unrank
+              :collect (loop :for b :in (block-subsystem-orbit subsys)
+                             :for γ.b := (mapcar γ b)
+                             :for ρ := (find-if (lambda (r) (find (list-minimum γ.b) r)) frame)
+                             :for π := (permuter ρ γ.b)
+                             :collect (funcall rank π)))))))
 
 ;;; TODO: Coordinates
 
