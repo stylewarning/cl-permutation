@@ -36,6 +36,8 @@
     1. A function to map elements of the permutation group GROUP to integers [0, 2^|GROUP| - 1].
 
     2. The inverse of the above function."
+  ;; FIXME: We need to make sure this fails when we attempt to rank
+  ;; something not in the group.
   (let ((spec (vector-to-mixed-radix-spec (group-radix group))))
     (flet ((rank-element (el)
              (let* ((trans (perm-group.transversal-system group))

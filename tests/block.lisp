@@ -48,3 +48,18 @@
     (is (= 2 (perm:group-degree edge-intra :true t)))
     (is (= 2 (perm:group-order edge-intra)))
     (is (perm:group-element-p (perm:make-perm 2 1) edge-intra))))
+
+(deftest test-orientation-of-identity-and-superflip ()
+  (let ((coord (perm::intrablock-coordinate-function *3x3*))
+        (identity (group-identity *3x3*))
+        (superflip (from-cycles (mapcar (lambda (x) (apply #'make-cycle x))
+                                        (perm::block-subsystem-orbit
+                                         (first (perm::group-block-subsystems *3x3*))))
+                                48)))
+    (destructuring-bind (edges corners) (funcall coord identity)
+      (is (every #'zerop edges))
+      (is (every #'zerop corners)))
+    (destructuring-bind (edges corners) (funcall coord superflip)
+      (is (every (lambda (x) (= 1 x)) edges))
+      (is (every #'zerop corners)))))
+
