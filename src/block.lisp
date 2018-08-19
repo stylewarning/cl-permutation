@@ -392,121 +392,180 @@ Returns a list of block systems."
       ;; All done. Return the values.
       (values intra-gens reference-frames))))
 
-(defun intrablock-coordinate-function (group)
+(defun block-subsystem-intrablock-group (subsys)
+  (generate-perm-group (block-subsystem-intrablock-group-generators subsys)))
+
+(defun intrablock-coordinate-function (subsys)
   ;; Interpretation of g → #(X Y Z ...)
   ;;
   ;;    The block in slot 0 will undergo a change in orientation by X.
   ;;    The block in slot 1 will undergo a change in orientation by Y.
   ;;    etc.
-  (let* ((subsystems (group-block-subsystems group))
-         (intrablock-gens/refs (loop :for subsys :in subsystems
-                                     :collect (multiple-value-list
-                                               (block-subsystem-intrablock-group-generators subsys))))
-         (groups (loop :for gens :in (mapcar #'first intrablock-gens/refs)
-                       :collect (generate-perm-group gens)))
-         (frames (mapcar #'second intrablock-gens/refs))
-         (rank/unrank (loop :for grp :in groups
-                            :collect (multiple-value-list (group-element-rank-functions grp)))))
-    (lambda (g)
-      (let ((γ (perm-evaluator g)))
-        (loop :for subsys :in subsystems
-              :for frame :in frames
-              :for intra :in groups
-              :for (rank unrank) :in rank/unrank
-              ;; N.B.: We can't iterate through the orbit. We must
-              ;; iterate through the frame! Otherwise we will have
-              ;; incorrect computations of π.
-              :collect (loop :with coord := (make-array (block-subsystem-size subsys) :initial-element nil)
-                             :for i :from 0
-                             :for b :across frame
-                             :for γ.b := (mapcar γ b)
-                             :for slot := (position-if (lambda (r) (find (list-minimum γ.b) r)) frame)
-                             :for ρ := (elt frame slot)
-                             :for π := (permuter ρ γ.b)
-                             :do (assert (group-element-p π intra))
-                                 (setf (aref coord i) (funcall rank π))
-                             :finally (return coord)))))))
+  (multiple-value-bind (gens frame) (block-subsystem-intrablock-group-generators subsys)
+    (let ((group (generate-perm-group gens)))
+      (multiple-value-bind (rank unrank) (group-element-rank-functions group)
+        (declare (ignore unrank))
+        (lambda (g)
+          (let ((γ (perm-evaluator g)))
+            ;; N.B.: We can't iterate through the orbit. We must
+            ;; iterate through the frame! Otherwise we will have
+            ;; incorrect computations of π.
+            (loop :with coord := (make-array (block-subsystem-size subsys) :initial-element nil)
+                  :for i :from 0
+                  :for b :across frame
+                  :for γ.b := (mapcar γ b)
+                  :for slot := (position-if (lambda (r) (find (list-minimum γ.b) r)) frame)
+                  :for ρ := (elt frame slot)
+                  :for π := (permuter ρ γ.b)
+                  :do (assert (group-element-p π group))
+                      (setf (aref coord i) (funcall rank π))
+                  :finally (return coord))))))))
 
-;;; TODO: Coordinates
+;;; Coordinates
 
-#+#:ignore
-(progn
-  (defun make-block-coord (permutation orientation)
-    (cons permutation orientation))
+(defstruct (block-coordinate-transformation (:conc-name coord.)
+                                            (:constructor %make-coord))
+  order
+  rank                                  ; GROUP -> INDEX
+  )
 
-  (defun block-coord-permutation (blk-coord)
-    (car blk-coord))
+(defun make-subsystem-transformations (subsys)
+  (let* ((size (block-subsystem-size subsys))
+         (interblock-group (block-subsystem-interblock-group subsys))
+         (interblock-hom   (block-subsystem-interblock-group-homomorphism subsys))
+         (intrablock-group (block-subsystem-intrablock-group subsys))
+         (intrablock-base (group-order intrablock-group))
+         (intrablock-spec (make-radix-spec intrablock-base size))
+         (intrablock-coord (intrablock-coordinate-function subsys)))
+    (multiple-value-bind (inter-rank inter-unrank)
+        (group-element-rank-functions interblock-group)
+      (declare (ignore inter-unrank))
+      (values
+       ;; Interblock xform
+       (%make-coord
+        :order (group-order interblock-group)
+        :rank (lambda (g) (funcall inter-rank (funcall interblock-hom g))))
+       (%make-coord
+        :order (cardinality intrablock-spec)
+        :rank (lambda (g) (rank intrablock-spec (funcall intrablock-coord g)))
+        ;; :unrank (lambda (r) (unrank intrablock-spec r))
+        )))))
 
-  (defun block-coord-orientation (blk-coord)
-    (cdr blk-coord))
+;;;; EXAMPLES?
 
-  (defstruct (coord-transformations (:conc-name nil)
-                                    (:constructor %make-coord-trans))
-    block-subsystem
-    perm-cardinality
-    to-perm
-    from-perm
-    orient-cardinality
-    to-orient
-    from-orient
-    )
+(defun verbose ()
+  (let ((last-time nil))
+    (lambda (control &rest args)
+      (let* ((current-time (get-internal-real-time))
+             (elapsed-time-ms (if (null last-time)
+                                  0
+                                  (round (* 1000 (- current-time last-time))
+                                         internal-time-units-per-second))))
+        (format t "[~6D ms] " elapsed-time-ms)
+        (apply #'format t control args)
+        (terpri)
+        (finish-output)
+        (setf last-time (get-internal-real-time))
+        nil))))
+
+(defun subsystem-solver (group &key (verbose (verbose)))
+  (let (subsystems xforms tables (num-gens (length (generators group))))
+    (when verbose (funcall verbose "Computing subsystems"))
+    (setf subsystems (group-block-subsystems group))
+
+    (when verbose (funcall verbose "Computing coordinate transforms"))
+    (setf xforms (loop :for subsys :in subsystems
+                       :append (multiple-value-list (make-subsystem-transformations subsys))))
+    (setf xforms (remove-if (lambda (x) (= 1 (coord.order x))) xforms))
+
+    (when verbose (funcall verbose "Computing ~D God tables" (length xforms)))
+    (loop :for i :from 1
+          :for xform :in xforms
+          :for order := (coord.order xform)
+          :do
+             (when (and verbose (> order 10000000))
+               (unless (y-or-n-p "Attempting to compute table over 10M. Continue?")
+                 (return-from subsystem-solver nil)))
+             (when verbose (funcall verbose "Computing ~:R God table of size ~D" i order))
+             (push (compute-god-table group :order order :rank-element (coord.rank xform)) tables)
+             (when verbose (funcall verbose "Done!")))
+    (setf tables (reverse tables))
+
+    (when verbose (funcall verbose "Computing IDDFS closure"))
+    (labels ((coord (g)
+               (loop :with c := (make-array (length tables) :element-type 'fixnum :initial-element 0)
+                     :for i :from 0
+                     :for xform :in xforms
+                     :do (setf (aref c i) (funcall (coord.rank xform) g))
+                     :finally (return c)))
+             (dfs (coord depth moves)
+               (cond
+                 ;; Solved.
+                 ((every #'zerop coord)
+                  (values t moves))
+                 ;; The solution must be of at least the depths specified by each
+                 ;; pruning table.
+                 ((or (zerop depth)
+                      (loop :for tbl :in tables
+                            :for c :across coord
+                            :thereis (< depth (god-table-entry-depth
+                                               (aref (god-table-vector tbl) c)))))
+                  (values nil nil))
+                 ;; Descend. We use transition tables here to actually
+                 ;; compute the map.
+                 (t
+                  (dotimes (i num-gens nil)
+                    (let ((next-coord (map 'simple-vector
+                                           (lambda (c tbl)
+                                             (svref (god-table-entry-transition
+                                                     (svref (god-table-vector tbl) c))
+                                                    i))
+                                           coord
+                                           tables)))
+                      ;; coordᵢ ← (aref transᵢ coordᵢ mv)
+                      (multiple-value-bind (found? solution)
+                          (dfs next-coord (1- depth) (cons i moves))
+                        (when found?
+                          (return-from dfs (values t solution))))))))))
+      (lambda (g)
+        (block nil
+          (loop :with coord := (coord g)
+                :for depth :from 0
+                :do (multiple-value-bind (found? solution)
+                        (dfs coord depth nil)
+                      (cond
+                        (found? (return (reverse solution)))
+                        (t      (write-string "."))))))))))
+
+(defun solve-and-verify (group solver element &key (move-printer #'princ))
+  (format t "~&Position: ~A~%" element)
+  (let* ((start-time (get-internal-real-time))
+         (solution (funcall solver element)))
+    (format t "~&Solution found in ~D ms!~%"
+            (round (* 1000 (- (get-internal-real-time) start-time))
+                   internal-time-units-per-second))
+    (let ((*print-pretty* nil))
+      (format t "Solution (apply left-to-right): ")
+      (dolist (mv solution)
+        (funcall move-printer mv)
+        (write-char #\Space))
+      (terpri))
+    (let ((solution*element (reduce #'perm-compose (reverse solution)
+                                    :initial-value element
+                                    :key (lambda (n) (nth n (generators group))))))
 
 
+      (format t "Verification: ~:[Failed! solution*element=~A~;Success!~]"
+              (perm-identity-p solution*element)
+              solution*element)
+      solution)))
 
-  (defun make-coord-transformation (block-subsystem)
-    (let ((perm-group (block-subsystem-permutation-group block-subsystem))
-          (orientation-vector-spec
-            (make-radix-spec (block-subsystem-block-size block-subsystem)
-                             (block-subsystem-size block-subsystem)))
-          (orientation-spec
-            (make-perm-spec (block-subsystem-block-size block-subsystem))))
-      (flet ((to-orient (index)
-               (map 'vector
-                    (lambda (o) (let ((v (unrank orientation-spec o)))
-                                  (vector-to-perm (map-into v #'1+ v))))
-                    (unrank orientation-vector-spec index)))
-             (from-orient (o-vec)
-               (rank orientation-vector-spec
-                     (map 'vector (lambda (x) (rank orientation-spec (perm-to-vector x)))
-                          o-vec))))
-        (multiple-value-bind (from-perm to-perm)
-            (group-element-rank-functions perm-group)
-          (%make-coord-trans
-           :block-subsystem block-subsystem
-           :perm-cardinality (group-order perm-group)
-           :orient-cardinality (cardinality orientation-vector-spec)
-           :from-perm from-perm
-           :to-perm to-perm
-           :from-orient #'from-orient
-           :to-orient #'to-orient)))))
-
-  (defun identity-block-coordinate (subsys)
-    (loop :with ℓ := (block-subsystem-size subsys)
-          :with si := (perm-identity (block-subsystem-block-size subsys))
-          :for bs :in (block-subsystem-orbit subsys)
-          :collect (make-block-coordinate
-                    (perm-identity ℓ)
-                    (make-array ℓ :initial-element si))))
-
-
-  (defun perm-to-coords (perm block-systems)
-    (labels ((permute-bss (bss)
-               (loop :with ev := (alexandria:curry #'perm-eval perm)
-                     :for bs :in bss
-                     :collect (loop :for blk :in bs
-                                    :collect (mapcar ev blk))))
-             (rank-block (blk)
-               (rank (make-perm-spec (length blk)) (coerce blk 'vector))))
-      (let ((p-bss (permute-bss (group-bss-raw block-systems)))
-            ;; Allocate some fresh coords.
-            (coords (identity-block-coordinate block-systems)))
-        ;; First, we compute the permutation vectors.
-        (loop :for bs :in p-bss
-              :for (p . o) :in coords
-              :collect (make-block-coordinate
-                        (apply #'make-perm (mapcar (lambda (blk)
-                                                     (aref (group-bss-ordering block-systems)
-                                                           (list-minimum blk)))
-                                                   bs))
-                        (map 'vector #'rank-block bs))))))
-)
+;;; Solving second phase of Kociemba:
+;;;
+;;; (defparameter *g2 (perm-examples::make-kociemba-g2))
+;;;
+;;; (defparameter *solver (subsystem-solver *g2))
+;;;
+;;; (let ((r (random-group-element *g2))
+;;;       (printer (lambda (i) (format t "~[U~;D~;R2~;L2~;F2~;B2~]" i))))
+;;;   (solve-and-verify *g2 *solver r :move-printer printer))
