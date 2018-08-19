@@ -361,14 +361,13 @@ Returns a list of block systems."
       (loop :with unexplored-frames := (list-to-queue (list (aref reference-frames 0)))
             :until (zerop (count nil reference-frames))
             :for ρ := (dequeue unexplored-frames)
-            :do
-               (dolist (γ G-generators)
-                 (let* ((γ.ρ (mapcar (perm-evaluator γ) ρ))
-                        (j (block-slot γ.ρ))
-                        (ρⱼ (aref reference-frames j)))
-                   (unless ρⱼ
-                     (setf (aref reference-frames j) γ.ρ)
-                     (enqueue unexplored-frames γ.ρ)))))
+            :do (dolist (γ G-generators)
+                  (let* ((γ.ρ (mapcar (perm-evaluator γ) ρ))
+                         (j (block-slot γ.ρ))
+                         (ρⱼ (aref reference-frames j)))
+                    (when (null ρⱼ)
+                      (setf (aref reference-frames j) γ.ρ)
+                      (enqueue unexplored-frames γ.ρ)))))
 
       ;; Now that we have all of the frames, we want to find
       ;; generators for the intrablock group. To do this, we look at
@@ -385,12 +384,20 @@ Returns a list of block systems."
             ;; cheaply.
             (unless (every #'= ρⱼ γ.ρ)
               (pushnew (permuter ρⱼ γ.ρ) intra-gens :test #'perm=)))))
-      ;; TODO: Adjust the reference frames so the group identity always sits at coordinate 0.
+
+      ;; TODO: Verify this ensures the identity element in the group
+      ;; corresponds to the identity elements in the intrablock
+      ;; groups. It seems to be the case for some tests.
       ;;
       ;; All done. Return the values.
       (values intra-gens reference-frames))))
 
 (defun intrablock-coordinate-function (group)
+  ;; Interpretation of g → #(X Y Z ...)
+  ;;
+  ;;    The block in slot 0 will undergo a change in orientation by X.
+  ;;    The block in slot 1 will undergo a change in orientation by Y.
+  ;;    etc.
   (let* ((subsystems (group-block-subsystems group))
          (intrablock-gens/refs (loop :for subsys :in subsystems
                                      :collect (multiple-value-list
@@ -406,11 +413,19 @@ Returns a list of block systems."
               :for frame :in frames
               :for intra :in groups
               :for (rank unrank) :in rank/unrank
-              :collect (loop :for b :in (block-subsystem-orbit subsys)
+              ;; N.B.: We can't iterate through the orbit. We must
+              ;; iterate through the frame! Otherwise we will have
+              ;; incorrect computations of π.
+              :collect (loop :with coord := (make-array (block-subsystem-size subsys) :initial-element nil)
+                             :for i :from 0
+                             :for b :across frame
                              :for γ.b := (mapcar γ b)
-                             :for ρ := (find-if (lambda (r) (find (list-minimum γ.b) r)) frame)
+                             :for slot := (position-if (lambda (r) (find (list-minimum γ.b) r)) frame)
+                             :for ρ := (elt frame slot)
                              :for π := (permuter ρ γ.b)
-                             :collect (funcall rank π)))))))
+                             :do (assert (group-element-p π intra))
+                                 (setf (aref coord i) (funcall rank π))
+                             :finally (return coord)))))))
 
 ;;; TODO: Coordinates
 
