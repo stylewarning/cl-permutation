@@ -14,44 +14,53 @@
    (generators :initarg :generators
                :reader god-table-generators)))
 
-;; TODO: Change to IDDFS?
+(defstruct god-table-entry
+  move
+  came-from
+  depth)
+
 (defun compute-god-table (group &key (target (group-identity group))
+                                     (generators (generators group))
+                                     (order (group-order group))
+                                     (rank-element (group-element-rank-functions group))
                                      (verbose t))
   (let ((generators (loop :for i :from 0
-                          :for g :in (generators group)
+                          :for g :in generators
                           :collect (cons i g)))
-        ;; Table of (CONS MOVE CAME-FROM)
-        (table (make-array (group-order group) :initial-element nil))
+        ;; Table of (list MOVE CAME-FROM DEPTH)
+        (table (make-array order :initial-element nil))
         (positions-left (make-queue)))
-    (multiple-value-bind (rank-element unrank-element)
-        (group-element-rank-functions group)
-      (declare (ignore unrank-element))
+    ;; Record TARGET as starting position.
+    (enqueue positions-left target)
+    (let ((target-rank (funcall rank-element target)))
+      (setf (svref table target-rank) (make-god-table-entry :move -1
+                                                            :came-from target-rank
+                                                            :depth 0)))
 
-      ;; Record TARGET as starting position.
-      (enqueue positions-left target)
-      (let ((target-rank (funcall rank-element target)))
-        (setf (svref table target-rank) (cons -1 target-rank)))
-
-      ;; Start iterating.
-      (loop :for num-elements-explored :from 1
-            :for next := (dequeue positions-left)
-            :do
-               (when (and verbose (zerop (mod num-elements-explored 50000)))
-                 (format t "~D~%" (length (queue-elements positions-left))))
-               (loop :for (i . g) :in generators
-                     :for p := (perm-compose g next)
-                     :for r := (funcall rank-element p)
-                     :when (null (svref table r))
-                       :do (enqueue positions-left p)
+    ;; Start iterating.
+    (loop :for num-elements-explored :from 1
+          :for next := (dequeue positions-left)
+          :do
+             (when (and verbose (zerop (mod num-elements-explored 50000)))
+               (format t "~D~%" (length (queue-elements positions-left))))
+             (loop :for (i . g) :in generators
+                   :for p := (perm-compose g next)
+                   :for r := (funcall rank-element p)
+                   :when (null (svref table r))
+                     :do (let ((came-from (funcall rank-element next)))
+                           (enqueue positions-left p)
                            (setf (svref table r)
-                                 (cons i (funcall rank-element next))))
-            :until (queue-empty-p positions-left))
+                                 (make-god-table-entry
+                                  :move i
+                                  :came-from came-from
+                                  :depth (1+ (god-table-entry-depth (svref table came-from)))))))
+          :until (queue-empty-p positions-left))
 
-      ;; Return a GOD-TABLE object.
-      (make-instance 'god-table :group group
-                                :table table
-                                :target target
-                                :generators generators))))
+    ;; Return a GOD-TABLE object.
+    (make-instance 'god-table :group group
+                              :table table
+                              :target target
+                              :generators generators)))
 
 (defgeneric reconstruct-perm (god-table perm)
   (:method ((table god-table) perm)
@@ -61,12 +70,11 @@
       (declare (ignore unrank-element)
                (type function rank-element))
       (labels ((chase (current collected)
-                 (destructuring-bind (move . next)
-                     (svref (god-table-vector table) current)
+                 (with-slots (move came-from) (svref (god-table-vector table) current)
                    (declare (type integer move))
                    (if (= -1 move)
                        (nreverse collected)
-                       (chase next (cons move collected))))))
+                       (chase came-from (cons move collected))))))
         (chase (funcall rank-element perm) nil)))))
 
 ;;; Example:
