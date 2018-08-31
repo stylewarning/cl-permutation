@@ -588,5 +588,5 @@ Returns a list of block systems."
 ;;; (defparameter *solver (subsystem-solver *g2))
 ;;;
 ;;; (let ((r (random-group-element *g2))
-;;;             (printer (lambda (i) (format t "~[U~;U2~;U'~;D~;D2~;D'~;D~;R2~;L2~;F2~;B2~]" i))))
-;;         (solve-and-verify *g2 *solver r :move-printer printer))
+;;;             (printer (lambda (i) (format t "~[U~;U2~;U'~;D~;D2~;D'~;R2~;L2~;F2~;B2~]" i))))
+;;;         (solve-and-verify *g2 *solver r :move-printer printer))
