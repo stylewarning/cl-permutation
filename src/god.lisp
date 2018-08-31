@@ -22,14 +22,19 @@
 
 (defun compute-god-table (group &key (target (group-identity group))
                                      (generators (generators group))
-                                     (order (group-order group))
+                                     (rank-cardinality (group-order group))
                                      (rank-element (group-element-rank-functions group))
                                      (verbose t))
+  ;; RANK-CARDINALITY is max_rank + 1. It is not necessarily the group
+  ;; order.
+  (check-type target perm)
+  (check-type rank-cardinality (integer 0))
+
   (let ((generators (loop :for i :from 0
                           :for g :in generators
                           :collect (cons i g)))
         ;; Table of (list MOVE CAME-FROM DEPTH)
-        (table (make-array order :initial-element nil))
+        (table (make-array rank-cardinality :initial-element nil))
         (positions-left (make-queue))
         (make-trans (lambda () (make-array (length generators)))))
     ;; Record TARGET as starting position.
