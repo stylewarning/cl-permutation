@@ -430,12 +430,12 @@ Returns a list of block systems."
   )
 
 (defun make-subsystem-transformations (subsys)
-  (let* ((size (block-subsystem-size subsys))
+  (let* ((size             (block-subsystem-size subsys))
          (interblock-group (block-subsystem-interblock-group subsys))
          (interblock-hom   (block-subsystem-interblock-group-homomorphism subsys))
          (intrablock-group (block-subsystem-intrablock-group subsys))
-         (intrablock-base (group-order intrablock-group))
-         (intrablock-spec (make-radix-spec intrablock-base size))
+         (intrablock-base  (group-order intrablock-group))
+         (intrablock-spec  (make-radix-spec intrablock-base size))
          (intrablock-coord (intrablock-coordinate-function subsys)))
     (multiple-value-bind (inter-rank inter-unrank)
         (group-element-rank-functions interblock-group)
@@ -445,9 +445,20 @@ Returns a list of block systems."
        (%make-coord
         :order (group-order interblock-group)
         :rank (lambda (g) (funcall inter-rank (funcall interblock-hom g))))
+       ;; Intrablock xform
        (%make-coord
         :order (cardinality intrablock-spec)
-        :rank (lambda (g) (rank intrablock-spec (funcall intrablock-coord g)))
+        :rank (lambda (g)
+                ;; We want to interpret this coordinate not as "the
+                ;; block in position X undergoes a change in
+                ;; orientation by Y", but rather "the block X
+                ;; undergoes a change in orientation by Y". We do this
+                ;; by putting all of the block orientation changes
+                ;; back into place, using knowledge of the interblock
+                ;; group we computed above.
+                (let ((coord (funcall intrablock-coord g))
+                      (block-perm (funcall interblock-hom g)))
+                  (rank intrablock-spec (permute (perm-inverse block-perm) coord))))
         ;; :unrank (lambda (r) (unrank intrablock-spec r))
         )))))
 
@@ -487,17 +498,26 @@ Returns a list of block systems."
                (unless (y-or-n-p "Attempting to compute table over 10M. Continue?")
                  (return-from subsystem-solver nil)))
              (when verbose (funcall verbose "Computing ~:R God table of size ~D" i order))
-             (push (compute-god-table group :order order :rank-element (coord.rank xform)) tables)
+             (push (compute-god-table group :rank-cardinality order :rank-element (coord.rank xform)) tables)
              (when verbose (funcall verbose "Done!")))
     (setf tables (reverse tables))
 
     (when verbose (funcall verbose "Computing IDDFS closure"))
+
     (labels ((coord (g)
                (loop :with c := (make-array (length tables) :element-type 'fixnum :initial-element 0)
                      :for i :from 0
                      :for xform :in xforms
                      :do (setf (aref c i) (funcall (coord.rank xform) g))
                      :finally (return c)))
+             (transition-coord (coord gen-idx)
+               (map 'simple-vector
+                    (lambda (c tbl)
+                      (aref (god-table-entry-transition
+                             (aref (god-table-vector tbl) c))
+                            gen-idx))
+                    coord
+                    tables))
              (dfs (coord depth moves)
                (cond
                  ;; Solved.
@@ -507,21 +527,22 @@ Returns a list of block systems."
                  ;; pruning table.
                  ((or (zerop depth)
                       (loop :for tbl :in tables
+                            :for idx :from 0
                             :for c :across coord
-                            :thereis (< depth (god-table-entry-depth
-                                               (aref (god-table-vector tbl) c)))))
+                            :for entry := (aref (god-table-vector tbl) c)
+                            :do (when (null entry)
+                                  (error "Couldn't compute depth for coord[~d]=~d. ~
+                                          Coord xform is ~S"
+                                         idx
+                                         c
+                                         (nth idx xforms)))
+                            :thereis (< depth (god-table-entry-depth entry))))
                   (values nil nil))
                  ;; Descend. We use transition tables here to actually
                  ;; compute the map.
                  (t
                   (dotimes (i num-gens nil)
-                    (let ((next-coord (map 'simple-vector
-                                           (lambda (c tbl)
-                                             (svref (god-table-entry-transition
-                                                     (svref (god-table-vector tbl) c))
-                                                    i))
-                                           coord
-                                           tables)))
+                    (let ((next-coord (transition-coord coord i)))
                       ;; coordᵢ ← (aref transᵢ coordᵢ mv)
                       (multiple-value-bind (found? solution)
                           (dfs next-coord (1- depth) (cons i moves))
