@@ -550,13 +550,14 @@ Returns a list of block systems."
                           (return-from dfs (values t solution))))))))))
       (lambda (g)
         (block nil
+          (format t "Searching: ")
           (loop :with coord := (coord g)
                 :for depth :from 0
                 :do (multiple-value-bind (found? solution)
                         (dfs coord depth nil)
                       (cond
-                        (found? (return (reverse solution)))
-                        (t      (write-string "."))))))))))
+                        (found? (format t "*") (return (reverse solution)))
+                        (t      (format t "~D-" depth) (finish-output))))))))))
 
 (defun solve-and-verify (group solver element &key (move-printer #'princ))
   (format t "~&Position: ~A~%" element)
