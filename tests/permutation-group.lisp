@@ -32,6 +32,16 @@
     (is (subgroup-p G H))
     (is (not (subgroup-p G J)))))
 
+(deftest test-normal-subgroup-test ()
+  "Test that NORMAL-SUBGROUP-P works."
+  (destructuring-bind (F R U B L D) (generators *3x3*)
+    ;; trivial normal subgroups
+    (is (normal-subgroup-p *3x3* *3x3*))
+    (is (normal-subgroup-p *3x3* (generate-perm-group (list (group-identity *3x3*)))))
+    ;; other tests
+    (is (normal-subgroup-p *3x3* (generate-perm-group (list (perm-expt F 2) R U (perm-expt B 2) L D))))
+    (is (not (normal-subgroup-p *3x3* (generate-perm-group (list F)))))))
+
 (deftest test-transversal-decomposition (group p)
   "Test that the transversal decomposition of the perm P can reconstruct the perm."
   (is (perm=*
