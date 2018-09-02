@@ -435,8 +435,8 @@ Returns a list of block systems."
          (interblock-hom   (block-subsystem-interblock-group-homomorphism subsys))
          (intrablock-group (block-subsystem-intrablock-group subsys))
          (intrablock-base  (group-order intrablock-group))
-         (intrablock-spec  (make-radix-spec intrablock-base size))
-         (intrablock-coord (intrablock-coordinate-function subsys)))
+         (intrablock-spec  (if (= 1 intrablock-base) nil (make-radix-spec intrablock-base size)))
+         (intrablock-coord (if (null intrablock-spec) nil (intrablock-coordinate-function subsys))))
     (multiple-value-bind (inter-rank inter-unrank)
         (group-element-rank-functions interblock-group)
       (declare (ignore inter-unrank))
@@ -446,21 +446,27 @@ Returns a list of block systems."
         :order (group-order interblock-group)
         :rank (lambda (g) (funcall inter-rank (funcall interblock-hom g))))
        ;; Intrablock xform
-       (%make-coord
-        :order (cardinality intrablock-spec)
-        :rank (lambda (g)
-                ;; We want to interpret this coordinate not as "the
-                ;; block in position X undergoes a change in
-                ;; orientation by Y", but rather "the block X
-                ;; undergoes a change in orientation by Y". We do this
-                ;; by putting all of the block orientation changes
-                ;; back into place, using knowledge of the interblock
-                ;; group we computed above.
-                (let ((coord (funcall intrablock-coord g))
-                      (block-perm (funcall interblock-hom g)))
-                  (rank intrablock-spec (permute (perm-inverse block-perm) coord))))
-        ;; :unrank (lambda (r) (unrank intrablock-spec r))
-        )))))
+       (if (null intrablock-coord)
+           (%make-coord
+            :order 1
+            :rank (lambda (g)
+                    (declare (ignore g))
+                    0))
+           (%make-coord
+            :order (cardinality intrablock-spec)
+            :rank (lambda (g)
+                    ;; We want to interpret this coordinate not as "the
+                    ;; block in position X undergoes a change in
+                    ;; orientation by Y", but rather "the block X
+                    ;; undergoes a change in orientation by Y". We do this
+                    ;; by putting all of the block orientation changes
+                    ;; back into place, using knowledge of the interblock
+                    ;; group we computed above.
+                    (let ((coord (funcall intrablock-coord g))
+                          (block-perm (funcall interblock-hom g)))
+                      (rank intrablock-spec (permute (perm-inverse block-perm) coord))))
+            ;; :unrank (lambda (r) (unrank intrablock-spec r))
+            ))))))
 
 ;;;; EXAMPLES?
 
@@ -495,7 +501,9 @@ Returns a list of block systems."
           :for order := (coord.order xform)
           :do
              (when (and verbose (> order 10000000))
-               (unless (y-or-n-p "Attempting to compute table over 10M. Continue?")
+               (unless (y-or-n-p "Attempting to compute table over ~
+                                  10M (~D exactly). Continue?"
+                                 order)
                  (return-from subsystem-solver nil)))
              (when verbose (funcall verbose "Computing ~:R God table of size ~D" i order))
              (push (compute-god-table group :rank-cardinality order :rank-element (coord.rank xform)) tables)
