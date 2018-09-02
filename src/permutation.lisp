@@ -282,7 +282,7 @@ Example: If P1 = 2 |-> 3 and P2 = 1 |-> 2 then (perm-compose P1 P2) = 1 |-> 3."
   (perm-compose p2 p1))
 
 (defun perm-conjugate (p c)
-  "Conjugate the permutation P by G. This is G P G^-1."
+  "Conjugate the permutation P by C. This is C P C^-1."
   (perm-compose c (perm-compose p (perm-inverse c))))
 
 (defun perm-expt (perm n)

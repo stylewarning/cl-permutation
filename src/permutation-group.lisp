@@ -359,6 +359,26 @@ The sigma (SIGMA K J) is represented by the cons cell (K . J)."
   (every (lambda (g) (group-element-p g group))
          (generators subgroup)))
 
+(defun same-group-p (group1 group2)
+  "Are the groups GROUP1 and GROUP2 the same (i.e., have the same permutation elements)?"
+  (and (subgroup-p group1 group2)
+       (subgroup-p group2 group1)))
+
+(defun normal-subgroup-p (group subgroup)
+  "Is the group SUBGROUP a normal subgroup of GROUP?"
+  (labels ((in-subgroup-p (x)
+             (group-element-p x subgroup))
+           (normality-criterion (x y)
+             ;; x in GROUP
+             ;; y in SUBGROUP
+             (let ((x-inv (perm-inverse x)))
+               (and (in-subgroup-p (perm-compose x (perm-compose y x-inv)))
+                    (in-subgroup-p (perm-compose x-inv (perm-compose y x)))))))
+    (and (subgroup-p group subgroup)
+         (loop :for x :in (generators group)
+               :always (loop :for y :in (generators subgroup)
+                             :always (normality-criterion x y))))))
+
 ;;; XXX FIXME: Avoid consing here.
 (defun random-group-element (group)
   "Generate a random element of the group GROUP."

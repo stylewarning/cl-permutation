@@ -119,6 +119,8 @@
    #:group-order                        ; FUNCTION
    #:group-element-p                    ; FUNCTION
    #:subgroup-p                         ; FUNCTION
+   #:same-group-p                       ; FUNCTION
+   #:normal-subgroup-p                  ; FUNCTION
    #:random-group-element               ; FUNCTION
    #:transversal-decomposition          ; FUNCTION
    #:group-orbits                       ; FUNCTION
