@@ -1,3 +1,5 @@
 [1] Efficient Representation of Perm Groups. Donald Knuth. 1990.
 
 [2] Efficient Finite Permutation Groups and Homomesy Computation in Common Lisp. Robert Smith and Brendan Pawlowski. 2014.
+
+[3] An Algorithm for Solving the Factorization Problemin Permutation Groups. Torsten Minkwitz. https://www.sciencedirect.com/science/article/pii/S0747717198902024
