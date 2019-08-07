@@ -11,7 +11,16 @@
 (defun minkwitz-table-quality (ν)
   (loop :for νᵢ :across ν
         :sum (loop :for img :across νᵢ
-                   :maximize (word-length (car img)))))
+                   :maximize (if (null img)
+                                 0
+                                 (word-length img)))))
+
+(defun minkwitz-table-size (ν)
+  ;; How many group elements does ν represent?
+  (loop :with p := 1
+        :for νᵢ :across ν
+        :do (setf p (* p (count-if-not #'null νᵢ)))
+        :finally (return p)))
 
 (defun car* (x)
   (check-type x cons)
@@ -29,9 +38,10 @@
 
 ;; TODO FIXME: This isn't fully working or implemented.
 (defun %compute-factorization-generators (group &key improve-every
-                                                     (length-limit 2)
+                                                     (initial-length-limit 2.0)
                                                      (min-rounds 0)
-                                                     (growth-factor 5/4))
+                                                     (growth-factor 5/4)
+                                                     (simplifier (word-simplifier-for-perm-group group)))
   (declare (optimize (speed 0) safety debug))
 
   ;; Deviations from Minkwitz's paper:
@@ -50,18 +60,30 @@
   ;;     * We factor out GROWTH-FACTOR. 5/4 is no silver
   ;;       bullet. Minkwitz just says 'l' should grow slowly, and he
   ;;       uses 5/4 in his pseudocode.
+  ;;
+  ;;     * We add SIMPLIFIER, a function that allows words to be
+  ;;       simplified. IDENTITY is perfectly reasonable as a simplifier.
+  ;;
+  ;;     * We relax the LENGTH-LIMIT condition so that the current
+  ;;       word (as produced by NEXT) is always valid as a
+  ;;       length. This is because we produce words in order of
+  ;;       increasing length.
   (check-type group         perm-group)
   (check-type improve-every (or null integer))
   (check-type min-rounds    unsigned-byte)
-  (check-type length-limit  (real (0) *))
+  (check-type initial-length-limit  (real (0) *))
   (check-type growth-factor (real 1 *))
+
   (uiop:nest
-   (let* ((deg (group-degree group))
+   ;; Ensure LENGTH-LIMIT is a double float so it doesn't grow out of
+   ;; control as a rational.
+   (let* ((length-limit (coerce initial-length-limit 'double-float))
+          (deg (group-degree group))
           (base (group-bsgs group))
           (k (length base))
           (free-group (perm-group.free-group group))
           (ϕ (free-group->perm-group-homomorphism free-group group))
-          (next (word-generator free-group))
+          (next (alexandria:compose simplifier (word-generator free-group)))
           (ν nil)))
    (labels ((verify-table (where)
               (loop :for i :from 1 :to k
@@ -71,7 +93,7 @@
                                   :for νᵢω :across νᵢ
                                   :when (and (not (null νᵢω))
                                              (/= bᵢ (perm-eval (funcall ϕ (car* νᵢω)) ω)))
-                                    :do (break "at ~S: ν~D[ω=~D] /= ~D" where i ω bᵢ))))
+                                    :do (error "Table inconsistency at ~S: ν~D[ω=~D] /= ~D" where i ω bᵢ))))
             (%step (i tt)
               ;;
               ;; In the original paper, 'r' is a pass-by-reference. We
@@ -79,7 +101,8 @@
               (check-type i unsigned-byte)
               (assert (free-group-element-valid-p free-group tt))
               (assert (<= 1 i k))
-              ;; tt is a free group word
+              ;; tt is a free group word. Simplify it
+              (setf tt (funcall simplifier tt))
               (let* ((νᵢ (aref ν (1- i)))
                      (bᵢ (elt base (1- i)))
                      (ω (1- (perm-eval (funcall ϕ tt) bᵢ)))
@@ -103,6 +126,7 @@
               (check-type c unsigned-byte)
               ;; TT is a free-group word.
               (assert (<= 1 c k))
+              (setf tt (funcall simplifier tt))
               (loop :for i :from c :to k
                     :while (and (not (free-group-identity-p tt))
                                 (< (word-length tt) length-limit))
@@ -161,25 +185,22 @@
                                                   (break "FOund a BAD PERM")))))
                                           (loop :for p :in (set-difference orb-x orb)
                                                 :for orig-orb-pt := (perm-eval ϕx⁻¹ p)
-                                                :for tt := (compose free-group
-                                                                    (car* (aref νᵢ (1- orig-orb-pt)))
-                                                                    x⁻¹
-                                                                    )
+                                                :for tt := (funcall
+                                                            simplifier
+                                                            (compose free-group
+                                                                     (car* (aref νᵢ (1- orig-orb-pt)))
+                                                                     x⁻¹
+                                                                     ))
                                                 :when (< (word-length tt) length-limit)
                                                   :do (setf (aref νᵢ (1- p)) (cons tt t)))))))))
 
             (%table-fullp (ν)
-              (let ((size (%table-size ν))
+              (let ((size (minkwitz-table-size ν))
                     (order (group-order group)))
                 (assert (<= size order))
                 (= size order)))
 
-            (%table-size (ν)
-              ;; How many group elements does ν represent?
-              (loop :with p := 1
-                    :for νᵢ :across ν
-                    :do (setf p (* p (count-if-not #'null νᵢ)))
-                    :finally (return p)))
+
 
             (%make-table ()
               ;; Make a fresh table.
@@ -206,32 +227,34 @@
      (setf ν (%make-table))
      (loop :for count :from 0
            :until (and (%table-fullp ν) (<= min-rounds count))
-           :do (let ((tt (funcall next count)))
-                 (%round length-limit 1 tt)
+           :do (let* ((tt (funcall next count))
+                      (current-length-limit (max length-limit (word-length tt))))
+                 (%round current-length-limit 1 tt)
                  (verify-table "round")
                  (when (zerop (mod count improve-every))
                    (when *perm-group-verbose*
                      (format t "~D: p[~3,1F] @ l=~A: ~A~%   ~{~D~^ ~}~%"
                              count
-                             (* 100 (/ (%table-size ν) (group-order group)))
-                             (round length-limit)
+                             (* 100 (/ (minkwitz-table-size ν) (group-order group)))
+                             (round current-length-limit)
                              tt
                              (map 'list (lambda (νᵢ)
                                           (count-if-not #'null νᵢ))
                                   ν)))
-                   (%improve length-limit)
+                   (%improve current-length-limit)
                    (verify-table "improve")
                    (unless (%table-fullp ν)
-                     (%fill-orbits length-limit)
+                     (%fill-orbits current-length-limit)
                      (verify-table "fill")
-                     (setf length-limit (* growth-factor length-limit))
-                     ))))
-     (when *perm-group-verbose*
-       (format t "Table quality: ~A~%" (minkwitz-table-quality ν)))
+                     ;; Grow the length limit itself, not simply the
+                     ;; current one for this round.
+                     (setf length-limit (* growth-factor length-limit))))))
      (verify-table "end")
      ;; Return the table, cleaning the usage flags out.
      (loop :for νᵢ :across ν
            :do (map-into νᵢ #'car νᵢ))
+     (when *perm-group-verbose*
+       (format t "Table quality: ~A~%" (minkwitz-table-quality ν)))
      ν)))
 
 (defun compute-factorization-generators (group)

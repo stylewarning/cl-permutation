@@ -455,8 +455,6 @@ The sigma (SIGMA K J) is represented by the cons cell (K . J)."
                     :when (commutesp g1 g2)
                       :do (push j (aref comms i))
                           (push i (aref comms j))))
-    (print orders)
-    (print comms)
     ;; Construct the simplifier.
     (word-simplifier orders comms)))
 
