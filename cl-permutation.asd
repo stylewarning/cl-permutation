@@ -1,6 +1,6 @@
 ;;;; cl-permutation.asd
 ;;;;
-;;;; Copyright (c) 2012-2018 Robert Smith
+;;;; Copyright (c) 2012-2019 Robert Smith
 
 (asdf:defsystem #:cl-permutation
   :description "A library for operating on permutations and permutation groups."
@@ -23,6 +23,7 @@
                (:file "free-group")
                (:file "straight-line-program")
                (:file "permutation-group")
+               (:file "minkwitz")
                (:file "homomorphism")
                (:file "orbit")
                (:file "do-group-elements")
