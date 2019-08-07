@@ -8,45 +8,6 @@
 
 ;;;;;;;;;;;;;;;;;; Improved Generator Decomposition ;;;;;;;;;;;;;;;;;;
 
-(defun word-length (w)
-  (etypecase w
-    (integer 1)
-    (sequence (max 1 (length w)))))
-
-(defun word-generator (group)
-  "Return a lambda function taking a non-negative integer N and returning the Nth word in a sequence which enumerates all words of the free group GROUP."
-  (check-type group free-group)
-  (%word-generator (free-group-num-generators group)))
-
-(defun %word-generator (num-generators)
-  "Return a lambda function taking a non-negative integer N and returning the Nth word in a sequence which enumerates all words of NUM-GENERATORS generators."
-  (let* ((b/2 num-generators)
-         (b (* 2 b/2)))
-    (labels ((process (x)
-               (if (<= x b/2)
-                   x
-                   (- b/2 x)))
-             (words-in-level (l)
-               (expt b l))
-             (words-below-level (l)
-               (loop :for i :below l :sum (words-in-level i)))
-             (find-level (n)
-               (if (zerop n)
-                   0
-                   (loop :for l :from 0
-                         :when (<= (words-below-level l)
-                                   n
-                                   (1- (words-below-level (1+ l))))
-                           :do (return l))))
-             (generate (n l)
-               (let ((n (- n (words-below-level l))))
-                 (loop :repeat l
-                       :collect (multiple-value-bind (quo rem) (floor n b)
-                                  (setf n quo)
-                                  (process (1+ rem)))))))
-      (lambda (n)
-        (generate n (find-level n))))))
-
 (defun minkwitz-table-quality (ν)
   (loop :for νᵢ :across ν
         :sum (loop :for img :across νᵢ
@@ -80,23 +41,23 @@
   ;;       algorithm should terminate immediately upon filling the
   ;;       table.)
   ;;
-  
-  
-  ;; every s rounds, improve
+  ;;     * We rename 's' to IMPROVE-EVERY.
   ;;
-  ;; l should be small in the beginning and grow slowly; small l
-  ;; terminates rounds earlier.
+  ;;     * We rename 'l' to LENGTH-LIMIT. Minkwitz gives no suggestion
+  ;;       on what LENGTH-LIMIT ought to be, except that L should
+  ;;       start small.
+  ;;
+  ;;     * We factor out GROWTH-FACTOR. 5/4 is no silver
+  ;;       bullet. Minkwitz just says 'l' should grow slowly, and he
+  ;;       uses 5/4 in his pseudocode.
   (check-type group         perm-group)
   (check-type improve-every (or null integer))
   (check-type min-rounds    unsigned-byte)
-  ;; Minkwitz gives no suggestion on what LENGTH-LIMIT ('l' in
-  ;; Minkwitz) ought to be, except that L should start small.
   (check-type length-limit  (real (0) *))
   (check-type growth-factor (real 1 *))
   (uiop:nest
    (let* ((deg (group-degree group))
           (base (group-bsgs group))
-          ;; (orbits (stabilizer-orbits group))
           (k (length base))
           (free-group (perm-group.free-group group))
           (ϕ (free-group->perm-group-homomorphism free-group group))

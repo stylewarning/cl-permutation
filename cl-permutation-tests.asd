@@ -1,10 +1,10 @@
 ;;;; cl-permutation-tests.asd
 ;;;;
-;;;; Copyright (c) 2014-2016 Robert Smith
+;;;; Copyright (c) 2014-2019 Robert Smith
 
 (asdf:defsystem #:cl-permutation-tests
   :description "Regression tests for the library CL-PERMUTATION."
-  :author "Robert Smith <quad@symbo1ics.com>"
+  :author "Robert Smith <robert@stylewarning.com>"
   :license "BSD 3-clause (See LICENSE)"
   :depends-on (#:cl-permutation
                #:cl-permutation-examples
@@ -22,4 +22,5 @@
                (:file "do-group-elements")
                (:file "homomorphism")
                (:file "orbit")
-               (:file "block")))
+               (:file "block")
+               (:file "free-group")))

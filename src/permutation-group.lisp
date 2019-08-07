@@ -436,6 +436,30 @@ The sigma (SIGMA K J) is represented by the cons cell (K . J)."
                                           (free-group-generator-to-perm-group-generator perm-group i)))
                   :finally (return result))))))
 
+(defun word-simplifier-for-perm-group (g)
+  "Construct a simplifier for the permutation group G according to its free group."
+  (check-type g perm-group)
+  (let* ((n (num-generators g))
+         (phi (free-group->perm-group-homomorphism (perm-group.free-group g) g))
+         (orders (make-array (1+ n) :initial-element nil))
+         (comms  (make-array (1+ n) :initial-element nil)))
+    ;; Calculate the orders of the generators.
+    (loop :for i :from 1 :to n
+          :for g := (funcall phi i)
+          :do (setf (aref orders i) (perm-order g)))
+    ;; Calculate the commuting ones.
+    (loop :for i :from 1 :to n
+          :for g1 := (funcall phi i)
+          :do (loop :for j :from (1+ i) :to n
+                    :for g2 := (funcall phi j)
+                    :when (commutesp g1 g2)
+                      :do (push j (aref comms i))
+                          (push i (aref comms j))))
+    (print orders)
+    (print comms)
+    ;; Construct the simplifier.
+    (word-simplifier orders comms)))
+
 (defun naive-generator-decomposition (perm group &key return-original-generators)
   "Compute the generator decomposition of the permutation PERM of the group GROUP. By default, return a sequence of free generators.
 
