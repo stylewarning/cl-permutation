@@ -94,3 +94,148 @@ An empty list corresponds to an empty composition, which is identity (0)."))
 
 (defmethod num-generators ((G free-group))
   (free-group-num-generators G))
+
+;;; Word generation & simplification
+
+(deftype word ()
+  '(or fixnum list))
+
+(defun word-length (w)
+  "What is the length of the word W?"
+  (etypecase w
+    (fixnum 1)
+    (list (max 1 (length w)))))
+
+(defun word-generator (group)
+  "Return a lambda function taking a non-negative integer N and returning the Nth word in a sequence which enumerates all words of the free group GROUP."
+  (check-type group free-group)
+  (%word-generator (free-group-num-generators group)))
+
+(defun %word-generator (num-generators)
+  "Return a lambda function taking a non-negative integer N and returning the Nth word in a sequence which enumerates all words of NUM-GENERATORS generators."
+  (let* ((b/2 num-generators)
+         (b (* 2 b/2)))
+    (labels ((process (x)
+               (if (<= x b/2)
+                   x
+                   (- b/2 x)))
+             (words-in-level (l)
+               (expt b l))
+             (words-below-level (l)
+               (loop :for i :below l :sum (words-in-level i)))
+             (find-level (n)
+               (if (zerop n)
+                   0
+                   (loop :for l :from 0
+                         :when (<= (words-below-level l)
+                                   n
+                                   (1- (words-below-level (1+ l))))
+                           :do (return l))))
+             (generate (n l)
+               (let ((n (- n (words-below-level l))))
+                 (loop :repeat l
+                       :collect (multiple-value-bind (quo rem) (floor n b)
+                                  (setf n quo)
+                                  (process (1+ rem)))))))
+      (lambda (n)
+        (generate n (find-level n))))))
+
+(defun word-simplifier (orders commuting)
+  "Let:
+
+    ORDERS: A vector of orders of each generator, or NIL if unknown/infinite.
+
+    COMMUTING: a vector of length N+1 where the Jth element is a list of all commuting generators of J
+
+Then return a unary function which takes elements of G and returns simplified versions of them."
+  (check-type orders vector)
+  (check-type commuting vector)
+  (assert (= (length orders) (length commuting)))
+  (assert (plusp (length orders)))
+  (assert (null (aref orders 0)))
+  (assert (null (aref commuting 0)))
+  (lambda (w)
+    (etypecase w
+      (integer (if (zerop w) '() w))
+      (list
+       ;; Remove identities from W and make a copy.
+       (let ((w (loop :for x :in w :unless (zerop x) :collect x)))
+         (cond
+           ;; Identity or singleton: return it.
+           ((or (endp w) (endp (rest w))) w)
+           ;; Arbitrary word.
+           (t
+            ;; Get rid of identities.
+            (let ((simplified-word nil))
+              (labels ((simplify-power (pt count)
+                         ;; Simplify PT^COUNT for PT > 0.
+                         ;;
+                         ;; Return either:
+                         ;;
+                         ;;     - NIL; it simplifies to identity.
+                         ;;
+                         ;;     - N; the simplest representation is PT^N for 1 <= N < ORDER.
+                         (let ((order (aref orders pt)))
+                           (if (null order)
+                               (values pt count)
+                               (let ((count (mod count order)))
+                                 (if (zerop count)
+                                     nil
+                                     count)))))
+                       (push-point (point count)
+                         ;; Push the POINT onto SIMPLIFIED-WORD a
+                         ;; total of COUNT times. Take into account
+                         ;; the known order to push inverses if
+                         ;; necessary.
+                         (let ((final (simplify-power point count))
+                               (order (aref orders point)))
+                              (when final
+                                ;; Having a FINAL implies an ORDER.
+                                (cond
+                                  ((<= final (/ order 2))
+                                   (loop :repeat final :do (push point simplified-word)))
+                                  (t
+                                   (loop :repeat (- order final) :do (push (- point) simplified-word)))))))
+                       (sift-commuting (point w)
+                         ;; Sift through the commuting elements at the
+                         ;; head of W to POINT. Return two values:
+                         ;;
+                         ;;     1. The number of POINT's found (i.e.,
+                         ;;     POINT^N) through the commuting
+                         ;;     elements. Note that N can be negative.
+                         ;;
+                         ;;     2. The remaining W with the commuting
+                         ;;     elements at the head.
+                         (let* ((count (if (plusp point) 1 -1))
+                                (point (abs point))
+                                (comms (aref commuting point))
+                                (commuters-found nil))
+                           (loop :for wi :on w
+                                 :for r := (abs (car wi))
+                                 :while (or (= r point)
+                                            (find r comms))
+                                 :do (cond
+                                       ;; We ran into an identical-ish point.
+                                       ((= r point)
+                                        (cond
+                                          ((plusp (car wi))  (incf count))
+                                          ((minusp (car wi)) (decf count))))
+                                       ;; We ran into a commuter.
+                                       (t
+                                        (push (car wi) commuters-found)))
+                                 :finally (return (values point count (nreconc commuters-found wi))))))
+                       (simp (w)
+                         ;; W is guaranteed to have no identities.
+                         (cond
+                           ;; Reached the end of the word. Return our answer.
+                           ((endp w)
+                            (nreverse simplified-word))
+                           ;; Sift through commuting elements and do a
+                           ;; run-length-encoding sort of thing.
+                           (t
+                            (multiple-value-bind (point count w-remaining)
+                                (sift-commuting (first w) (rest w))
+                              (push-point point count)
+                              (simp w-remaining))))))
+                ;; Remove identities, and simplify.
+                (simp w))))))))))

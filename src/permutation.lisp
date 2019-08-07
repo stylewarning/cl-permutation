@@ -298,7 +298,7 @@ Example: If P1 = 2 |-> 3 and P2 = 1 |-> 2 then (perm-compose P1 P2) = 1 |-> 3."
       (t (rec perm n)))))
 
 (defun perm-order (perm)
-  "Compute the order of a permutation PERM."
+  "Compute the order of a permutation PERM. This is the non-negative power required to exponentiate it to identity."
   (labels ((rec (current-perm n)
              (if (perm-identity-p current-perm)
                  n
@@ -400,6 +400,11 @@ If a fixed point doesn't exist, return NIL."
   (loop :for x :in from
         :collect (1+ (position x to :test test)) :into m
         :finally (return (apply #'make-perm m))))
+
+(defun commutesp (a b)
+  "Do the permutations A and B commute?"
+  (perm= (perm-compose a b)
+         (perm-compose b a)))
 
 ; HI!!!
 ; HELLO
