@@ -164,33 +164,15 @@
                                   :when x
                                     :do (let* ((x (car* x))
                                                (x⁻¹ (inverse free-group x))
-                                               ;; (ϕx⁻¹ (funcall ϕ x⁻¹))
                                                (ϕx (funcall ϕ x))
-                                               (ϕx⁻¹ (perm-inverse ϕx))
                                                (orb-x (mapcar (perm-evaluator ϕx) orb)))
-                                          #+ignore
-                                          (progn
-                                            (format t "Orbit = ~A~%" orb)
-                                            (format t "X = ~A~%" x)
-                                            (format t "ϕX = ~A~%" ϕx)
-                                            (dolist (o orb)
-                                              (let* ((to (perm-eval ϕx o))
-                                                     (from (perm-eval ϕx⁻¹ to)))
-                                                (format t "    ϕX(~D) ↦ ~D -> ~D~%"
-                                                        o
-                                                        to
-                                                        from)
-                                                (finish-output)
-                                                (when (/= o from)
-                                                  (break "FOund a BAD PERM")))))
                                           (loop :for p :in (set-difference orb-x orb)
-                                                :for orig-orb-pt := (perm-eval ϕx⁻¹ p)
+                                                :for orb-pt := (perm-inverse-eval ϕx p)
                                                 :for tt := (funcall
                                                             simplifier
                                                             (compose free-group
-                                                                     (car* (aref νᵢ (1- orig-orb-pt)))
-                                                                     x⁻¹
-                                                                     ))
+                                                                     (car* (aref νᵢ (1- orb-pt)))
+                                                                     x⁻¹))
                                                 :when (< (word-length tt) length-limit)
                                                   :do (setf (aref νᵢ (1- p)) (cons tt t)))))))))
 
@@ -225,7 +207,8 @@
      ;;
      ;; Set all νᵢ to be undefined, except νᵢ(bᵢ) = identity
      (setf ν (%make-table))
-     (loop :for count :from 0
+     (loop :with start-time := (get-internal-real-time)
+           :for count :from 0
            :until (and (%table-fullp ν) (<= min-rounds count))
            :do (let* ((tt (funcall next count))
                       (current-length-limit (max length-limit (word-length tt))))
@@ -233,14 +216,17 @@
                  (verify-table "round")
                  (when (zerop (mod count improve-every))
                    (when *perm-group-verbose*
-                     (format t "~D: p[~3,1F] @ l=~A: ~A~%   ~{~D~^ ~}~%"
+                     (format t "~D: p[~3,1F] @ l=~A: ~A [~D ms]~%   ~{~D~^ ~}~%"
                              count
                              (* 100 (/ (minkwitz-table-size ν) (group-order group)))
                              (round current-length-limit)
                              tt
+                             (round (* 1000 (- (get-internal-real-time) start-time))
+                                    internal-time-units-per-second)
                              (map 'list (lambda (νᵢ)
                                           (count-if-not #'null νᵢ))
-                                  ν)))
+                                  ν))
+                     (setf start-time (get-internal-real-time)))
                    (%improve current-length-limit)
                    (verify-table "improve")
                    (unless (%table-fullp ν)
