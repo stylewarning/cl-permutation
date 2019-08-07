@@ -69,7 +69,7 @@
 ;; TODO FIXME: This isn't fully working or implemented.
 (defun %compute-factorization-generators (group &key improve-every
                                                      (length-limit 2)
-                                                     (min-rounds (expt 10 6))
+                                                     (min-rounds 0)
                                                      (growth-factor 5/4))
   (declare (optimize (speed 0) safety debug))
 
@@ -271,26 +271,11 @@
      ;; Return the table, cleaning the usage flags out.
      (loop :for νᵢ :across ν
            :do (map-into νᵢ #'car νᵢ))
-     (showtbl ϕ base ν)
      ν)))
-
-(defun showtbl (f base x)
-  nil
-  #+ig
-  (loop :for bi :in base
-        :for xi :across x
-        :do (format t "- - - ~D~%" bi)
-            (loop :for j :from 1
-                  :for v :across xi
-                  :when v
-                    :do (format t "    ~D: ~A~%" j (funcall f v))
-                  )
-        )
-  )
 
 (defun compute-factorization-generators (group)
   "Modify the permutation group PERM-GROUP so that it is capable of factorizing elements into generators."
-  (unless nil ;;(perm-group.factorization-generators group)
+  (unless (perm-group.factorization-generators group)
     (setf (perm-group.factorization-generators group)
           (%compute-factorization-generators group)))
   t)

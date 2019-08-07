@@ -39,7 +39,10 @@
     (is (normal-subgroup-p *3x3* *3x3*))
     (is (normal-subgroup-p *3x3* (generate-perm-group (list (group-identity *3x3*)))))
     ;; other tests
-    ;;(is (normal-subgroup-p *3x3* (generate-perm-group (list (perm-expt F 2) R U (perm-expt B 2) L D))))
+    ;;
+    ;; TODO: FIXME
+    #+fails
+    (is (normal-subgroup-p *3x3* (generate-perm-group (list (perm-expt F 2) R U (perm-expt B 2) L D))))
     (is (not (normal-subgroup-p *3x3* (generate-perm-group (list F)))))))
 
 (deftest test-transversal-decomposition (group p)
