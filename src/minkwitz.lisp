@@ -52,13 +52,14 @@
             (setf (aref νᵢ (1- b)) (cons id nil)))
     ν))
 
-;; TODO FIXME: This isn't fully working or implemented.
 (defun %compute-factorization-generators (group &key improve-every
                                                      (initial-length-limit 2.0)
                                                      (min-rounds 0)
                                                      (growth-factor 5/4)
                                                      (simplifier (word-simplifier-for-perm-group group)))
-  (declare (optimize (speed 0) safety debug))
+  ;(declare (optimize (speed 0) safety debug))
+  (declare (optimize speed (safety 0) (debug 0)))
+  (declare (type (function (*) *) simplifier))
 
   ;; Deviations from Minkwitz's paper:
   ;;
@@ -84,6 +85,12 @@
   ;;       word (as produced by NEXT) is always valid as a
   ;;       length. This is because we produce words in order of
   ;;       increasing length.
+  ;;
+  ;;     * We calculate all orbits of each transversal ahead of
+  ;;       time. This is so we can determine whether we ought to
+  ;;       explore it or not. (If the orbit is of length 1, then that
+  ;;       transversal will only contain identity, so we shouldn't
+  ;;       bother with it. See EXPLORE-INDEX? and EXPLORE-VEC.
   (check-type group                perm-group)
   (check-type improve-every        (or null (and fixnum unsigned-byte)))
   (check-type min-rounds           (and fixnum unsigned-byte))
@@ -101,6 +108,13 @@
           (free-group (perm-group.free-group group))
           (ϕ (free-group->perm-group-homomorphism free-group group))
           (next (alexandria:compose simplifier (word-generator free-group)))
+          (orbits (stabilizer-orbits group))
+          ;; If an orbit only has 1 element in it, then it's not worth
+          ;; exploring. This vector should be accessed with
+          ;; EXPLORE-INDEX?.
+          (explore-vec (map 'simple-bit-vector
+                            (lambda (x) (if (= 1 (length x)) 0 1))
+                            orbits))
           ;; Set all νᵢ to be undefined, except νᵢ(bᵢ) = identity
           (ν (%make-minkwitz-table base deg))
           ;; Minkwitz suggests that IMPROVE-EVERY is somewhat difficult to
@@ -111,97 +125,111 @@
               (type (function (*) *) ϕ)
               (type simple-vector ν)
               (type list base)))
-   (labels ((verify-table (where)
-              (declare (optimize (speed 0) safety debug))
-              (loop :for i :from 1 :to k
-                    :for bᵢ :in base
-                    :for νᵢ :across ν
-                    :append (loop :for ω :from 1 :to deg
-                                  :for νᵢω :across νᵢ
-                                  :when (and (not (null νᵢω))
-                                             (/= bᵢ (perm-eval (funcall ϕ (car* νᵢω)) ω)))
-                                    :do (error "Table inconsistency at ~S: ν~D[ω=~D] /= ~D" where i ω bᵢ))))
-            (%step (i tt)
-              ;;
+   ;; Utility functions....
+   (flet ((explore-index? (i)
+            ;; Should we explore elements in νᵢ?
+            (= 1 (sbit explore-vec i))
+            ;t
+            )
+          (verify-table (where)
+            (declare (optimize (speed 0) safety debug))
+            (loop :for i :from 1 :to k
+                  :for bᵢ :in base
+                  :for νᵢ :across ν
+                  :append (loop :for ω :from 1 :to deg
+                                :for νᵢω :across νᵢ
+                                :when (and (not (null νᵢω))
+                                           (/= bᵢ (unsafe/perm-eval (funcall ϕ (car* νᵢω)) ω)))
+                                  :do (error "Table inconsistency at ~S: ν~D[ω=~D] /= ~D" where i ω bᵢ)))))
+     (declare (inline explore-index?)))
+   (labels ((%step (i tt)
+              (declare (type fixnum i))
               ;; In the original paper, 'r' is a pass-by-reference. We
               ;; simply return it here.
-              (check-type i unsigned-byte)
-              (assert (free-group-element-valid-p free-group tt))
-              (assert (<= 1 i k))
-              ;; tt is a free group word. Simplify it
               (setf tt (funcall simplifier tt))
               (let* ((νᵢ (aref ν (1- i)))
                      (bᵢ (elt base (1- i)))
-                     (ω (1- (perm-eval (funcall ϕ tt) bᵢ)))
+                     (ω (1- (unsafe/perm-eval (funcall ϕ tt) bᵢ)))
                      (tt⁻¹ (inverse free-group tt)))
+                (declare (type simple-vector νᵢ)
+                         (type perm-element bᵢ ω))
                 (symbol-macrolet ((b′ (aref νᵢ ω)))
                   (cond
                     ((not (null b′))
-                     (prog1 (compose free-group (car* b′) tt) ;; original paper sez t*b′
+                     (prog1 (values (compose free-group (car* b′) tt)) ;; original paper sez t*b′
                        (when (< (word-length tt) (word-length (car* b′)))
                          (setf b′ (cons tt⁻¹ t))
                          (%step i tt⁻¹))))
                     (t
                      (setf b′ (cons tt⁻¹ t))
                      (%step i tt⁻¹)
-                     (identity-element free-group))))))
+                     (values (identity-element free-group)))))))
 
             (%round (length-limit c tt)
+              (declare (type double-float length-limit))
               ;;
               ;; This function is supposed to receive tt by
               ;; reference. Not sure why...
-              (check-type c unsigned-byte)
+                                        ;(check-type c unsigned-byte)
               ;; TT is a free-group word.
-              (assert (<= 1 c k))
+                                        ;(assert (<= 1 c k))
               (setf tt (funcall simplifier tt))
               (loop :for i :from c :to k
                     :while (and (not (free-group-identity-p tt))
                                 (< (word-length tt) length-limit))
-                    :do (setf tt (%step i tt))))
+                    :do (when (explore-index? (1- i))
+                          (setf tt (%step i tt)))))
 
             (%improve (length-limit)
+              (declare (type double-float length-limit))
               (dotimes (j k)
-                (loop :for x :across (aref ν j) :do
-                  (when x
-                    (loop :for y :across (aref ν j) :do
-                      (when y
-                        (when (or (cdr x) (cdr y))
-                          ;; 1+j because it refers to the j'th stabilizer G⁽ʲ⁾
-                          (%round length-limit (1+ j) (compose free-group (car* y) (car* x))))))))
-                ;; Mark all of vⱼ as old.
-                (loop :for x :across (aref ν j)
-                      :when x
-                        :do (rplacd x nil))))
+                (when (explore-index? j)
+                  ;; XXX: Do we *need* to explore *every* pair in the
+                  ;; cartesian product?
+                  (loop :for x :of-type (or null cons) :across (the simple-vector (aref ν j)) :do
+                    (when x
+                      (loop :for y :of-type (or null cons) :across (the simple-vector (aref ν j)) :do
+                        (when y
+                          (when (or (cdr x) (cdr y))
+                            ;; 1+j because it refers to the j'th stabilizer G⁽ʲ⁾
+                            (%round length-limit (1+ j) (compose free-group (car* y) (car* x))))))))
+                  ;; Mark all of vⱼ as old.
+                  (loop :for x :across (the simple-vector (aref ν j))
+                        :when x
+                          :do (rplacd x nil)))))
 
             (%fill-orbits (length-limit)
+              (declare (type double-float length-limit))
               (loop :for i :below k
-                    :for νᵢ :across ν
+                    :for νᵢ :of-type simple-vector :across ν
                     :for bᵢ :in base
-                    :do (let ((orb nil))
-                          (loop :for y :across νᵢ
-                                :when y
-                                  :do (pushnew (perm-eval (funcall ϕ (car* y)) bᵢ) orb))
-                          (assert (every (lambda (x)
-                                           (not (null (aref νᵢ (1- x)))))
-                                         orb)
-                                  ()
-                                  "Inconsistency in table.")
-                          (loop :for j :from (1+ i) :below k :do
-                            (loop :for x :across (aref ν j)
-                                  :when x
-                                    :do (let* ((x (car* x))
-                                               (x⁻¹ (inverse free-group x))
-                                               (ϕx (funcall ϕ x))
-                                               (orb-x (mapcar (perm-evaluator ϕx) orb)))
-                                          (loop :for p :in (set-difference orb-x orb)
-                                                :for orb-pt := (perm-inverse-eval ϕx p)
-                                                :for tt := (funcall
-                                                            simplifier
-                                                            (compose free-group
-                                                                     (car* (aref νᵢ (1- orb-pt)))
-                                                                     x⁻¹))
-                                                :when (< (word-length tt) length-limit)
-                                                  :do (setf (aref νᵢ (1- p)) (cons tt t)))))))))
+                    :do (when (explore-index? i)
+                          (let ((orb nil))
+                            (loop :for y :across νᵢ
+                                  :when y
+                                    :do (pushnew (unsafe/perm-eval (funcall ϕ (car* y)) bᵢ) orb))
+                            #+ignore
+                            (assert (every (lambda (x)
+                                             (not (null (aref νᵢ (1- x)))))
+                                           orb)
+                                    ()
+                                    "Inconsistency in table.")
+                            (loop :for j :from (1+ i) :below k :do
+                              (loop :for x :of-type (or null cons) :across (the simple-vector (aref ν j))
+                                    :when x
+                                      :do (let* ((x (car* x))
+                                                 (x⁻¹ (inverse free-group x))
+                                                 (ϕx (funcall ϕ x))
+                                                 (orb-x (mapcar (perm-evaluator ϕx) orb)))
+                                            (loop :for p :of-type perm-element :in (set-difference orb-x orb)
+                                                  :for orb-pt :of-type perm-element := (perm-inverse-eval ϕx p)
+                                                  :for tt := (funcall
+                                                              simplifier
+                                                              (compose free-group
+                                                                       (car* (aref νᵢ (1- orb-pt)))
+                                                                       x⁻¹))
+                                                  :when (< (word-length tt) length-limit)
+                                                    :do (setf (aref νᵢ (1- p)) (cons tt t))))))))))
 
             (%table-fullp (ν)
               (let ((size (minkwitz-table-size ν)))
@@ -211,13 +239,13 @@
      ;; The code starting here reflects Minkwitz's SGSWordQuick
      ;; procedure, except for the construction of ν, which is above.
      (loop :with start-time := (get-internal-real-time)
-           :for count :from 0
+           :for count :of-type fixnum :from 1 :below most-positive-fixnum
            :until (and (%table-fullp ν) (<= min-rounds count))
-           :do (let* ((tt (funcall next count))
+           :do (let* ((tt (funcall next (1- count)))
                       (current-length-limit (max length-limit
                                                  (coerce (word-length tt) 'double-float))))
                  (%round current-length-limit 1 tt)
-                 (verify-table "round")
+                 ;; (verify-table "round")
                  (when (zerop (mod count improve-every))
                    (%improve current-length-limit)
                    ;; (verify-table "improve")
@@ -226,21 +254,22 @@
                      ;; (verify-table "fill")
                      ;; Grow the length limit itself, not simply the
                      ;; current one for this round.
-                     (setf length-limit (* growth-factor length-limit)))
-                   (when (and *perm-group-verbose*
-                              (zerop (mod count improve-every)))
-                     (format t "~D: p[~3,1F] @ l=~A: ~A [~D ms]~%   ~{~D~^ ~}~%"
-                             count
-                             (* 100 (/ (minkwitz-table-size ν) (group-order group)))
-                             (round current-length-limit)
-                             tt
-                             (round (* 1000 (- (get-internal-real-time) start-time))
-                                    internal-time-units-per-second)
-                             (map 'list (lambda (νᵢ)
-                                          (count-if-not #'null νᵢ))
-                                  ν))
-                     (setf start-time (get-internal-real-time)))
-                   )))
+                     (setf length-limit (* growth-factor length-limit))))
+                 ;; Some logging.
+                 (when (and *perm-group-verbose*
+                            (zerop (mod count (min 10000 improve-every))))
+                   (format t "~D: p[~3,1F] @ l=~A: ~A [~D ms]~%   ~{~D~^ ~}~%"
+                           count
+                           (* 100 (/ (minkwitz-table-size ν) (group-order group)))
+                           (round current-length-limit)
+                           tt
+                           (round (* 1000 (- (get-internal-real-time) start-time))
+                                  internal-time-units-per-second)
+                           (map 'list (lambda (νᵢ)
+                                        (count-if-not #'null νᵢ))
+                                ν))
+                   (finish-output)
+                   (setf start-time (get-internal-real-time)))))
      (verify-table "end")
      ;; Return the table, cleaning the usage flags out.
      (loop :for νᵢ :across ν
@@ -281,7 +310,7 @@ This is also called \"factorization\"."
                  (t
                   (let* ((νᵢ (aref ν i))
                          (bᵢ (first base-left))
-                         (ωᵢ (perm-eval π bᵢ))
+                         (ωᵢ (unsafe/perm-eval π bᵢ))
                          (νᵢωᵢ (aref νᵢ (1- ωᵢ)))
                          (νᵢπ (perm-compose (funcall ϕ νᵢωᵢ) π)))
                     (walk-stabilizer (1+ i) νᵢπ (rest base-left) (cons νᵢωᵢ factorization)))))))
