@@ -68,6 +68,11 @@ An empty list corresponds to an empty composition, which is identity (0)."))
 (defmethod identity-element ((g free-group))
   0)
 
+(defmethod compose ((g free-group) (a null)    b)           b)
+(defmethod compose ((g free-group) (a (eql 0)) b)           b)
+(defmethod compose ((g free-group) a           (b null))    a)
+(defmethod compose ((g free-group) a           (b (eql 0))) a)
+
 (defmethod compose ((g free-group) a b)
   (assert (free-group-element-valid-p g a)
           (a)
