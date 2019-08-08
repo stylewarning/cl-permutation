@@ -125,7 +125,7 @@
               (type (function (*) *) ϕ)
               (type simple-vector ν)
               (type simple-vector base)))
-   ;; Utility functions....
+   ;; Utility functions...
    (flet ((explore-index? (i)
             ;; Should we explore elements in νᵢ?
             (= 1 (sbit explore-vec i)))
@@ -139,6 +139,7 @@
                                 :when (/= bᵢ (unsafe/perm-eval (funcall ϕ (car* νᵢω)) ω))
                                   :do (error "Table inconsistency at ~S: ν~D[ω=~D] /= ~D" where i ω bᵢ)))))
      (declare (inline explore-index?)))
+   ;; Main logic...
    (labels ((%step (i tt)
               (declare (type fixnum i))
               ;; In the original paper, 'r' is a pass-by-reference. We
@@ -233,8 +234,12 @@
                         (max length-limit (coerce (word-length tt) 'double-float))))
                  (%round current-length-limit 1 tt)
                  (when (zerop (mod count improve-every))
+                   (when *perm-group-verbose*
+                     (format t "~D: * * * Improving lengths...~%" count))
                    (%improve current-length-limit)
                    (unless (%table-fullp ν)
+                     (when *perm-group-verbose*
+                       (format t "~D: * * * Filling orbits...~%" count))
                      (%fill-orbits current-length-limit)
                      ;; Grow the length limit itself, not simply the
                      ;; current one for this round.
@@ -243,10 +248,10 @@
                  ;; Some logging.
                  (when (and *perm-group-verbose*
                             (zerop (mod count (min 10000 improve-every))))
-                   (format t "~D: p[~3,1F] @ l=~A: ~A [~D ms]~%    "
+                   (format t "~D: [~3,1F%] @ l=~A: ~A [~D ms]~%    "
                            count
                            (* 100 (/ (minkwitz-table-size ν) (group-order group)))
-                           (round current-length-limit)
+                           (floor current-length-limit)
                            tt
                            (round (* 1000 (- (get-internal-real-time) start-time))
                                   internal-time-units-per-second))
@@ -264,14 +269,14 @@
                    (finish-output)
                    (setf start-time (get-internal-real-time)))))
      ;; Do a sanity check on the consistency of the table.
-     (verify-table "end")
+     (check-table "end")
      ;; Return the table, cleaning the usage flags out.
      (loop :for νᵢ :across ν
            :do (maphash (lambda (k v)
                           (setf (gethash k νᵢ) (car v)))
                         νᵢ))
      (when *perm-group-verbose*
-       (format t "Table quality: ~A~%" (minkwitz-table-quality ν)))
+       (format t "Table quality: ~D~%" (minkwitz-table-quality ν)))
      ν)))
 
 (defun compute-factorization-generators (group)
@@ -281,6 +286,7 @@
           (%compute-factorization-generators group)))
   t)
 
+;;; TODO: call simplifier
 (defun generator-decomposition (g group &key return-original-generators)
   "Given an element g ∈ GROUP, factorize it into a sequence of generators, represented as a list of elements in the homomorphic FREE-GROUP.
 
