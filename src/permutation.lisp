@@ -168,15 +168,21 @@
           n perm)
   (aref (perm.rep perm) (1+ n)))
 
+(declaim (ftype (function (perm perm-element) perm-element) perm-eval unsafe/perm-eval))
+(declaim (inline unsafe/perm-eval))
+(defun unsafe/perm-eval (perm n)
+  (aref (perm.rep perm) n))
+
 (defun perm-eval (perm n)
   "Evaluate the permutation PERM at index N."
   (assert (<= 1 n (perm-size perm))
-          (n)
+          ()
           "Permutation index of ~D must be within 1 and the length of the ~
            permutation ~A."
           n perm)
-  (aref (perm.rep perm) n))
+  (unsafe/perm-eval perm n))
 
+(declaim (ftype (function (perm) (function (perm-element) perm-element)) perm-evaluator))
 (defun perm-evaluator (perm)
   "Return an evaluation function for the permutation PERM (a la PERM-EVAL)."
   (lambda (n) (perm-eval perm n)))
@@ -184,7 +190,7 @@
 (defun perm-eval* (perm n)
   "Evaluate the permutation PERM at index N. If N is larger than the size of the permutation, return the fixed point."
   (assert (<= 1 n)
-          (n)
+          ()
           "Permutation index of ~D must be greater than 1."
           n)
   (if (> n (perm-size perm))
@@ -198,7 +204,7 @@
 (defun perm-inverse-eval (perm n)
   "Evaluate the inverse of the permutation PERM at index N."
   (assert (<= 1 n (perm-size perm))
-          (n)
+          ()
           "Permutation index of ~D must be within 1 and the length of the ~
            permutation ~A."
           n perm)

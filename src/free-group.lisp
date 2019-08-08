@@ -100,6 +100,7 @@ An empty list corresponds to an empty composition, which is identity (0)."))
 (deftype word ()
   '(or fixnum list))
 
+(declaim (ftype (function (t) (and fixnum unsigned-byte)) word-length))
 (defun word-length (w)
   "What is the length of the word W?"
   (etypecase w
