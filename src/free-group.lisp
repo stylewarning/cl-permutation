@@ -146,6 +146,12 @@ An empty list corresponds to an empty composition, which is identity (0)."))
       (lambda (n)
         (generate n (find-level n))))))
 
+(defun random-word-generator (n)
+  (lambda (length)
+    (loop :repeat (1+ (random length))
+          :for sign := (expt -1 (random 2))
+          :collect (* sign (1+ (random n))))))
+
 (defun word-simplifier (orders commuting)
   "Let:
 
