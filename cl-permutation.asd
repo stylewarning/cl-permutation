@@ -10,7 +10,8 @@
                #:iterate
                #:cl-algebraic-data-type
                #:closer-mop
-               #:uiop)
+               #:uiop
+               #:bordeaux-fft)
   :in-order-to ((asdf:test-op (asdf:test-op #:cl-permutation-tests)))
   :pathname "src/"
   :serial t
