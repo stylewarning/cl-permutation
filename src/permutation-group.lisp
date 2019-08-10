@@ -475,7 +475,7 @@ Note: The result is likely very long and inefficient."
              (eval-slp (slp)
                (evaluate-slp fg ctx slp)))
       (mapcar (if return-original-generators hom #'identity) ; Free -> Perm
-              (delete (identity-element fg) ; Remove identities.
-                      (mapcan #'eval-slp    ; Eval SLPs
-                              (mapcar #'find-slp d)))))))
+              (remove-if #'free-group-identity-p
+                         (loop :for di :in d
+                               :append (alexandria:ensure-list (eval-slp (find-slp di)))))))))
 

@@ -95,9 +95,9 @@
   ;; Set ]
   (set-macro-character #\] (get-macro-character #\))))
 
+(declaim (ftype (function ((vector-size :down-by 1)) raw-perm) allocate-perm-vector))
 (defun allocate-perm-vector (n)
   "Allocate a vector compatible with a size-N permutation."
-  (check-type n (vector-size :down-by 1))
   (make-array (1+ n) :element-type 'perm-element
                      :initial-element 0))
 
@@ -264,7 +264,9 @@
   "The sign of a permutation PERM."
   (if (perm-even-p perm) 1 -1))
 
-(declaim (inline %perm-compose-upto))
+(declaim (inline %perm-compose-upto %perm-compose-into/equal %perm-compose-into/unequal)
+         (ftype (function (raw-perm raw-perm raw-perm) raw-perm) %perm-compose-into/equal)
+         (ftype (function (raw-perm vector-size raw-perm vector-size raw-perm) raw-perm) %perm-compose-into/unequal))
 (defun %perm-compose-upto (p1 p2 n)
   ;; N limits the resulting perm size.
   (let* ((p12-spec (allocate-perm-vector n)))
@@ -274,13 +276,37 @@
           :finally (return (%make-perm :rep p12-spec)))))
 (declaim (notinline %perm-compose-upto))
 
+(defun %perm-compose-into/equal (p1 p2 storage)
+  (declare (optimize speed (safety 0) (debug 0) (space 0)))
+  (loop :for i :of-type vector-index :from 1 :below (length storage)
+        :do (setf (aref storage i) (aref p1 (aref p2 i)))
+        :finally (return storage)))
+
+(defun %perm-compose-into/unequal (p1 n1 p2 n2 storage)
+  (declare (optimize speed (safety 0) (debug 0) (space 0)))
+  (flet ((eval-p1 (i) (if (> i n1) i (aref p1 i)))
+         (eval-p2 (i) (if (> i n2) i (aref p2 i))))
+    (declare (inline eval-p1 eval-p2))
+    (loop :for i :of-type vector-index :from 1 :below (length storage)
+          :do (setf (aref storage i) (eval-p1 (eval-p2 i)))
+          :finally (return storage))))
+
 (declaim (inline perm-compose))
 (defun perm-compose (p1 p2)
   "Compose the permutations P1 and P2: x |-> P1(P2(x)).
 
 Example: If P1 = 2 |-> 3 and P2 = 1 |-> 2 then (perm-compose P1 P2) = 1 |-> 3."
-  (declare (inline %perm-compose-upto))
-  (%perm-compose-upto p1 p2 (max (perm-size p1) (perm-size p2))))
+  (let* ((n1 (perm-size p1))
+         (n2 (perm-size p2))
+         (storage (allocate-perm-vector (max n1 n2))))
+    (%make-perm :rep
+                (if (= n1 n2)
+                    (%perm-compose-into/equal (perm.rep p1)
+                                              (perm.rep p2)
+                                              storage)
+                    (%perm-compose-into/unequal (perm.rep p1) n1
+                                                (perm.rep p2) n2
+                                                storage)))))
 (declaim (notinline perm-compose))
 
 (defun perm-compose-flipped (p1 p2)
@@ -292,6 +318,7 @@ Example: If P1 = 2 |-> 3 and P2 = 1 |-> 2 then (perm-compose P1 P2) = 1 |-> 3."
   "Conjugate the permutation P by C. This is C P C^-1."
   (perm-compose c (perm-compose p (perm-inverse c))))
 
+;;; TODO: binary expt
 (defun perm-expt (perm n)
   "Raise a permutation PERM to the Nth power. If N is negative, then the inverse will be raised to the -Nth power."
   (check-type n integer)
