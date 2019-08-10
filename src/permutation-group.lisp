@@ -424,17 +424,37 @@ The sigma (SIGMA K J) is represented by the cons cell (K . J)."
           "The free group and the perm group must have the ~
            same number of generators.")
   ;; The perm group contains the free group.
-  (lambda (elts)
-    (typecase elts
-      (integer (free-group-generator-to-perm-group-generator
-                perm-group
-                elts))
-      (list (loop :with result := (group-identity perm-group)
-                  :for i :in elts
-                  :do (setf result
-                            (perm-compose result
-                                          (free-group-generator-to-perm-group-generator perm-group i)))
-                  :finally (return result))))))
+  (let* ((n (num-generators perm-group))
+         (lookup-table (make-array (1+ (* 2 n))))
+         (degree (group-degree perm-group)))
+    ;; Fill the lookup table.
+    (setf (aref lookup-table n) (group-identity perm-group))
+    (loop :for i :from 1 :to n
+          :for g :in (generators perm-group)
+          :do (setf (aref lookup-table (- n i)) g
+                    (aref lookup-table (+ n i)) (perm-inverse g)))
+    (assert (every (lambda (x) (= degree (perm-size x))) lookup-table))
+    ;; Produce an optimized lambda.
+    (lambda (elts)
+      (etypecase elts
+        (integer (aref lookup-table (- n elts)))
+        (list (cond
+                ;; Do this case because it's identity.
+                ((null elts)       (aref lookup-table (- n 0)))
+                ;; Do this case because it's no work.
+                ((null (cdr elts)) (aref lookup-table (- n (first elts))))
+                ;; Do this case because it costs less to allocate.
+                ((null (cddr elts)) (perm-compose (aref lookup-table (- n (first elts)))
+                                                  (aref lookup-table (- n (second elts)))))
+                ;; Otherwise, we'll do this the best we can.
+                (t
+                 (loop :with result-storage := (iota-vector (1+ degree))
+                       :with temp-storage := (allocate-perm-vector degree)
+                       :for i :in elts
+                       :for p := (perm.rep (aref lookup-table (- n i)))
+                       :do (%perm-compose-into/equal result-storage p temp-storage)
+                           (rotatef temp-storage result-storage)
+                       :finally (return (%make-perm :rep result-storage))))))))))
 
 (defun word-simplifier-for-perm-group (g)
   "Construct a simplifier for the permutation group G according to its free group."
