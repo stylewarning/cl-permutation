@@ -21,7 +21,8 @@
 (defstruct (perm (:conc-name perm.)
                  (:print-function print-perm)
                  (:constructor %make-perm))
-  (rep (iota-vector 1) :type raw-perm))
+  (rep (iota-vector 1) :type raw-perm :read-only t))
+#+sbcl (declaim (sb-ext:freeze-type perm))
 
 ;;; XXX: fix the duplication.
 (defun print-perm (perm stream depth)
