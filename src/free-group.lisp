@@ -66,7 +66,7 @@ An empty list corresponds to an empty composition, which is identity (0)."))
     (t nil)))
 
 (defmethod identity-element ((g free-group))
-  0)
+  nil)
 
 (defmethod compose ((g free-group) (a null)    b)           b)
 (defmethod compose ((g free-group) (a (eql 0)) b)           b)
