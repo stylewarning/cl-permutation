@@ -113,7 +113,7 @@
 
 (deftest test-naive-generator-decomposition-randomly ()
   "Check veracity of generator decomposition of random elements of the 2x2 cube group. (Naive method.)"
-  (loop :repeat 10 :do
+  (loop :repeat 100 :do
     (test-naive-generator-decomposition *2x2* (random-group-element *2x2*))))
 
 (deftest test-factorization-using-free-group (group p)
