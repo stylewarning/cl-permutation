@@ -358,7 +358,7 @@ The arguments are:
          (format t ";; A simplifier was ~:[not~;~] provided.~%" simplifier-provided-p)
          (format t ";; A word generator was ~:[not~;~] provided.~%" word-generator-provided-p)
          (format t ";; The group has ~D generator~:P and is of order ~D.~%" (num-generators group) order)
-         (format t ";; The base is ~S.~%" base)
+         (format t ";; The base (~D element~:P) is ~S.~%" k base)
          (format t ";; The orbit lengths are ~S.~%" orbit-lengths)))
      ;; The code starting here reflects Minkwitz's SGSWordQuick
      ;; procedure, except for the construction of ν, which is above.
