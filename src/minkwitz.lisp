@@ -227,6 +227,7 @@ The arguments are:
           ;; set after the table is built.
           (num-rounds nil))
      (declare (type double-float length-limit)
+              (type unsigned-byte order)
               (type (and fixnum unsigned-byte) k improve-every)
               (type (function (*) *) ϕ)
               (type simple-vector ν)
@@ -293,6 +294,7 @@ The arguments are:
             (%improve (length-limit)
               (declare (type double-float length-limit))
               (let ((rounds-left improve-max-tries))
+                (declare (type fixnum rounds-left))
                 (dotimes (j k)
                   (when (> 1 (hash-table-count (aref ν j)))
                     ;; XXX: Do we *need* to explore *every* pair in the
@@ -338,8 +340,10 @@ The arguments are:
 
             (%table-fullp (ν)
               (let ((size (%system-size ν)))
+                (declare (type unsigned-byte size))
                 (assert (<= size order))
-                (= size order)))))
+                (= size order))))
+     (declare (inline %table-fullp)))
    (progn
      ;; ...
      (when *perm-group-verbose*
