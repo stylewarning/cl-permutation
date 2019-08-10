@@ -440,17 +440,14 @@ This is also called \"factorization\"."
                   (assert (perm-identity-p π)
                           ()
                           "Inconsistency in GENERATOR-DECOMPOSITION. Possibly an issue with the table?")
-                  (inverse fg (remove-if #'free-group-identity-p
-                                         (canonicalize-free-group-element
-                                          fg
-                                          factorization))))
+                  (inverse fg factorization))
                  (t
                   (let* ((νᵢ (aref ν i))
                          (bᵢ (first base-left))
                          (ωᵢ (unsafe/perm-eval π bᵢ))
                          (νᵢωᵢ (entry-word (gethash ωᵢ νᵢ)))
                          (νᵢπ (perm-compose (funcall ϕ νᵢωᵢ) π)))
-                    (walk-stabilizer (1+ i) νᵢπ (rest base-left) (cons νᵢωᵢ factorization)))))))
+                    (walk-stabilizer (1+ i) νᵢπ (rest base-left) (compose fg νᵢωᵢ factorization)))))))
       (let ((decomp (funcall
                      (minkwitz-table-simplifier
                       (perm-group.factorization-generators group))

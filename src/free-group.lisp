@@ -40,23 +40,20 @@ An empty list corresponds to an empty composition, which is identity (0)."))
                    element))
       (t nil))))
 
-(defun canonicalize-free-group-element (g e)
-  (declare (ignore g))
-  (alexandria:flatten (list e)))
-
 (defun make-free-group-element (g &rest elements)
   "Make an element of the free group G where ELEMENTS are either integer generators of G, or other elements created by this function."
+  (declare (dynamic-extent elements))
   (check-type g free-group)
-  (flet ((process (e)
-           (if (listp e)
-               (canonicalize-free-group-element g e)
-               (list e))))
-    (assert (every (lambda (e)
-                     (free-group-element-valid-p g e))
-                   elements)
-            (elements)
-            "The provided free group contains invalid elements.")
-    (mapcan #'process elements)))
+  (let ((word nil))
+    (dolist (el elements (nreverse word))
+      (assert (free-group-element-valid-p g el))
+      (etypecase el
+        (integer
+         (unless (zerop el)
+           (push el word)))
+        (list (dolist (x el)
+                (unless (zerop x)
+                  (push x word))))))))
 
 (defun free-group-identity-p (x)
   "Is X an identity element of a free group?"
@@ -88,10 +85,10 @@ An empty list corresponds to an empty composition, which is identity (0)."))
     (integer (- a))
     ;; (a b c)^-1 = (c^-1 b^-1 a^-1) 
     (list
-     (canonicalize-free-group-element
-      g
-      (mapcar (lambda (e) (inverse g e))
-              (reverse a))))))
+     (let ((word nil))
+       (dolist (x a word)
+         (unless (zerop x)
+           (push (- x) word)))))))
 
 (defmethod generators ((G free-group))
   (loop :for i :from 1 :to (num-generators G)
