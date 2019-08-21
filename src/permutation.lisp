@@ -427,7 +427,9 @@ If a fixed point doesn't exist, return NIL."
                     (elt a (1- (perm-eval* perm (1+ i)))))
           :finally (return (if type
                                (coerce result type)
-                               (coerce result (type-of a)))))))
+                               (coerce result (if (typep a 'cons)
+                                                  'list
+                                                  (type-of a))))))))
 
 (defun permuter (from to &key (test 'eql))
   "Compute a permutation P such that (PERMUTE P FROM) == TO."
