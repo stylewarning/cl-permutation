@@ -414,7 +414,7 @@ If a fixed point doesn't exist, return NIL."
           :collect i))
 
 (defun permute (perm a &key type)
-  "Permute the sequence A according to PERM. The return an array by default unless TYPE is specified."
+  "Permute the sequence A according to PERM. Retun an object of the same kind as A by default unless TYPE is specified."
   (assert (<= (perm-size perm)
               (length a))
           (perm a)
