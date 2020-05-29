@@ -5,15 +5,15 @@
 (in-package #:cl-permutation)
 
 ;;; This file contains an implementation of Minkwitz's algorithm.
-
-(defstruct (entry (:constructor entry (seen word))
-                  (:copier nil)
-                  (:predicate nil))
-  "Representation of an entry in a Minkwitz table."
-  ;; Has the algorithm seen this entry?
-  (seen t   :type boolean)
-  ;; The value of an entry, which is a free group word.
-  (word nil :read-only t))
+(eval-when (:compile-toplevel :load-toplevel)
+  (defstruct (entry (:constructor entry (seen word))
+                    (:copier nil)
+                    (:predicate nil))
+    "Representation of an entry in a Minkwitz table."
+    ;; Has the algorithm seen this entry?
+    (seen t   :type boolean)
+    ;; The value of an entry, which is a free group word.
+    (word nil :read-only t)))
 #+sbcl (declaim (sb-ext:freeze-type entry))
 
 (declaim (inline new-entry mark-entry-as-seen))
