@@ -30,11 +30,13 @@
 ;;; mess up the invariant above. This invariant is later repaired
 ;;; "on-demand" within DJS-FIND.
 
-;;; We turn *PRINT-CIRCLE* on because each DJS/DJS-REP creates a new
-;;; circular structure.
-(setf *print-circle* t)
+(defun %djs-and-rep-printer (s stream depth)
+  (declare (ignore depth))
+  (let ((*print-circle* t))
+    (princ s stream)))
 
-(defstruct (djs (:constructor %make-djs))
+(defstruct (djs (:constructor %make-djs)
+                (:print-function %djs-and-rep-printer))
   "Representation of a disjoint-set data structure. Each node has a representative element denoted by REPRESENTATIVE, which points to a DJS-REP node representing the canonical element of that disjoint-set."
   ;; FIXME: This type produces a warning because the compiler
   ;; presumably doesn't know about DJS-REP yet.
@@ -43,7 +45,8 @@
 
 ;;; TODO: I think we can eliminate DJS-REP. We can just use a cons
 ;;; cell.
-(defstruct (djs-rep (:constructor %make-djs-rep))
+(defstruct (djs-rep (:constructor %make-djs-rep)
+                    (:print-function %djs-and-rep-printer))
   "Pointer to the representative element of a DJS."
   (djs nil :type djs))
 
