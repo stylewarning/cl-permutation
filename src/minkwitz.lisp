@@ -145,7 +145,7 @@ The arguments are:
 "
   (declare (optimize (speed 0) safety debug))
   ;;(declare (optimize speed (safety 0) (debug 0)))
-  (declare (type (function (*) *) simplifier))
+  (declare (type (function (t) t) simplifier))
 
   ;; Deviations from Minkwitz's paper, and other implementation notes:
   ;;
@@ -229,7 +229,7 @@ The arguments are:
      (declare (type double-float length-limit)
               (type unsigned-byte order)
               (type (and fixnum unsigned-byte) k improve-every)
-              (type (function (*) *) ϕ)
+              (type (function (t) t) ϕ)
               (type simple-vector ν)
               (type simple-vector base)))
 
