@@ -442,6 +442,17 @@ If a fixed point doesn't exist, return NIL."
   (perm= (perm-compose a b)
          (perm-compose b a)))
 
+(defun perm< (a b)
+  "Is the permutation A lexicographically preceding B?"
+  (let ((size (min (perm-size a) (perm-size b))))
+    (loop :for i :from 1 :to size
+          :for ai := (perm-eval* a i)
+          :for bi := (perm-eval* b i)
+          :do (cond
+                ((< ai bi) (return t))
+                ((> ai bi) (return nil)))
+            :finally (return nil))))
+
 ; HI!!!
 ; HELLO
 

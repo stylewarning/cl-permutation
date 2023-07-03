@@ -45,6 +45,8 @@
    #:perm-last-non-fixpoint
    #:perm-fixpoints
    #:permute
+   #:commutesp
+   #:perm<
 
    #:cycle-element
    #:cycle

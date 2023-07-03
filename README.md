@@ -80,6 +80,8 @@ There is a slew of permutation operations:
 * `perm-inverse`: invert a permutation
 * `perm-fixpoints`: compute the fixed points of a permutation
 * `permute`: permute an array according to a permutation
+* `commutesp`: check if two permutations commute
+* `perm<`: check lexicographic order
 
 
 ## Permutation Generation
