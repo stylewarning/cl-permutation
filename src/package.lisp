@@ -5,6 +5,8 @@
 (defpackage #:cl-permutation
   (:use #:cl)
   (:nicknames #:perm)
+  (:local-nicknames
+   (#:pq #:priority-queue))
 
   ;; permutation.lisp
   (:export
