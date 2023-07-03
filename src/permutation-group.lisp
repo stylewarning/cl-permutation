@@ -498,4 +498,3 @@ Note: The result is likely very long and inefficient."
               (remove-if #'free-group-identity-p
                          (loop :for di :in d
                                :append (alexandria:ensure-list (eval-slp (find-slp di)))))))))
-
