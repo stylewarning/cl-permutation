@@ -21,9 +21,20 @@
   (bitmap   0   :type integer)
   (elements nil :type list))
 
+(defun assoc* (i list)
+  (declare (optimize speed (safety 0))
+           (type perm-element i)
+           (type list list))
+  (loop :until (null list) :do
+    (let ((x (pop list)))
+      (declare (type (cons perm-element t) x))
+      (when (= i (car x))
+        (return-from assoc* x))))
+  nil)
+
 (declaim (inline raw-saref))
 (defun raw-saref (sa n)
-  (assoc n (sparse-array-elements sa) :test #'=))
+  (assoc* n (sparse-array-elements sa)))
 
 (defun saref (sa n)
   (if (logbitp n (sparse-array-bitmap sa))
@@ -132,7 +143,7 @@
     2. The value associated with the perm.
 
 RE-ORDER is an optional argument, either a function or a perm that re-orders the children.
-  
+
 For example, if SIZE = 10, then #[10 9 8 7 6 5 4 3 2 1] would traverse in reverse lexicographic order."
 
   (declare (optimize speed))
@@ -160,14 +171,68 @@ For example, if SIZE = 10, then #[10 9 8 7 6 5 4 3 2 1] would traverse in revers
                           :do (dfs (1+ depth) x))))))
       (dfs 1 (perm-tree-root tree)))))
 
-(defmacro do-perm-tree ((p v tree) &body body)
+(defun perm-tree-next-perm (tree perm &key (re-order
+                                            (perm-identity (perm-tree-perm-size tree))))
+  "Find the lexicographic successor to a perm."
+  (declare (optimize speed))
+  (assert (= (perm-size perm) (perm-tree-perm-size tree)))
+
+  (let* ((size (perm-size perm))
+         (max-depth size))
+    (flet ((relabel (i)
+             (unsafe/perm-eval re-order i)))
+      (declare (inline relabel))
+      (labels ((search-at-depth (current-depth to-depth node)
+                 (declare (type fixnum current-depth to-depth)
+                          (type sparse-array node))
+                 (cond
+                   ((< current-depth to-depth)
+                    (let* ((next-index (unsafe/perm-eval perm current-depth))
+                           (next (saref node next-index)))
+                      (when next
+                        (search-at-depth (1+ current-depth) to-depth next))))
+                   (t
+                    ;; TODO make this better
+                    (loop :with skip := t
+                          :with point := (unsafe/perm-eval perm current-depth)
+                          :for i :from 1 :to size
+                          :for i* := (relabel i)
+                          :do (cond
+                                (skip
+                                 (when (= i* point)
+                                   (setf skip nil)))
+                                (t
+                                 (let ((next (saref node i*)))
+                                   (when next
+                                     (dfs (1+ current-depth) next)))))))))
+
+               (dfs (depth node)
+                 (declare (type fixnum depth)
+                          (type sparse-array node))
+                 (cond
+                   ((= depth max-depth)
+                    (loop :for i :from 1 :to size
+                          :for x := (saref node (relabel i))
+                          :unless (null x)
+                            :do (return-from perm-tree-next-perm (values (car x) (cdr x)))))
+                   (t
+                    (loop :for i :from 1 :to size
+                          :for x := (saref node (relabel i))
+                          :unless (null x)
+                            :do (dfs (1+ depth) x))))))
+        (loop :for depth :from (1- size) :downto 1 :do
+          (search-at-depth 1 depth (perm-tree-root tree)))
+        ;; If we reached here, we found nothing...
+        (values nil nil)))))
+
+(defmacro do-perm-tree ((p v tree &key re-order) &body body)
   (let ((iter-tree (gensym "ITER-TREE"))
         (tree-once (gensym "TREE-ONCE")))
     `(let ((,tree-once ,tree))
        (flet ((,iter-tree (,p ,v)
                 ,@body))
          (declare (dynamic-extent #',iter-tree))
-         (map-perm-tree #',iter-tree ,tree-once)
+         (map-perm-tree #',iter-tree ,tree-once :re-order ,re-order)
          nil))))
 
 (defun collect-perm-tree (tree)
@@ -177,84 +242,77 @@ For example, if SIZE = 10, then #[10 9 8 7 6 5 4 3 2 1] would traverse in revers
       (push p elements))
     (nreverse elements)))
 
-(defun perm-tree-least (tree)
-  (do-perm-tree (p v tree)
+;;; should be equal to perm tree
+;;; TODO make a test
+(defun collect-perm-tree2 (tree &key re-order)
+  (loop :with node := (perm-tree-least tree :re-order re-order)
+        :until (null node)
+        :collect (prog1 node
+                   (setf node (perm-tree-next-perm tree node :re-order re-order)))))
+
+(defun perm-tree-least (tree &key re-order)
+  (do-perm-tree (p v tree :re-order re-order)
     (return-from perm-tree-least (values p v))))
 
-(defun perm-tree-next-perm (tree perm)
-  ;; This could be made more efficient with coroutines in the map
-  ;; function.
-  (flet ((f (p v)
-           (declare (ignore v))
-           (when (perm< perm p)
-             (return-from perm-tree-next-perm p))))
-    (map-perm-tree #'f tree)
-    ;; otherwise return nil
-    nil))
+(defun schroeppel-shamir2 (l1-tree l2-tree)
+  (let ((q (pq:make-pqueue #'perm<)))
+    ;; Initialize the queue with minimums.
+    (do-perm-tree (y wy l2-tree)
+      (multiple-value-bind (x wx)
+          (perm-tree-least l1-tree :re-order (perm-inverse y))
+        (pq:pqueue-push
+         (list y wy x wx)
+         (perm-compose y x)
+         q)))
 
-;;;
+    ;; Create an iterator over products of L1 and L2
+    (labels ((iterator ()
+               (when (pq:pqueue-empty-p q)
+                 (return-from iterator nil))
+               (multiple-value-bind (components yx)
+                   (pq:pqueue-pop q)
+                 (destructuring-bind (y wy x wx) components
+                     ;; update queue
+                     (multiple-value-bind (next-x next-wx)
+                         (perm-tree-next-perm l1-tree x :re-order (perm-inverse y))
+                       (when next-x
+                         (pq:pqueue-push
+                          (list y wy next-x next-wx)
+                          (perm-compose y next-x)
+                          q)))
+                   ;; return our element
+                   (cons yx (append wy wx))))))
+      #'iterator)))
 
-(defun find-smallest-above (tree x y &optional (yx (perm-compose y x)))
-  ;; Find the P in TREE such that YP is the smallest element after
-  ;; YX.
-  (assert (perm-tree-member-p tree x))
-  (flet ((seek (p wp)
-           (let ((yp (perm-compose y p)))
-             (when (perm< yx yp)
-               (return-from find-smallest-above (values p yp wp))))))
-    (map-perm-tree #'seek tree :re-order (perm-inverse y))
-    ;; if we get this far, we didn't find anything...
-    (values nil nil nil)))
-
-(defun perm-priority (perm)
-  ;; same as RANK
-  (loop :with size := (perm-size perm)
-        :with rank := 0
-        :for i :from 0 :below (1- size)
-        :for elt := (perm-ref perm i)
-        :do (let ((inversions (loop :for j :from (1+ i) :below size
-                                    :for elt-after := (perm-ref perm j)
-                                    :count (> elt elt-after))))
-              (setf rank (+ inversions (* rank (- size i)))))
-        :finally (return rank)))
-
-(defun schroeppel-shamir (l1-tree l2-tree)
-  ;; We could initialize the queue in the coroutine, but it makes
-  ;; benchmarking a little more difficult.
-  (let ((q (pq:make-pqueue #'<)))
-    (multiple-value-bind (x1 wx1) (perm-tree-least l1-tree)
-      (do-perm-tree (y wy l2-tree)
-        (let ((yx1 (perm-compose y x1)))
-          (pq:pqueue-push (list y wy x1 wx1 yx1)
-                          (perm-priority yx1)
-                          q))))
-    (coroutine
-      (loop :until (pq:pqueue-empty-p q)
-            :do (destructuring-bind (y wy x wx yx) (pq:pqueue-pop q)
-                  (yield (cons yx (append wy wx)))
-                  (multiple-value-bind (next-x next-yx next-wx)
-                      (find-smallest-above l1-tree x y yx)
-                    (unless (null next-x)
-                      (pq:pqueue-push
-                       (list y wy next-x next-wx next-yx)
-                       (perm-priority next-yx)
-                       q))))))))
+(defun in-common?* (&rest args)
+  (write-line "; profiling")
+  (time ;sb-sprof:with-profiling (:reset t :mode :cpu :report :graph)
+    (apply #'in-common? args)))
 
 (defun in-common? (a b &key (test '=)
                             (compare '<)
                             (key 'identity)
                             (join 'cons)
-                            (return-immediately nil))
-  
+                            (return-immediately nil)
+                            (report-interval 100000)
+                            (limit nil ;500000
+                             ))
+
   (let ((common nil)
-        (ai (next-or a nil))
-        (bi (next-or b nil))
+        (ai (funcall a))
+        (bi (funcall b))
         (lap (get-internal-real-time))
         (count 0))
     (loop
-      (when (zerop (mod count 5000))
-        (format t "~&~D: ~D~%" count (round (- (get-internal-real-time) lap) internal-time-units-per-second))
-        (setf lap (get-internal-real-time)))
+      (when (and (plusp count) (zerop (mod count report-interval)))
+        (let ((elapsed-time (/ (- (get-internal-real-time) lap) internal-time-units-per-second)))
+          (format t "~&~D: ~D (~A perms/sec)~%"
+                  count
+                  (round elapsed-time)
+                  (float (/ report-interval elapsed-time)))
+          (setf lap (get-internal-real-time))))
+      (when (and limit (>= count limit))
+        (return-from in-common? common))
       (incf count)
       (when (or (null ai) (null bi))
         (return-from in-common? common))
@@ -266,14 +324,12 @@ For example, if SIZE = 10, then #[10 9 8 7 6 5 4 3 2 1] would traverse in revers
              (when return-immediately
                (return-from in-common? result))
              (push result common))
-           (setf ai (next-or a nil)
-                 bi (next-or b nil)))
+           (setf ai (funcall a)
+                 bi (funcall b)))
           ((funcall compare ax bx)
-           (setf ai (next-or a nil)))
-          ((funcall compare bx ax)
-           (setf bi (next-or b nil)))
-          (t
-           (error "unreachable")))))))
+           (setf ai (funcall a)))
+          (t                            ; equiv. (funcall compare bx ax)
+           (setf bi (funcall b))))))))
 
 (defun transform-tree (f tree)
   (let ((new-tree (make-perm-tree (perm-tree-perm-size tree))))
@@ -310,35 +366,52 @@ For example, if SIZE = 10, then #[10 9 8 7 6 5 4 3 2 1] would traverse in revers
 
 (defvar *3x3 (3x3-htm))
 
+(defun logout (string)
+  (write-line string)
+  (finish-output))
 
-(defun test-ss (g &key (group (cl-permutation-examples:make-rubik-2x2)))
+(defun test-ss (g &key group)
+  (check-type group perm-group)
   (let* ((gens (perm-group.generators group))
          (free (perm-group.free-group group))
          (free->2x2 (free-group->perm-group-homomorphism free group))
-         
-         (L1 (generate-words-of-bounded-length gens 5))
+
+         (L1 (progn
+               (logout "; generating words")
+               (generate-words-of-bounded-length gens 5)))
          (L2 L1)
+         (L4 (progn
+               (logout "; xform trees")
+               (transform-tree (lambda (p v)
+                                 (values (perm-inverse p)
+                                         (reverse (mapcar #'- v))))
+                               L1)))
          (L3 (transform-tree (lambda (p v)
-                               (values (perm-compose (perm-inverse p) g)
-                                       (reverse (mapcar #'- v))))
-                             L1))
-         (L4 (transform-tree (lambda (p v)
-                               (values (perm-inverse p)
-                                       (reverse (mapcar #'- v))))
-                             L1))
-         (L1L2 (schroeppel-shamir L1 L2))
-         (L3L4 (schroeppel-shamir L3 L4)))
+                               (values (perm-compose p g) v))
+                             L4))
+
+         (L1L2 (progn
+                 (logout "; SS 1")
+                 (schroeppel-shamir2 L1 L2)))
+         (L3L4 (progn
+                 (logout "; SS 2")
+                 (schroeppel-shamir2 L3 L4))))
     (format t "~&|L_i| = ~D~%" (perm-tree-num-elements L1))
-    (let ((solution (in-common? L1L2 L3L4 :key 'car
-                                          :test 'perm=
-                                          :compare 'perm<
-                                          :join (lambda (a b)
-                                                  (cons (car a)
-                                                        (append
-                                                         (reverse (mapcar #'- (cdr b)))
-                                                         (cdr a))))
-                                          :return-immediately t)))
-      (print solution)
-      (values (car solution)
-              (perm-compose (perm-inverse (funcall free->2x2 (cdr solution)))
-                            g)))))
+    (let ((solution (in-common?* L1L2 L3L4 :key 'car
+                                           :test 'perm=
+                                           :compare 'perm<
+                                           :join (lambda (a b)
+                                                   (cons (car a)
+                                                         (append
+                                                          (reverse (mapcar #'- (cdr b)))
+                                                          (cdr a))))
+                                           :return-immediately t)))
+      (when solution
+        (fresh-line)
+        (format t "input : ~A~%" g)
+        (format t "common: ~A~%" (car solution))
+        (let ((*print-pretty* nil))
+          (format t "* * * reconstruction: ~A~%" (cdr solution)))
+        (values (car solution)
+                (perm-compose (perm-inverse (funcall free->2x2 (cdr solution)))
+                              g))))))

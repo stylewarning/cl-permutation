@@ -20,7 +20,6 @@
   :serial t
   :components ((:file "package")
                (:file "utilities")
-               (:file "coroutines")
                (:file "permutation")
                (:file "bruhat")
                (:file "permutation-generation")
