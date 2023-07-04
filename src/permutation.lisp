@@ -442,12 +442,14 @@ If a fixed point doesn't exist, return NIL."
   (perm= (perm-compose a b)
          (perm-compose b a)))
 
+;; TODO FIXME: fix for unequal lengths
 (defun perm< (a b)
   "Is the permutation A lexicographically preceding B?"
+  (declare (optimize speed))
   (let ((size (min (perm-size a) (perm-size b))))
     (loop :for i :from 1 :to size
-          :for ai := (perm-eval* a i)
-          :for bi := (perm-eval* b i)
+          :for ai :of-type perm-element := (unsafe/perm-eval a i)
+          :for bi :of-type perm-element := (unsafe/perm-eval b i)
           :do (cond
                 ((< ai bi) (return t))
                 ((> ai bi) (return nil)))
