@@ -11,16 +11,76 @@
 ;;;;
 ;;;; This file requires "generators.lisp" and priority-queue
 
+;;; Sparse Array
+;;;
+;;; We use sparse arrays to implement the permutation trie
+;;; (PERM-TREE), since occupancy is generally very, very small. We
+;;; save a lot of memory this way.
+
+(defstruct (sparse-array (:constructor make-sparse-array ()))
+  (bitmap   0   :type integer)
+  (elements nil :type list))
+
+(declaim (inline raw-saref))
+(defun raw-saref (sa n)
+  (assoc n (sparse-array-elements sa) :test #'=))
+
+(defun saref (sa n)
+  (if (logbitp n (sparse-array-bitmap sa))
+      (cdr (raw-saref sa n))
+      nil))
+
+(defun (setf saref) (new-value sa n)
+  (let ((existing (raw-saref sa n)))
+    (cond
+      ((consp existing)
+       (rplacd existing new-value))
+      (t
+       (push (cons n new-value) (sparse-array-elements sa))
+       (setf (sparse-array-bitmap sa)
+             (dpb 1 (byte 1 n) (sparse-array-bitmap sa)))
+       new-value))))
+
+;;; Permutation Tree
+;;;
+;;; This is a data structure that associates a permutation with
+;;; arbitrary data. It has the benefit that permutations can be
+;;; visited in lexicographic order, and permutations overlap in
+;;; memory.
+
 (defstruct (perm-tree (:constructor %make-perm-tree))
   "A trie-like data structure to store permutations."
   num-elements
   perm-size
   root)
 
+(defmethod print-object ((object perm-tree) stream)
+  (print-unreadable-object (object stream :type t :identity t)
+    (format stream "~D perm~:P" (perm-tree-num-elements object))))
+
+(defun occupancy (tree)
+  (let ((total   0)
+        (non-nil 0))
+    (labels ((tally (x)
+               (incf total)
+               (typecase x
+                 (sparse-array
+                  (incf non-nil)
+                  (mapcar (lambda (c) (tally (cdr c))) (sparse-array-elements x)))
+                 (vector
+                  (incf non-nil)
+                  (map nil #'tally x))
+                 (null
+                  nil)
+                 (otherwise
+                  (incf non-nil)))))
+      (tally (perm-tree-root tree))
+      (values non-nil total))))
+
 (defun make-perm-tree (perm-size)
   (%make-perm-tree :num-elements 0
                    :perm-size perm-size
-                   :root (make-array (1+ perm-size) :initial-element nil)))
+                   :root (make-sparse-array)))
 
 (defun perm-tree-member-p (tree perm)
   (let ((size (perm-tree-perm-size tree)))
@@ -28,9 +88,9 @@
                (let ((point (perm-eval perm i)))
                  (cond
                    ((= i size)
-                    (not (null (aref node point))))
+                    (not (null (saref node point))))
                    (t
-                    (let ((next-node (aref node point)))
+                    (let ((next-node (saref node point)))
                       (and (not (null next-node))
                            (check (1+ i) next-node))))))))
       (check 1 (perm-tree-root tree)))))
@@ -39,12 +99,12 @@
   (let ((size (perm-tree-perm-size tree)))
     (labels ((record (point node perm value)
                (incf (perm-tree-num-elements tree))
-               (setf (aref node point) (cons perm value)))
+               (setf (saref node point) (cons perm value)))
              (ingest (i node)
                (let ((point (perm-eval perm i)))
                  (cond
                    ((= i size)
-                    (let ((old-value (aref node point)))
+                    (let ((old-value (saref node point)))
                       (cond
                         ((null old-value)
                          (record point node perm value)
@@ -57,9 +117,9 @@
                         (t
                          (error "Trying to overwrite existing value.")))))
                    (t
-                    (let ((next-node (or (aref node point)
-                                         (setf (aref node point)
-                                               (make-array (1+ size) :initial-element nil)))))
+                    (let ((next-node (or (saref node point)
+                                         (setf (saref node point)
+                                               (make-sparse-array)))))
                       (ingest (1+ i) next-node)))))))
       (ingest 1 (perm-tree-root tree)))))
 
@@ -86,16 +146,16 @@ For example, if SIZE = 10, then #[10 9 8 7 6 5 4 3 2 1] would traverse in revers
     (declare (type fixnum size))
     (labels ((dfs (depth node)
                (declare (type fixnum depth)
-                        (type simple-vector node))
+                        (type sparse-array node))
                (cond
                  ((= depth max-depth)
                   (loop :for i :from 1 :to size
-                        :for x := (aref node (funcall relabel i))
+                        :for x := (saref node (funcall relabel i))
                         :unless (null x)
                           :do (funcall f (car x) (cdr x))))
                  (t
                   (loop :for i :from 1 :to size
-                        :for x := (aref node (funcall relabel i))
+                        :for x := (saref node (funcall relabel i))
                         :unless (null x)
                           :do (dfs (1+ depth) x))))))
       (dfs 1 (perm-tree-root tree)))))
@@ -159,14 +219,16 @@ For example, if SIZE = 10, then #[10 9 8 7 6 5 4 3 2 1] would traverse in revers
         :finally (return rank)))
 
 (defun schroeppel-shamir (l1-tree l2-tree)
-  (coroutine
-    (let ((q (pq:make-pqueue #'<)))
-      (multiple-value-bind (x1 wx1) (perm-tree-least l1-tree)
-        (do-perm-tree (y wy l2-tree)
-          (let ((yx1 (perm-compose y x1)))
-            (pq:pqueue-push (list y wy x1 wx1 yx1)
-                            (perm-priority yx1)
-                            q))))
+  ;; We could initialize the queue in the coroutine, but it makes
+  ;; benchmarking a little more difficult.
+  (let ((q (pq:make-pqueue #'<)))
+    (multiple-value-bind (x1 wx1) (perm-tree-least l1-tree)
+      (do-perm-tree (y wy l2-tree)
+        (let ((yx1 (perm-compose y x1)))
+          (pq:pqueue-push (list y wy x1 wx1 yx1)
+                          (perm-priority yx1)
+                          q))))
+    (coroutine
       (loop :until (pq:pqueue-empty-p q)
             :do (destructuring-bind (y wy x wx yx) (pq:pqueue-pop q)
                   (yield (cons yx (append wy wx)))
@@ -183,6 +245,7 @@ For example, if SIZE = 10, then #[10 9 8 7 6 5 4 3 2 1] would traverse in revers
                             (key 'identity)
                             (join 'cons)
                             (return-immediately nil))
+  
   (let ((common nil)
         (ai (next-or a nil))
         (bi (next-or b nil))
@@ -237,6 +300,17 @@ For example, if SIZE = 10, then #[10 9 8 7 6 5 4 3 2 1] would traverse in revers
       (loop :for max :from 1 :to word-length :do (f max 1 id nil))
       tree)))
 
+(defun 3x3-htm ()
+  (let* ((original (perm-group.generators (cl-permutation-examples:make-rubik-3x3)))
+         (new (loop :for g :in original
+                    :collect (perm-expt g 1)
+                    :collect (perm-expt g 2)
+                    :collect (perm-expt g 3))))
+    (generate-perm-group new)))
+
+(defvar *3x3 (3x3-htm))
+
+
 (defun test-ss (g &key (group (cl-permutation-examples:make-rubik-2x2)))
   (let* ((gens (perm-group.generators group))
          (free (perm-group.free-group group))
@@ -254,7 +328,7 @@ For example, if SIZE = 10, then #[10 9 8 7 6 5 4 3 2 1] would traverse in revers
                              L1))
          (L1L2 (schroeppel-shamir L1 L2))
          (L3L4 (schroeppel-shamir L3 L4)))
-    (format t "|L_i| = ~D~%" (perm-tree-num-elements L1))
+    (format t "~&|L_i| = ~D~%" (perm-tree-num-elements L1))
     (let ((solution (in-common? L1L2 L3L4 :key 'car
                                           :test 'perm=
                                           :compare 'perm<
