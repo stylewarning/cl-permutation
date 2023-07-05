@@ -4,14 +4,12 @@
 
 (in-package #:cl-permutation)
 
-(declaim (optimize speed))
+(declaim (optimize speed (safety 1)))
 
 ;;;; This file implements the planning algorithm from the paper
 ;;;; "Planning and Learning in Permutation Groups" by Fiat, Moses,
 ;;;; Shamir, Shimshoni, and Tardos. In the paper, they call it a
 ;;;; "t-list algorithm", and their main example specialized to t=4.
-;;;;
-;;;; This file requires "generators.lisp" and priority-queue
 
 ;;; Sparse Array
 ;;;
@@ -57,11 +55,11 @@
 (defun raw-saref (sa n)
   (assoc* n (sparse-array-elements sa)))
 
-(declaim (inline saref))
 (defun saref (sa n)
   (declare (type sparse-array sa)
            (type perm-element n)
-           (optimize speed (safety 0)))
+           (optimize speed (safety 0))
+           )
   (cdr (raw-saref sa n))
   #+ig
   (if (logbitp n (sparse-array-bitmap sa))
@@ -129,8 +127,12 @@
                            (cdr result))))
                    (t
                     (let ((next-node (saref node point)))
-                      (and (not (null next-node))
-                           (check (1+ i) next-node))))))))
+                      (etypecase next-node
+                        (null nil)
+                        (sparse-array (check (1+ i) next-node))
+                        (cons (if (perm= perm (car next-node))
+                                  (cdr next-node)
+                                  nil)))))))))
       (check 1 (perm-tree-root tree)))))
 
 (defun ingest-perm (tree perm &key (value t) force ignore)
@@ -138,9 +140,10 @@
     (labels ((record (point node perm value)
                (incf (perm-tree-num-elements tree))
                (setf (saref node point) (cons perm value)))
-             (ingest (i node)
+             (ingest (i node perm value)
                (let ((point (perm-eval perm i)))
                  (cond
+                   ;; special case at the leaf
                    ((= i size)
                     (let ((old-value (saref node point)))
                       (cond
@@ -155,11 +158,33 @@
                         (t
                          (error "Trying to overwrite existing value.")))))
                    (t
-                    (let ((next-node (or (saref node point)
-                                         (setf (saref node point)
-                                               (make-sparse-array size)))))
-                      (ingest (1+ i) next-node)))))))
-      (ingest 1 (perm-tree-root tree)))))
+                    (let ((object-at-location (saref node point)))
+                      (etypecase object-at-location
+                        (null
+                         (record point node perm value)
+                         value)
+                        (sparse-array
+                         (ingest (1+ i) object-at-location perm value))
+                        (cons
+                         (let ((old-perm (car object-at-location))
+                               (old-value (cdr object-at-location)))
+                           (cond
+                             ((perm= perm old-perm)
+                              (cond
+                                (ignore
+                                 nil)
+                                (force
+                                 (rplacd object-at-location value))
+                                (t
+                                 (error "Trying to overwrite existing value."))))
+                             (t
+                              (let ((next-node (make-sparse-array size)))
+                                (setf (saref node point) next-node)
+                                ;; don't double count
+                                (decf (perm-tree-num-elements tree))
+                                (ingest (1+ i) next-node old-perm old-value)
+                                (ingest (1+ i) next-node perm value)))))))))))))
+      (ingest 1 (perm-tree-root tree) perm value))))
 
 (defun map-perm-tree (f tree &key re-order)
   ;; TODO: modify so that we can visit all elements *after* a particular one?
@@ -184,32 +209,23 @@ For example, if SIZE = 10, then #[10 9 8 7 6 5 4 3 2 1] would traverse in revers
                     (function re-order))))
     (declare (type fixnum size))
     (labels ((dfs (depth node)
-               (declare (type fixnum depth)
-                        (type sparse-array node))
-               (cond
-                 ((= depth max-depth)
-                  (loop :for i :from 1 :to size
-                        :for x := (saref node (funcall relabel i))
-                        :unless (null x)
-                          :do (funcall f (car x) (cdr x))))
-                 (t
-                  (loop :for i :from 1 :to size
-                        :for x := (saref node (funcall relabel i))
-                        :unless (null x)
-                          :do (dfs (1+ depth) x))))))
+               (declare (type fixnum depth))
+               (etypecase node
+                 (cons
+                  (funcall f (car node) (cdr node)))
+                 (sparse-array
+                  (cond
+                    ((= depth max-depth)
+                     (loop :for i :from 1 :to size
+                           :for x := (saref node (funcall relabel i))
+                           :unless (null x)
+                             :do (funcall f (car x) (cdr x))))
+                    (t
+                     (loop :for i :from 1 :to size
+                           :for x := (saref node (funcall relabel i))
+                           :unless (null x)
+                             :do (dfs (1+ depth) x))))))))
       (dfs 1 (perm-tree-root tree)))))
-
-(defun saref1 (&rest args)
-  (apply #'saref args))
-
-(defun saref2 (&rest args)
-  (apply #'saref args))
-
-(defun saref3 (&rest args)
-  (apply #'saref args))
-
-(defun saref4 (&rest args)
-  (apply #'saref args))
 
 (defun perm-tree-next-perm (tree perm &key (re-order
                                             (perm-identity (perm-tree-perm-size tree))))
@@ -228,15 +244,20 @@ For example, if SIZE = 10, then #[10 9 8 7 6 5 4 3 2 1] would traverse in revers
                  (cond
                    ((< current-depth to-depth)
                     (let* ((next-index (unsafe/perm-eval perm current-depth))
-                           (next (saref3 node next-index)))
-                      (cond
+                           (next (saref node next-index)))
+                      (etypecase next
                         ;; We didn't actually find our target
                         ;; perm. That's OK, we can still find the
                         ;; successor to it.
-                        ((null next)
+                        (null
+                         (bottom-up-dfs perm current-depth path))
+                        ;; We found something... search above it
+                        ;;
+                        ;; XXX: check??????????????????????????????/
+                        (cons
                          (bottom-up-dfs perm current-depth path))
                         ;; We found the next node, keep descending.
-                        (t
+                        (sparse-array
                          (search-at-depth
                           (1+ current-depth)
                           to-depth
@@ -246,48 +267,50 @@ For example, if SIZE = 10, then #[10 9 8 7 6 5 4 3 2 1] would traverse in revers
                    ;; searching here.
                    (t
                     (bottom-up-dfs perm current-depth path))))
+
                (bottom-up-dfs (perm current-depth path)
                  (loop :for node :in path
-                       ;;:for count :of-type fixnum := (sparse-array-count node)
                        :for depth :of-type fixnum := current-depth :then (1- depth)
-                       :unless (sparse-array-singleton-p node)
-                         :do
-                            (loop :with skip := t
-                                  :with point :of-type perm-element := (unsafe/perm-eval perm depth)
-                                  :for i :of-type perm-element :from 1 :to size
-                                  :for i* :of-type perm-element := (relabel i)
-                                  :do (cond
-                                        (skip
-                                         ;; When we've reached our
-                                         ;; point---which is
-                                         ;; skipped---we can now stop
-                                         ;; skipping.
-                                         (when (= i* point)
-                                           (setf skip nil)))
-                                        (t
-                                         (let ((next (saref4 node i*)))
-                                           (when next
-                                             (dfs (1+ depth) next))))))))
+                       :do
+                          (loop :with skip := t
+                                :with point :of-type perm-element := (unsafe/perm-eval perm depth)
+                                :for i :of-type perm-element :from 1 :to size
+                                :for i* :of-type perm-element := (relabel i)
+                                :do (cond
+                                      (skip
+                                       ;; When we've reached our
+                                       ;; point---which is
+                                       ;; skipped---we can now stop
+                                       ;; skipping.
+                                       (when (= i* point)
+                                         (setf skip nil)))
+                                      (t
+                                       (let ((next (saref node i*)))
+                                         (dfs (1+ depth) next)))))))
                (dfs (depth node)
-                 (declare (type fixnum depth)
-                          (type sparse-array node))
-                 (cond
-                   ((= depth max-depth)
-                    (if (sparse-array-singleton-p node) ;(= 1 (sparse-array-count node))
-                        (return-from perm-tree-next-perm
-                          (cadar (sparse-array-elements node)))
-                        (loop :for i :of-type perm-element :from 1 :to size
-                              :for x := (saref1 node (relabel i))
-                              :unless (null x)
-                                :do (return-from perm-tree-next-perm (car x)))))
-                   (t
-                    ;; TODO count optimization?
-                    (if (sparse-array-singleton-p node) ; (= 1 count)
-                        (dfs (1+ depth) (cdar (sparse-array-elements node)))
-                        (loop :for i :of-type perm-element :from 1 :to size
-                              :for x := (saref2 node (relabel i))
-                              :unless (null x)
-                                :do (dfs (1+ depth) x)))))))
+                 (declare (type fixnum depth))
+                 (etypecase node
+                   (null nil)
+                   (cons
+                    (return-from perm-tree-next-perm (car node)))
+                   (sparse-array
+                    (cond
+                      ((= depth max-depth)
+                       (if (sparse-array-singleton-p node) ;(= 1 (sparse-array-count node))
+                           (return-from perm-tree-next-perm
+                             (cadar (sparse-array-elements node)))
+                           (loop :for i :of-type perm-element :from 1 :to size
+                                 :for x := (saref node (relabel i))
+                                 :unless (null x)
+                                   :do (return-from perm-tree-next-perm (car x)))))
+                      (t
+                       ;; TODO count optimization?
+                       (if nil ;(sparse-array-singleton-p node) ; (= 1 count)
+                           (dfs (1+ depth) (cdar (sparse-array-elements node)))
+                           (loop :for i :of-type perm-element :from 1 :to size
+                                 :for x := (saref node (relabel i))
+                                 :unless (null x)
+                                   :do (dfs (1+ depth) x)))))))))
         (search-at-depth 1 (1- size) (perm-tree-root tree) (list (perm-tree-root tree)))
         ;; If we reached here, we found nothing...
         nil))))
@@ -355,7 +378,7 @@ For example, if SIZE = 10, then #[10 9 8 7 6 5 4 3 2 1] would traverse in revers
 
 (defun in-common?* (&rest args)
   (write-line "; profiling")
-  (sb-sprof:with-profiling (:reset t :mode :cpu :report :graph)
+  (time ;sb-sprof:with-profiling (:reset t :mode :cpu :report :graph)
     (apply #'in-common? args)))
 
 (defun in-common? (a b &key (test '=)
@@ -396,7 +419,7 @@ For example, if SIZE = 10, then #[10 9 8 7 6 5 4 3 2 1] would traverse in revers
                    (remaining (- total count))
                    (hours-left (/ remaining perms-per-sec 60 60)))
               (multiple-value-bind (hours hour-fraction) (truncate hours-left 1)
-                (format t "~&~:D: ~D sec @ ~D perms/sec; ~3,4F% complete, eta ~D hour~:P ~D minute~:P~%"
+                (format t "~&~:D: ~D sec @ ~:D perms/sec; ~3,4F% complete, eta ~D hour~:P ~D minute~:P~%"
                         count
                         (round elapsed-time)
                         (round perms-per-sec)
@@ -466,7 +489,6 @@ For example, if SIZE = 10, then #[10 9 8 7 6 5 4 3 2 1] would traverse in revers
          (L3 (transform-tree (lambda (p v)
                                (values (perm-compose p g) v))
                              L4))
-
          (L1L2 (progn
                  (logout "; SS 1")
                  (schroeppel-shamir2 L2 L1)))
@@ -474,6 +496,12 @@ For example, if SIZE = 10, then #[10 9 8 7 6 5 4 3 2 1] would traverse in revers
                  (logout "; SS 2")
                  (schroeppel-shamir2 L4 L3))))
     (format t "~&|L_i| = ~:D~%" (perm-tree-num-elements L1))
+    (format t "tally: ~A~%" (let* ((o (occupancy L1))
+                                   (s (reduce #'+ o)))
+                              (map 'vector (lambda (x)
+                                             (* 100.0 (/ x s)))
+                                   o)))
+
     (let ((solution (in-common?* L1L2 L3L4 :test #'perm=
                                            :compare #'perm<
                                            :join (lambda (f4 f3 f2 f1)
@@ -492,8 +520,8 @@ For example, if SIZE = 10, then #[10 9 8 7 6 5 4 3 2 1] would traverse in revers
                                                      (perm-tree-ref L2 f2)
                                                      (perm-tree-ref L1 f1))))
                                            
-                                           :limit 1000000
-                                           :report-interval 500000
+                                           ;:limit 5000000
+                                           :report-interval 10000000
                                            :return-immediately t
                                            :num-elements-1 (* (perm-tree-num-elements L1)
                                                               (perm-tree-num-elements L2))
@@ -503,7 +531,7 @@ For example, if SIZE = 10, then #[10 9 8 7 6 5 4 3 2 1] would traverse in revers
       (when solution
         (fresh-line)
         (format t "input : ~A~%" g)
-        (format t "common: ~A~%" (car solution))
+        (format t "common: ~A~%" solution)
         (let ((*print-pretty* nil))
           (format t "* * * reconstruction: ~A~%" (cdr solution)))
         (values solution
