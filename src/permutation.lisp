@@ -24,6 +24,12 @@
   (rep nil :type raw-perm :read-only t))
 #+sbcl (declaim (sb-ext:freeze-type perm))
 
+(declaim (inline perm-size))
+(defun perm-size (perm)
+  "The size of a permutation PERM."
+  (declare (type perm perm))
+  (1- (length (perm.rep perm))))
+
 ;;; XXX: fix the duplication.
 (defun print-perm (perm stream depth)
   "Printer for perms."
@@ -176,6 +182,8 @@
 (declaim (ftype (function (perm perm-element) perm-element) perm-eval unsafe/perm-eval))
 (declaim (inline unsafe/perm-eval))
 (defun unsafe/perm-eval (perm n)
+  (declare (type perm perm)
+           (type perm-element n))
   (aref (perm.rep perm) n))
 
 (defun perm-eval (perm n)
@@ -239,10 +247,6 @@
                                 (perm-size other-perm))
         :always (= (perm-eval* perm i)
                    (perm-eval* other-perm i))))
-
-(defun perm-size (perm)
-  "The size of a permutation PERM."
-  (1- (length (perm.rep perm))))
 
 (defun perm-length (perm)
   "Count the number of inversions in the permutation PERM."
@@ -449,11 +453,14 @@ If a fixed point doesn't exist, return NIL."
 ;; TODO FIXME: fix for unequal lengths
 (defun perm< (a b)
   "Is the permutation A lexicographically preceding B?"
-  (declare (optimize speed))
-  (let ((size (min (perm-size a) (perm-size b))))
-    (loop :for i :from 1 :to size
-          :for ai :of-type perm-element := (unsafe/perm-eval a i)
-          :for bi :of-type perm-element := (unsafe/perm-eval b i)
+  (declare (optimize speed (safety 0))
+           (type perm a b))
+  (let ((araw (perm.rep a))
+        (braw (perm.rep b)))
+    (declare (type raw-perm araw braw))
+    (loop :for i :of-type perm-element :from 1 :below (min (length araw) (length braw))
+          :for ai :of-type perm-element := (aref araw i)
+          :for bi :of-type perm-element := (aref braw i)
           :do (cond
                 ((< ai bi) (return t))
                 ((> ai bi) (return nil)))
