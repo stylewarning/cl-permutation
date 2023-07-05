@@ -448,13 +448,13 @@ The sigma (SIGMA K J) is represented by the cons cell (K . J)."
                                                   (aref lookup-table (- n (second elts)))))
                 ;; Otherwise, we'll do this the best we can.
                 (t
-                 (loop :with result-storage := (iota-vector (1+ degree))
+                 (loop :with result-storage := (allocate-identity-vector degree)
                        :with temp-storage := (allocate-perm-vector degree)
                        :for i :in elts
                        :for p := (perm.rep (aref lookup-table (- n i)))
                        :do (%perm-compose-into/equal result-storage p temp-storage)
                            (rotatef temp-storage result-storage)
-                       :finally (return (%make-perm :rep result-storage))))))))))
+                       :finally (return (%make-perm result-storage))))))))))
 
 (defun word-simplifier-for-perm-group (g)
   "Construct a simplifier for the permutation group G according to its free group."
