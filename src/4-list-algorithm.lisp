@@ -14,7 +14,7 @@
 ;;; Sparse Array
 ;;;
 ;;; We use sparse arrays to implement the permutation trie
-;;; (PERM-TREE), since occupancy is generally very, very small. We
+;;; (PERM-TRIE), since occupancy is generally very, very small. We
 ;;; save a lot of memory this way.
 
 (declaim (inline sparse-array-bitmap sparse-array-elements %make-sparse-array))
@@ -79,25 +79,25 @@
              (dpb 1 (byte 1 n) (sparse-array-bitmap sa)))
        new-value))))
 
-;;; Permutation Tree
+;;; Permutation Trie
 ;;;
 ;;; This is a data structure that associates a permutation with
 ;;; arbitrary data. It has the benefit that permutations can be
 ;;; visited in lexicographic order, and permutations overlap in
 ;;; memory.
 
-(defstruct (perm-tree (:constructor %make-perm-tree))
+(defstruct (perm-trie (:constructor %make-perm-trie))
   "A trie-like data structure to store permutations."
   (num-elements 0 :type (and fixnum unsigned-byte))
   (perm-size 0 :type vector-size)
   root)
 
-(defmethod print-object ((object perm-tree) stream)
+(defmethod print-object ((object perm-trie) stream)
   (print-unreadable-object (object stream :type t :identity t)
-    (format stream "~D perm~:P" (perm-tree-num-elements object))))
+    (format stream "~D perm~:P" (perm-trie-num-elements object))))
 
-(defun occupancy (tree)
-  (let ((histogram (make-array (1+ (perm-tree-perm-size tree)) :initial-element 0)))
+(defun occupancy (trie)
+  (let ((histogram (make-array (1+ (perm-trie-perm-size trie)) :initial-element 0)))
     (labels ((tally (x)
                (typecase x
                  (sparse-array
@@ -108,16 +108,16 @@
                      )))
                  (otherwise
                   nil))))
-      (tally (perm-tree-root tree))
+      (tally (perm-trie-root trie))
       (values histogram))))
 
-(defun make-perm-tree (perm-size)
-  (%make-perm-tree :num-elements 0
+(defun make-perm-trie (perm-size)
+  (%make-perm-trie :num-elements 0
                    :perm-size perm-size
                    :root (make-sparse-array perm-size)))
 
-(defun perm-tree-ref (tree perm)
-  (let ((size (perm-tree-perm-size tree)))
+(defun perm-trie-ref (trie perm)
+  (let ((size (perm-trie-perm-size trie)))
     (labels ((check (i node)
                (let ((point (perm-eval perm i)))
                  (cond
@@ -133,12 +133,12 @@
                         (cons (if (perm= perm (car next-node))
                                   (cdr next-node)
                                   nil)))))))))
-      (check 1 (perm-tree-root tree)))))
+      (check 1 (perm-trie-root trie)))))
 
-(defun ingest-perm (tree perm &key (value t) force ignore)
-  (let ((size (perm-tree-perm-size tree)))
+(defun ingest-perm (trie perm &key (value t) force ignore)
+  (let ((size (perm-trie-perm-size trie)))
     (labels ((record (point node perm value)
-               (incf (perm-tree-num-elements tree))
+               (incf (perm-trie-num-elements trie))
                (setf (saref node point) (cons perm value)))
              (ingest (i node perm value)
                (let ((point (perm-eval perm i)))
@@ -181,14 +181,14 @@
                               (let ((next-node (make-sparse-array size)))
                                 (setf (saref node point) next-node)
                                 ;; don't double count
-                                (decf (perm-tree-num-elements tree))
+                                (decf (perm-trie-num-elements trie))
                                 (ingest (1+ i) next-node old-perm old-value)
                                 (ingest (1+ i) next-node perm value)))))))))))))
-      (ingest 1 (perm-tree-root tree) perm value))))
+      (ingest 1 (perm-trie-root trie) perm value))))
 
-(defun map-perm-tree (f tree &key re-order)
+(defun map-perm-trie (f trie &key re-order)
   ;; TODO: modify so that we can visit all elements *after* a particular one?
-  "Visit the permutations of TREE in lexicographic order. F should be a function taking two arguments:
+  "Visit the permutations of TRIE in lexicographic order. F should be a function taking two arguments:
 
     1. The perm
 
@@ -200,7 +200,7 @@ For example, if SIZE = 10, then #[10 9 8 7 6 5 4 3 2 1] would traverse in revers
 
   (declare (optimize speed)
            (type function f))
-  (let* ((size      (perm-tree-perm-size tree))
+  (let* ((size      (perm-trie-perm-size trie))
          (max-depth size)
          (relabel (etypecase re-order
                     (null #'identity)
@@ -225,13 +225,13 @@ For example, if SIZE = 10, then #[10 9 8 7 6 5 4 3 2 1] would traverse in revers
                            :for x := (saref node (funcall relabel i))
                            :unless (null x)
                              :do (dfs (1+ depth) x))))))))
-      (dfs 1 (perm-tree-root tree)))))
+      (dfs 1 (perm-trie-root trie)))))
 
-(defun perm-tree-next-perm (tree perm &key (re-order
-                                            (perm-identity (perm-tree-perm-size tree))))
+(defun perm-trie-next-perm (trie perm &key (re-order
+                                            (perm-identity (perm-trie-perm-size trie))))
   "Find the lexicographic successor to a perm."
   (declare (optimize speed))
-  (assert (= (perm-size perm) (perm-tree-perm-size tree)))
+  (assert (= (perm-size perm) (perm-trie-perm-size trie)))
 
   (let* ((size (perm-size perm))
          (max-depth size))
@@ -292,17 +292,17 @@ For example, if SIZE = 10, then #[10 9 8 7 6 5 4 3 2 1] would traverse in revers
                  (etypecase node
                    (null nil)
                    (cons
-                    (return-from perm-tree-next-perm (car node)))
+                    (return-from perm-trie-next-perm (car node)))
                    (sparse-array
                     (cond
                       ((= depth max-depth)
                        (if (sparse-array-singleton-p node) ;(= 1 (sparse-array-count node))
-                           (return-from perm-tree-next-perm
+                           (return-from perm-trie-next-perm
                              (cadar (sparse-array-elements node)))
                            (loop :for i :of-type perm-element :from 1 :to size
                                  :for x := (saref node (relabel i))
                                  :unless (null x)
-                                   :do (return-from perm-tree-next-perm (car x)))))
+                                   :do (return-from perm-trie-next-perm (car x)))))
                       (t
                        ;; TODO count optimization?
                        (if nil ;(sparse-array-singleton-p node) ; (= 1 count)
@@ -311,46 +311,46 @@ For example, if SIZE = 10, then #[10 9 8 7 6 5 4 3 2 1] would traverse in revers
                                  :for x := (saref node (relabel i))
                                  :unless (null x)
                                    :do (dfs (1+ depth) x)))))))))
-        (search-at-depth 1 (1- size) (perm-tree-root tree) (list (perm-tree-root tree)))
+        (search-at-depth 1 (1- size) (perm-trie-root trie) (list (perm-trie-root trie)))
         ;; If we reached here, we found nothing...
         nil))))
 
-(defmacro do-perm-tree ((p v tree &key re-order) &body body)
-  (let ((iter-tree (gensym "ITER-TREE"))
-        (tree-once (gensym "TREE-ONCE")))
-    `(let ((,tree-once ,tree))
-       (flet ((,iter-tree (,p ,v)
+(defmacro do-perm-trie ((p v trie &key re-order) &body body)
+  (let ((iter-trie (gensym "ITER-TRIE"))
+        (trie-once (gensym "TRIE-ONCE")))
+    `(let ((,trie-once ,trie))
+       (flet ((,iter-trie (,p ,v)
                 ,@body))
-         (declare (dynamic-extent #',iter-tree))
-         (map-perm-tree #',iter-tree ,tree-once :re-order ,re-order)
+         (declare (dynamic-extent #',iter-trie))
+         (map-perm-trie #',iter-trie ,trie-once :re-order ,re-order)
          nil))))
 
-(defun collect-perm-tree (tree)
+(defun collect-perm-trie (trie)
   (let ((elements nil))
-    (do-perm-tree (p v tree)
+    (do-perm-trie (p v trie)
       (declare (ignore v))
       (push p elements))
     (nreverse elements)))
 
-;;; should be equal to perm tree
+;;; should be equal to perm trie
 ;;; TODO make a test
-(defun collect-perm-tree2 (tree &key re-order)
-  (loop :with node := (perm-tree-least tree :re-order re-order)
+(defun collect-perm-trie2 (trie &key re-order)
+  (loop :with node := (perm-trie-least trie :re-order re-order)
         :until (null node)
         :collect (prog1 node
-                   (setf node (perm-tree-next-perm tree node :re-order re-order)))))
+                   (setf node (perm-trie-next-perm trie node :re-order re-order)))))
 
-(defun perm-tree-least (tree &key re-order)
-  (do-perm-tree (p v tree :re-order re-order)
-    (return-from perm-tree-least (values p v))))
+(defun perm-trie-least (trie &key re-order)
+  (do-perm-trie (p v trie :re-order re-order)
+    (return-from perm-trie-least (values p v))))
 
-(defun schroeppel-shamir2 (l2-tree l1-tree)
+(defun schroeppel-shamir2 (l2-trie l1-trie)
   (let ((q (pq:make-pqueue #'perm<)))
     ;; Initialize the queue with minimums.
-    (do-perm-tree (y wy l2-tree)
+    (do-perm-trie (y wy l2-trie)
       (declare (ignore wy))
       (let ((y-inv (perm-inverse y)))
-        (let ((x (perm-tree-least l1-tree :re-order y-inv)))
+        (let ((x (perm-trie-least l1-trie :re-order y-inv)))
           (pq:pqueue-push
            (list x y y-inv)
            (perm-compose y x)
@@ -365,7 +365,7 @@ For example, if SIZE = 10, then #[10 9 8 7 6 5 4 3 2 1] would traverse in revers
                    (pq:pqueue-pop q)
                  (destructuring-bind (x y y-inv) components
                      ;; update queue
-                   (let ((next-x (perm-tree-next-perm l1-tree x :re-order y-inv)))
+                   (let ((next-x (perm-trie-next-perm l1-trie x :re-order y-inv)))
                      (when next-x
                        (rplaca components next-x) ; save memory
                        (pq:pqueue-push
@@ -388,6 +388,7 @@ For example, if SIZE = 10, then #[10 9 8 7 6 5 4 3 2 1] would traverse in revers
                             (report-interval 100000)
                             num-elements-1
                             num-elements-2
+                            verbose
                             (limit nil ;500000
                              ))
   (let ((common nil)
@@ -412,7 +413,9 @@ For example, if SIZE = 10, then #[10 9 8 7 6 5 4 3 2 1] would traverse in revers
              (setf (values bx f4 f3) (funcall b))))
           ;; Report some info.
           (incf count)
-          (when (and (plusp count) (zerop (mod count report-interval)))
+          (when (and verbose
+                     (plusp count)
+                     (zerop (mod count report-interval)))
             (let* ((elapsed-time (/ (- (get-internal-real-time) lap) internal-time-units-per-second))
                    (perms-per-sec (/ report-interval elapsed-time))
                    (total (+ num-elements-1 num-elements-2))
@@ -430,32 +433,32 @@ For example, if SIZE = 10, then #[10 9 8 7 6 5 4 3 2 1] would traverse in revers
           (when (and limit (>= count limit))
             (return-from in-common? common)))))))
 
-(defun transform-tree (f tree)
-  (let ((new-tree (make-perm-tree (perm-tree-perm-size tree))))
-    (do-perm-tree (p v tree)
+(defun transform-trie (f trie)
+  (let ((new-trie (make-perm-trie (perm-trie-perm-size trie))))
+    (do-perm-trie (p v trie)
       (multiple-value-bind (new-p new-v) (funcall f p v)
-        (ingest-perm new-tree new-p :value new-v)))
-    new-tree))
+        (ingest-perm new-trie new-p :value new-v)))
+    new-trie))
 
 ;;;; 2x2
 
 (defun generate-words-of-bounded-length (gens word-length)
   (let* ((size (loop :for g :in gens :maximize (perm-size g)))
-         (tree (make-perm-tree size))
+         (trie (make-perm-trie size))
          (id   (perm-identity size)))
-    (ingest-perm tree id :value nil)
+    (ingest-perm trie id :value nil)
     (labels ((f (max cur perm word)
                (loop :for i :from 1
                      :for g :in gens
                      :for p := (perm-compose g perm)
                      :for w := (cons i word)
-                     :do (ingest-perm tree p :value w :ignore t)
+                     :do (ingest-perm trie p :value w :ignore t)
                          (when (< cur max)
                            (f max (1+ cur) p w)))))
       (loop :for max :from 1 :to word-length :do (f max 1 id nil))
-      tree)))
+      trie)))
 
-#-d
+#+d
 (progn
   (defun 3x3-htm ()
     (let* ((original (perm-group.generators (cl-permutation-examples:make-rubik-3x3)))
@@ -464,76 +467,84 @@ For example, if SIZE = 10, then #[10 9 8 7 6 5 4 3 2 1] would traverse in revers
                       :collect (perm-expt g 2)
                       :collect (perm-expt g 3))))
       (generate-perm-group new)))
+  (defun scramble (group num-moves)
+    (let ((s (group-identity group)))
+      (loop :repeat num-moves :do
+        (setf s (perm-compose (alexandria:random-elt (perm-group.generators group))
+                              s)))
+      s))
   (defvar *3x3 (3x3-htm)))
 
-(defun logout (string)
-  (write-line string)
-  (finish-output))
-
-(defun test-ss (g &key group)
+(defun test-ss (g &key group (wordlen 5))
   (check-type group perm-group)
-  (let* ((gens (perm-group.generators group))
-         (free (perm-group.free-group group))
-         (free->2x2 (free-group->perm-group-homomorphism free group))
+  (labels ((logout (string)
+             (write-line string)
+             (finish-output)))
+    (let* ((gens (perm-group.generators group))
+           (free (perm-group.free-group group))
+           (free->2x2 (free-group->perm-group-homomorphism free group))
 
-         (L1 (progn
-               (logout "; generating words")
-               (generate-words-of-bounded-length gens 5)))
-         (L2 L1)
-         (L4 (progn
-               (logout "; xform trees")
-               (transform-tree (lambda (p v)
-                                 (values (perm-inverse p)
-                                         (reverse (mapcar #'- v))))
-                               L1)))
-         (L3 (transform-tree (lambda (p v)
-                               (values (perm-compose p g) v))
-                             L4))
-         (L1L2 (progn
-                 (logout "; SS 1")
-                 (schroeppel-shamir2 L2 L1)))
-         (L3L4 (progn
-                 (logout "; SS 2")
-                 (schroeppel-shamir2 L4 L3))))
-    (format t "~&|L_i| = ~:D~%" (perm-tree-num-elements L1))
-    (format t "tally: ~A~%" (let* ((o (occupancy L1))
-                                   (s (reduce #'+ o)))
-                              (map 'vector (lambda (x)
-                                             (* 100.0 (/ x s)))
-                                   o)))
+           (L1 (progn
+                 (logout "; generating words")
+                 (generate-words-of-bounded-length gens wordlen)))
+           (L2 L1)
+           (L4 (progn
+                 (logout "; xform tries")
+                 (transform-trie (lambda (p v)
+                                   (values (perm-inverse p)
+                                           (reverse (mapcar #'- v))))
+                                 L1)))
+           (L3 (transform-trie (lambda (p v)
+                                 (values (perm-compose p g) v))
+                               L4))
+           (L1L2 (progn
+                   (logout "; SS 1")
+                   (schroeppel-shamir2 L2 L1)))
+           (L3L4 (progn
+                   (logout "; SS 2")
+                   (schroeppel-shamir2 L4 L3))))
+      (format t "~&|L_i|    = ~:D~%" (perm-trie-num-elements L1))
+      (format t "~&2|L_i|^2 = ~:D~%" (* 2 (expt (perm-trie-num-elements L1) 2)))
+      (format t "tally: ~A~%" (let* ((o (occupancy L1))
+                                     (s (reduce #'+ o)))
+                                (map 'vector (lambda (x)
+                                               (* 100.0 (/ x s)))
+                                     o)))
 
-    (let ((solution (in-common?* L1L2 L3L4 :test #'perm=
-                                           :compare #'perm<
-                                           :join (lambda (f4 f3 f2 f1)
-                                                   ;; we can save
-                                                   ;; memory here if
-                                                   ;; L{1,2,3,4} are
-                                                   ;; essentially
-                                                   ;; equal up to
-                                                   ;; transformation.
-                                                   (revappend
-                                                    (mapcar #'-
-                                                            (append
-                                                             (perm-tree-ref L4 f4)
-                                                             (perm-tree-ref L3 f3)))
-                                                    (append
-                                                     (perm-tree-ref L2 f2)
-                                                     (perm-tree-ref L1 f1))))
-                                           
-                                           ;:limit 5000000
-                                           :report-interval 10000000
-                                           :return-immediately t
-                                           :num-elements-1 (* (perm-tree-num-elements L1)
-                                                              (perm-tree-num-elements L2))
-                                           :num-elements-2 (* (perm-tree-num-elements L3)
-                                                              (perm-tree-num-elements L4))
-                                           )))
-      (when solution
-        (fresh-line)
-        (format t "input : ~A~%" g)
-        (format t "common: ~A~%" solution)
-        (let ((*print-pretty* nil))
-          (format t "* * * reconstruction: ~A~%" (cdr solution)))
-        (values solution
-                (perm-compose (perm-inverse (funcall free->2x2 solution))
-                              g))))))
+      (let ((solution (in-common?* L1L2 L3L4 :test #'perm=
+                                             :compare #'perm<
+                                             :join (lambda (f4 f3 f2 f1)
+                                                     ;; we can save
+                                                     ;; memory here if
+                                                     ;; L{1,2,3,4} are
+                                                     ;; essentially
+                                                     ;; equal up to
+                                                     ;; transformation.
+                                                     (revappend
+                                                      (mapcar #'-
+                                                              (append
+                                                               (perm-trie-ref L4 f4)
+                                                               '(0)
+                                                               (perm-trie-ref L3 f3)))
+                                                      (append
+                                                       '(0)
+                                                       (perm-trie-ref L2 f2)
+                                                       '(0)
+                                                       (perm-trie-ref L1 f1))))
+                                             
+                                        ;:limit 5000000
+                                             :report-interval 10000000
+                                             :return-immediately t
+                                             :num-elements-1 (* (perm-trie-num-elements L1)
+                                                                (perm-trie-num-elements L2))
+                                             :num-elements-2 (* (perm-trie-num-elements L3)
+                                                                (perm-trie-num-elements L4))
+                                             )))
+        (when solution
+          (fresh-line)
+          (format t "input : ~A~%" g)
+          (let ((*print-pretty* nil))
+            (format t "* * * reconstruction: ~A~%" solution))
+          (values solution
+                  (perm-compose (perm-inverse (funcall free->2x2 solution))
+                                g)))))))
