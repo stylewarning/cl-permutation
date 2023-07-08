@@ -81,11 +81,11 @@
         (if (not (vectorp perm))
             (progn
               (setf perm (make-array (1+ n) :initial-contents (iota (1+ n))))
-              (%make-perm :rep (map-into-perm #'abs perm)))
+              (%make-perm (map-into-perm #'abs perm)))
             (let ((next (next-perm perm n)))
               ;; If we are at the end, then set PERM to NIL.
               (if next
-                  (%make-perm :rep (map-into-perm #'abs next))
+                  (%make-perm (map-into-perm #'abs next))
                   (setf perm nil))))))))
 
 (defmacro doperms ((x n &optional result) &body body)
@@ -102,6 +102,6 @@ RESULT."
                                        :initial-contents (iota (1+ ,len)))
                :then (next-perm ,perm ,len)
              :while ,perm
-             :do (let ((,x (%make-perm :rep (map-into-perm #'abs ,perm))))
+             :do (let ((,x (%make-perm (map-into-perm #'abs ,perm))))
                    ,@body)
              :finally (return ,result)))))

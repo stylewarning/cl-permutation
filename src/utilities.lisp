@@ -18,13 +18,15 @@
   "Generate a list of numbers between 0 and N-1."
   (loop :for i :below n :collect i))
 
-(defun iota-vector (n)
+(declaim (inline iota-vector))
+(defun iota-vector (n &key (element-type t))
   "Generate the equivalent of (COERCE (IOTA N) 'VECTOR)."
-  (loop :with a := (make-array n :element-type 'vector-index
+  (loop :with a := (make-array n :element-type element-type
                                  :initial-element 0)
         :for i :below n
         :do (setf (aref a i) i)
         :finally (return a)))
+(declaim (notinline iota-vector))
 
 (defun iota+1 (n)
   "Generate a list of numbers between 1 and N."

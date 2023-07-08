@@ -1,5 +1,5 @@
 ;;;; permutation.lisp
-;;;; Copyright (c) 2012-2015 Robert Smith
+;;;; Copyright (c) 2012-2023 Robert Smith
 
 (in-package #:cl-permutation)
 
@@ -10,9 +10,9 @@
 
 (deftype perm-element ()
   "An element of a perm."
-  ;; Since a perm can contain 1 to the maximum of VECTOR-INDEX, the
-  ;; type is also that of a VECTOR-INDEX.
-  'vector-index)
+  ;; We only allow permutations that have points between 1 and
+  ;; 65535. 0 is reserved for special use.
+  '(unsigned-byte 16))
 
 (deftype raw-perm ()
   "Type defining the internal representation of a perm."
@@ -20,9 +20,15 @@
 
 (defstruct (perm (:conc-name perm.)
                  (:print-function print-perm)
-                 (:constructor %make-perm))
-  (rep (iota-vector 1) :type raw-perm :read-only t))
+                 (:constructor %make-perm (rep)))
+  (rep nil :type raw-perm :read-only t))
 #+sbcl (declaim (sb-ext:freeze-type perm))
+
+(declaim (inline perm-size))
+(defun perm-size (perm)
+  "The size of a permutation PERM."
+  (declare (type perm perm))
+  (1- (length (perm.rep perm))))
 
 ;;; XXX: fix the duplication.
 (defun print-perm (perm stream depth)
@@ -79,9 +85,9 @@
   (let ((read-list (read-delimited-list #\] stream t)))
     (assert-valid-permutation-elements read-list)
 
-    (%make-perm :rep (make-array (1+ (length read-list))
-                                 :element-type 'perm-element
-                                 :initial-contents (cons 0 read-list)))))
+    (%make-perm (make-array (1+ (length read-list))
+                            :element-type 'perm-element
+                            :initial-contents (cons 0 read-list)))))
 
 (defun enable-perm-reader ()
   "Enable the use of #[...] for perms."
@@ -101,6 +107,10 @@
   (make-array (1+ n) :element-type 'perm-element
                      :initial-element 0))
 
+(defun allocate-identity-vector (n)
+  (declare (inline iota-vector))
+  (iota-vector (1+ n) :element-type 'perm-element))
+
 
 
 ;;;;;;;;;;;;;;;;;;;;;;; PERMUTATION OPERATIONS ;;;;;;;;;;;;;;;;;;;;;;;
@@ -113,7 +123,7 @@
         :for i :from 1
         :for x :in list
         :do (setf (aref rep i) x)
-        :finally (return (%make-perm :rep rep))))
+        :finally (return (%make-perm rep))))
 (declaim (notinline list-to-perm))
 
 (defun perm-to-list (perm)
@@ -128,7 +138,7 @@
         :for i :from 1
         :for x :across word
         :do (setf (aref rep i) x)
-        :finally (return (%make-perm :rep rep))))
+        :finally (return (%make-perm rep))))
 
 (defun perm-to-vector (perm)
   "Convert a permutation PERM to a vector."
@@ -142,7 +152,7 @@
 
 (defun perm-identity (n)
   "The identity permutation of size N."
-  (%make-perm :rep (iota-vector (1+ n))))
+  (%make-perm (allocate-identity-vector n)))
 
 (defun perm-identity-p (perm)
   "Is the permutation PERM an identity permutation?"
@@ -156,9 +166,9 @@
     * :ANY  for any permutation
     * :EVEN for only even permutations
     * :ODD  for only odd permutations"
-  (%make-perm :rep (nshuffle (iota-vector (1+ n))
-                             :parity parity
-                             :start 1)))
+  (%make-perm (nshuffle (allocate-identity-vector n)
+                        :parity parity
+                        :start 1)))
 
 (defun perm-ref (perm n)
   "Compute the zero-based index of PERM at N."
@@ -172,6 +182,8 @@
 (declaim (ftype (function (perm perm-element) perm-element) perm-eval unsafe/perm-eval))
 (declaim (inline unsafe/perm-eval))
 (defun unsafe/perm-eval (perm n)
+  (declare (type perm perm)
+           (type perm-element n))
   (aref (perm.rep perm) n))
 
 (defun perm-eval (perm n)
@@ -236,10 +248,6 @@
         :always (= (perm-eval* perm i)
                    (perm-eval* other-perm i))))
 
-(defun perm-size (perm)
-  "The size of a permutation PERM."
-  (1- (length (perm.rep perm))))
-
 (defun perm-length (perm)
   "Count the number of inversions in the permutation PERM."
   (let ((n         (perm-size perm))
@@ -273,7 +281,7 @@
     (loop :for i :from 1 :to n
           :do (setf (aref p12-spec i)
                     (perm-eval* p1 (perm-eval* p2 i)))
-          :finally (return (%make-perm :rep p12-spec)))))
+          :finally (return (%make-perm p12-spec)))))
 (declaim (notinline %perm-compose-upto))
 
 (defun %perm-compose-into/equal (p1 p2 storage)
@@ -299,14 +307,14 @@ Example: If P1 = 2 |-> 3 and P2 = 1 |-> 2 then (perm-compose P1 P2) = 1 |-> 3."
   (let* ((n1 (perm-size p1))
          (n2 (perm-size p2))
          (storage (allocate-perm-vector (max n1 n2))))
-    (%make-perm :rep
-                (if (= n1 n2)
-                    (%perm-compose-into/equal (perm.rep p1)
-                                              (perm.rep p2)
-                                              storage)
-                    (%perm-compose-into/unequal (perm.rep p1) n1
-                                                (perm.rep p2) n2
-                                                storage)))))
+    (%make-perm
+     (if (= n1 n2)
+         (%perm-compose-into/equal (perm.rep p1)
+                                   (perm.rep p2)
+                                   storage)
+         (%perm-compose-into/unequal (perm.rep p1) n1
+                                     (perm.rep p2) n2
+                                     storage)))))
 (declaim (notinline perm-compose))
 
 (defun perm-compose-flipped (p1 p2)
@@ -356,7 +364,7 @@ Example: If P1 = 2 |-> 3 and P2 = 1 |-> 2 then (perm-compose P1 P2) = 1 |-> 3."
   (let ((transposed-spec (copy-seq (perm.rep perm))))
     (rotatef (aref transposed-spec a)
              (aref transposed-spec b))
-    (%make-perm :rep transposed-spec)))
+    (%make-perm transposed-spec)))
 
 (defun perm-transpose-entries (perm a b)
   "Transpose the entries A and B in PERM."
@@ -377,7 +385,7 @@ Example: If P1 = 2 |-> 3 and P2 = 1 |-> 2 then (perm-compose P1 P2) = 1 |-> 3."
          (pos-b (position b transposed-spec)))
     (rotatef (aref transposed-spec pos-a)
              (aref transposed-spec pos-b))
-    (%make-perm :rep transposed-spec)))
+    (%make-perm transposed-spec)))
 
 (defun perm-inverse (perm)
   "Find the inverse of the permutation PERM."
@@ -385,7 +393,7 @@ Example: If P1 = 2 |-> 3 and P2 = 1 |-> 2 then (perm-compose P1 P2) = 1 |-> 3."
          (perm*-spec (allocate-perm-vector n)))
     (loop :for i :from 1 :to n
           :do (setf (aref perm*-spec (perm-eval perm i)) i)
-          :finally (return (%make-perm :rep perm*-spec)))))
+          :finally (return (%make-perm perm*-spec)))))
 
 (defun perm-point-fixed-p (perm k)
   "Is K fixed in the perm PERM?"
@@ -442,12 +450,17 @@ If a fixed point doesn't exist, return NIL."
   (perm= (perm-compose a b)
          (perm-compose b a)))
 
+;; TODO FIXME: fix for unequal lengths
 (defun perm< (a b)
   "Is the permutation A lexicographically preceding B?"
-  (let ((size (min (perm-size a) (perm-size b))))
-    (loop :for i :from 1 :to size
-          :for ai := (perm-eval* a i)
-          :for bi := (perm-eval* b i)
+  (declare (optimize speed (safety 0))
+           (type perm a b))
+  (let ((araw (perm.rep a))
+        (braw (perm.rep b)))
+    (declare (type raw-perm araw braw))
+    (loop :for i :of-type perm-element :from 1 :below (min (length araw) (length braw))
+          :for ai :of-type perm-element := (aref araw i)
+          :for bi :of-type perm-element := (aref braw i)
           :do (cond
                 ((< ai bi) (return t))
                 ((> ai bi) (return nil)))
@@ -658,8 +671,8 @@ SIZE is ignored if it is less than the maximum point within the cycles."
   (let* ((maximum (max size (loop :for cycle :in cycles
                                   :maximize (loop :for i :across (cycle-rep cycle)
                                                   :maximize i))))
-         (perm (iota-vector (1+ maximum))))
-    (dolist (cycle cycles (%make-perm :rep perm))
+         (perm (allocate-identity-vector maximum)))
+    (dolist (cycle cycles (%make-perm perm))
       (map-cycle-mappings (lambda (from to)
                             (rotatef (aref perm from)
                                      (aref perm to)))

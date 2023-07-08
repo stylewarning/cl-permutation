@@ -78,7 +78,7 @@
                        :for x :across orbit
                        :do (setf (aref result i)
                                  (aref element-map (perm-eval g x)))
-                       :finally (return (%make-perm :rep result))))))
+                       :finally (return (%make-perm result))))))
       #'homomorphism)))
 
 ;;; XXX: We may want to store the group was derived from and the

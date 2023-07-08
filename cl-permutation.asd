@@ -1,6 +1,6 @@
 ;;;; cl-permutation.asd
 ;;;;
-;;;; Copyright (c) 2012-2019 Robert Smith
+;;;; Copyright (c) 2012-2023 Robert Smith
 
 (asdf:defsystem #:cl-permutation
   :description "A library for operating on permutations and permutation groups."
@@ -12,7 +12,9 @@
                #:closer-mop
                #:uiop
                #:bordeaux-fft
-               #:priority-queue)
+               #:priority-queue
+               #:cl-cont
+               )
   :in-order-to ((asdf:test-op (asdf:test-op #:cl-permutation-tests)))
   :pathname "src/"
   :serial t
@@ -26,6 +28,7 @@
                (:file "straight-line-program")
                (:file "permutation-group")
                (:file "minkwitz")
+               (:file "4-list-algorithm")
                (:file "homomorphism")
                (:file "orbit")
                (:file "do-group-elements")
@@ -33,4 +36,5 @@
                (:file "combinatorial-ranking")
                (:file "find-subgroups")
                (:file "god")
+               (:file "block-subsystem-solver")
                (:file "extra-functions")))
